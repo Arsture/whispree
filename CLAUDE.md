@@ -79,3 +79,24 @@ Hotkey → AudioService (record + FFT) → STTProvider.transcribe() → LLMProvi
 - `WhisperKitProvider`, `LightningWhisperProvider`, `GroqSTTProvider` — nonisolated (NOT @MainActor), `@unchecked Sendable`
 - Audio tap callback runs on audio thread; dispatches to MainActor via `Task { @MainActor in ... }`
 - `processPipeline()` runs in a `Task` on MainActor; `await sttProvider.transcribe()` suspends MainActor and runs inference on background executor
+
+## Directory Documentation (AGENTS.md)
+
+각 디렉토리별 상세 문서. 작업 영역에 따라 해당 파일을 참조:
+
+- @AGENTS.md — 프로젝트 루트 (아키텍처 개요, 빌드, 설계 제약)
+- @NotMyWhisper/AGENTS.md — 메인 앱 타겟 (파이프라인, 동시성 모델)
+- @NotMyWhisper/App/AGENTS.md — 앱 진입점, AppState 중앙 상태
+- @NotMyWhisper/Coordinators/AGENTS.md — RecordingCoordinator 파이프라인 오케스트레이션
+- @NotMyWhisper/Models/AGENTS.md — 데이터 모델, 설정, 상태 enum
+- @NotMyWhisper/Services/AGENTS.md — 서비스 레이어 개요
+- @NotMyWhisper/Services/Audio/AGENTS.md — 마이크 녹음 + FFT
+- @NotMyWhisper/Services/Auth/AGENTS.md — Codex 토큰 재사용
+- @NotMyWhisper/Services/Hotkey/AGENTS.md — 전역 단축키
+- @NotMyWhisper/Services/LLM/AGENTS.md — LLM 교정 (None/Local/OpenAI)
+- @NotMyWhisper/Services/ModelManagement/AGENTS.md — ML 모델 다운로드
+- @NotMyWhisper/Services/STT/AGENTS.md — STT 프로바이더 (WhisperKit/Groq/Lightning)
+- @NotMyWhisper/Services/TextInsertion/AGENTS.md — 클립보드 + CGEvent 붙여넣기
+- @NotMyWhisper/Views/AGENTS.md — SwiftUI UI 레이어
+- @NotMyWhisperTests/AGENTS.md — 유닛 + E2E 테스트
+- @stt-engine/AGENTS.md — Python FastAPI STT 서버
