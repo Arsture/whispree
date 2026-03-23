@@ -62,8 +62,12 @@ final class AppState: ObservableObject {
     // MARK: - Provider Management
 
     func switchSTTProvider(to type: STTProviderType) async {
-        await sttProvider?.teardown()
+        // 전환 시작 시 이전 에러 클리어
         whisperModelState = .loading
+
+        // 이전 provider teardown (에러 무시 — 전환 중 teardown 실패는 예상된 동작)
+        await sttProvider?.teardown()
+
         switch type {
         case .whisperKit:
             sttProvider = WhisperKitProvider()
