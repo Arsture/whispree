@@ -1,4 +1,4 @@
-# NotMyWhisper
+# Whispree
 
 A free, fully local macOS menu bar app for speech-to-text with LLM post-processing. An open-source alternative to SuperWhisper, running entirely on Apple Silicon with no cloud dependencies.
 
@@ -30,14 +30,14 @@ A free, fully local macOS menu bar app for speech-to-text with LLM post-processi
 
 ```bash
 # Clone
-git clone https://github.com/Arsture/NotMyWhisper.git
-cd NotMyWhisper
+git clone https://github.com/Arsture/Whispree.git
+cd Whispree
 
 # Generate Xcode project
 xcodegen generate
 
 # Open in Xcode
-open NotMyWhisper.xcodeproj
+open Whispree.xcodeproj
 
 # Build and run (⌘R)
 ```
@@ -62,7 +62,7 @@ Access settings from the menu bar icon:
 ## Architecture
 
 ```
-NotMyWhisper/
+Whispree/
 ├── App/                    # App entry point, delegate, state
 ├── Models/                 # Data models (settings, state, model info)
 ├── Services/

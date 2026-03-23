@@ -1,6 +1,6 @@
 <!-- Generated: 2026-03-23 -->
 
-# NotMyWhisper
+# Whispree
 
 ## Purpose
 macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 이전 앱에 자동 붙여넣기. Apple Silicon(arm64) 전용, macOS 14+, 로컬 온디바이스 실행.
@@ -17,8 +17,8 @@ macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 
 
 | Directory | Purpose |
 |-----------|---------|
-| `NotMyWhisper/` | 메인 앱 타겟 — Swift/SwiftUI (see `NotMyWhisper/AGENTS.md`) |
-| `NotMyWhisperTests/` | 유닛 + E2E 테스트 48개 (see `NotMyWhisperTests/AGENTS.md`) |
+| `Whispree/` | 메인 앱 타겟 — Swift/SwiftUI (see `Whispree/AGENTS.md`) |
+| `WhispreeTests/` | 유닛 + E2E 테스트 48개 (see `WhispreeTests/AGENTS.md`) |
 | `mlx-worker/` | Python mlx-audio STT worker — stdin/stdout JSON 파이프 통신 |
 | `docs/` | 추가 문서 |
 

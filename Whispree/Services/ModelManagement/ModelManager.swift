@@ -1,0 +1,231 @@
+import Foundation
+import Combine
+
+@MainActor
+final class ModelManager: ObservableObject {
+    @Published var whisperModelInfo = ModelInfo.whisperLargeV3Turbo
+    @Published var llmModelInfo = ModelInfo.qwen3_4B
+    @Published var isDownloading = false
+
+    // MARK: - 독립 모델 다운로드 상태 (Downloads 탭용, provider와 무관)
+    @Published var whisperKitDownloaded: Bool = false
+    @Published var mlxAudioDownloaded: Bool = false
+    @Published var localLLMDownloaded: Bool = false
+    @Published var mlxAudioDownloadState: ModelState = .notDownloaded
+
+    private let appState: AppState
+    private let sttService: STTService
+    private let llmService: LLMService
+    private var cancellables = Set<AnyCancellable>()
+
+    static var modelsDirectory: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appendingPathComponent("Whispree/Models", isDirectory: true)
+    }
+
+    init(appState: AppState, sttService: STTService, llmService: LLMService) {
+        self.appState = appState
+        self.sttService = sttService
+        self.llmService = llmService
+        createModelsDirectoryIfNeeded()
+        observeProviderStates()
+        refreshCachedModelStates()
+    }
+
+    private func observeProviderStates() {
+        appState.$whisperModelState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.whisperModelInfo.state = state
+            }
+            .store(in: &cancellables)
+
+        appState.$llmModelState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.llmModelInfo.state = state
+            }
+            .store(in: &cancellables)
+    }
+
+    private func createModelsDirectoryIfNeeded() {
+        try? FileManager.default.createDirectory(
+            at: Self.modelsDirectory,
+            withIntermediateDirectories: true
+        )
+    }
+
+    // MARK: - 디스크 캐시 기반 모델 상태 확인
+
+    func refreshCachedModelStates() {
+        whisperKitDownloaded = isModelCached(repoId: "argmaxinc/whisperkit-coreml")
+        mlxAudioDownloaded = isModelCached(repoId: "mlx-community/Qwen3-ASR-1.7B-8bit")
+        localLLMDownloaded = isModelCached(repoId: "mlx-community/Qwen3-4B-Instruct-2507-4bit")
+
+        if mlxAudioDownloaded && mlxAudioDownloadState == .notDownloaded {
+            mlxAudioDownloadState = .ready
+        }
+    }
+
+    private func isModelCached(repoId: String) -> Bool {
+        let fm = FileManager.default
+        // HuggingFace 캐시: ~/.cache/huggingface/hub/models--{org}--{name}/
+        let cacheDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cache/huggingface/hub")
+        let modelDir = cacheDir.appendingPathComponent("models--" + repoId.replacingOccurrences(of: "/", with: "--"))
+        return fm.fileExists(atPath: modelDir.path)
+    }
+
+    // MARK: - Provider 로딩 (앱 시작 시)
+
+    func loadModelsIfAvailable() async {
+        await appState.switchSTTProvider(to: appState.settings.sttProviderType)
+        await appState.switchLLMProvider(to: appState.settings.llmProviderType)
+        refreshCachedModelStates()
+    }
+
+    // MARK: - Downloads 탭 전용 (provider 전환 없이 다운로드)
+
+    func downloadWhisperKitModel() async {
+        let originalType = appState.settings.sttProviderType
+        isDownloading = true
+
+        await appState.switchSTTProvider(to: .whisperKit)
+        whisperKitDownloaded = true
+
+        if originalType != .whisperKit {
+            await appState.switchSTTProvider(to: originalType)
+        }
+        isDownloading = false
+    }
+
+    func downloadMLXAudioModel() async {
+        let originalType = appState.settings.sttProviderType
+        isDownloading = true
+        mlxAudioDownloadState = .loading
+
+        await appState.switchSTTProvider(to: .mlxAudio)
+
+        if appState.whisperModelState.isReady {
+            mlxAudioDownloaded = true
+            mlxAudioDownloadState = .ready
+        } else if case .error(let msg) = appState.whisperModelState {
+            mlxAudioDownloadState = .error(msg)
+        }
+
+        if originalType != .mlxAudio {
+            await appState.switchSTTProvider(to: originalType)
+        }
+        isDownloading = false
+    }
+
+    func downloadLocalLLMModel() async {
+        let originalType = appState.settings.llmProviderType
+        isDownloading = true
+
+        await appState.switchLLMProvider(to: .local)
+        localLLMDownloaded = appState.llmModelState.isReady
+
+        if originalType != .local {
+            await appState.switchLLMProvider(to: originalType)
+        }
+        isDownloading = false
+    }
+
+    // MARK: - 기존 메서드 (STT/LLM 탭에서 사용)
+
+    func downloadWhisperModel() async throws {
+        isDownloading = true
+        whisperModelInfo.state = .downloading(progress: 0)
+        do {
+            await appState.switchSTTProvider(to: appState.settings.sttProviderType)
+            if case .error(let msg) = appState.whisperModelState {
+                throw NSError(domain: "ModelManager", code: 1, userInfo: [NSLocalizedDescriptionKey: msg])
+            }
+            whisperModelInfo.state = .ready
+            whisperKitDownloaded = true
+        } catch {
+            whisperModelInfo.state = .error(error.localizedDescription)
+            throw error
+        }
+        isDownloading = false
+    }
+
+    func downloadLLMModel() async throws {
+        isDownloading = true
+        llmModelInfo.state = .downloading(progress: 0)
+        do {
+            await appState.switchLLMProvider(to: .local)
+            if case .error(let msg) = appState.llmModelState {
+                throw NSError(domain: "ModelManager", code: 2, userInfo: [NSLocalizedDescriptionKey: msg])
+            }
+            llmModelInfo.state = .ready
+            localLLMDownloaded = true
+        } catch {
+            llmModelInfo.state = .error(error.localizedDescription)
+            throw error
+        }
+        isDownloading = false
+    }
+
+    func downloadAllModels(
+        whisperProgress: @escaping (Double) -> Void,
+        llmProgress: @escaping (Double) -> Void
+    ) async throws {
+        try await downloadWhisperModel()
+        whisperProgress(1.0)
+        try await downloadLLMModel()
+        llmProgress(1.0)
+    }
+
+    // MARK: - 삭제
+
+    func deleteWhisperModel() {
+        sttService.unloadModel()
+        Task { await appState.sttProvider?.teardown() }
+        appState.sttProvider = nil
+        whisperModelInfo.state = .notDownloaded
+        appState.whisperModelState = .notDownloaded
+        whisperKitDownloaded = false
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("huggingface")
+        try? FileManager.default.removeItem(at: cacheDir)
+    }
+
+    func deleteLLMModel() {
+        llmService.unloadModel()
+        Task { await appState.llmProvider?.teardown() }
+        appState.llmProvider = nil
+        llmModelInfo.state = .notDownloaded
+        appState.llmModelState = .notDownloaded
+        localLLMDownloaded = false
+    }
+
+    func deleteMLXAudioModel() {
+        if appState.settings.sttProviderType == .mlxAudio {
+            Task { await appState.sttProvider?.teardown() }
+            appState.sttProvider = nil
+            appState.whisperModelState = .notDownloaded
+        }
+        mlxAudioDownloaded = false
+        mlxAudioDownloadState = .notDownloaded
+        // HuggingFace 캐시 삭제
+        let cacheDir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cache/huggingface/hub/models--mlx-community--Qwen3-ASR-1.7B-8bit")
+        try? FileManager.default.removeItem(at: cacheDir)
+    }
+
+    var totalDiskUsage: Int64 {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(at: Self.modelsDirectory, includingPropertiesForKeys: [.fileSizeKey]) else {
+            return 0
+        }
+        var total: Int64 = 0
+        for case let url as URL in enumerator {
+            if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize {
+                total += Int64(size)
+            }
+        }
+        return total
+    }
+}

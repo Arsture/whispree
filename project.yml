@@ -1,6 +1,6 @@
-name: NotMyWhisper
+name: Whispree
 options:
-  bundleIdPrefix: com.notmywhisper
+  bundleIdPrefix: com.whispree
   deploymentTarget:
     macOS: "14.0"
   xcodeVersion: "16.0"
@@ -19,7 +19,7 @@ packages:
     from: "0.9.0"
   mlx-swift-lm:
     url: https://github.com/ml-explore/mlx-swift-lm
-    branch: main
+    revision: a3e1bf49f6f44d0e9cba29f1c4a61576f646a1b4
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     from: "2.0.0"
@@ -28,16 +28,16 @@ packages:
     from: "1.0.0"
 
 targets:
-  NotMyWhisper:
+  Whispree:
     type: application
     platform: macOS
     sources:
-      - path: NotMyWhisper
+      - path: Whispree
         excludes:
           - "**/.DS_Store"
           - "**/AGENTS.md"
     resources:
-      - path: NotMyWhisper/Resources/Assets.xcassets
+      - path: Whispree/Resources/Assets.xcassets
     postBuildScripts:
       - script: |
           mkdir -p "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker"
@@ -46,10 +46,10 @@ targets:
         name: Copy mlx-worker to bundle
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.notmywhisper.app
-        PRODUCT_NAME: NotMyWhisper
-        INFOPLIST_FILE: NotMyWhisper/Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: NotMyWhisper/Resources/NotMyWhisper.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.whispree.app
+        PRODUCT_NAME: Whispree
+        INFOPLIST_FILE: Whispree/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Whispree/Resources/Whispree.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: DRDT2F8525
         ENABLE_HARDENED_RUNTIME: "YES"
@@ -66,20 +66,20 @@ targets:
       - package: KeyboardShortcuts
       - package: LaunchAtLogin
     entitlements:
-      path: NotMyWhisper/Resources/NotMyWhisper.entitlements
+      path: Whispree/Resources/Whispree.entitlements
       properties:
         com.apple.security.device.audio-input: true
 
-  NotMyWhisperTests:
+  WhispreeTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: NotMyWhisperTests
+      - path: WhispreeTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.notmywhisper.app.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.whispree.app.tests
         GENERATE_INFOPLIST_FILE: "YES"
         BUNDLE_LOADER: "$(TEST_HOST)"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NotMyWhisper.app/Contents/MacOS/NotMyWhisper"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Whispree.app/Contents/MacOS/Whispree"
     dependencies:
-      - target: NotMyWhisper
+      - target: Whispree
