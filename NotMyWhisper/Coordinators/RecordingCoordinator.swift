@@ -166,7 +166,7 @@ final class RecordingCoordinator: ObservableObject {
                     switch appState.settings.correctionMode {
                     case .custom:
                         systemPrompt = appState.settings.customLLMPrompt ?? CorrectionPrompts.codeSwitchPrompt
-                    case .standard, .promptEngineering:
+                    case .standard, .fillerRemoval, .structured:
                         systemPrompt = CorrectionPrompts.prompt(
                             for: appState.settings.correctionMode,
                             language: appState.settings.language

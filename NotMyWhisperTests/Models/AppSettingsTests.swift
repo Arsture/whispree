@@ -91,4 +91,53 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertTrue(prompt.contains("GitHub"))
         XCTAssertTrue(prompt.contains("T-distribution"))
     }
+
+    // MARK: - New Correction Modes
+
+    func testCorrectionModeFillerRemoval() {
+        XCTAssertEqual(CorrectionMode.fillerRemoval.rawValue, "fillerRemoval")
+        XCTAssertFalse(CorrectionMode.fillerRemoval.displayName.isEmpty)
+        XCTAssertFalse(CorrectionMode.fillerRemoval.description.isEmpty)
+    }
+
+    func testCorrectionModeStructured() {
+        XCTAssertEqual(CorrectionMode.structured.rawValue, "structured")
+        XCTAssertFalse(CorrectionMode.structured.displayName.isEmpty)
+        XCTAssertFalse(CorrectionMode.structured.description.isEmpty)
+    }
+
+    func testCorrectionModeCount() {
+        XCTAssertEqual(CorrectionMode.allCases.count, 4,
+                       "Should have standard, fillerRemoval, structured, custom")
+    }
+
+    func testPromptRoutingFillerRemoval() {
+        let prompt = CorrectionPrompts.prompt(for: .fillerRemoval, language: .auto)
+        XCTAssertTrue(prompt.contains("필러"),
+                      "Filler removal mode should mention fillers")
+        XCTAssertTrue(prompt.contains("문장 순서 변경 금지"),
+                      "Filler removal should preserve sentence order")
+    }
+
+    func testPromptRoutingStructured() {
+        let prompt = CorrectionPrompts.prompt(for: .structured, language: .auto)
+        XCTAssertTrue(prompt.contains("구조화"),
+                      "Structured mode should mention structuring")
+        XCTAssertTrue(prompt.contains("절대 삭제하지 않음"),
+                      "Structured mode should preserve content")
+    }
+
+    func testPromptEngineeringMigration() throws {
+        // Simulate old "promptEngineering" value stored in JSON
+        let json = #"{"correctionMode":"promptEngineering"}"#
+        let data = json.data(using: .utf8)!
+
+        struct TestWrapper: Codable {
+            var correctionMode: CorrectionMode
+        }
+
+        let decoded = try JSONDecoder().decode(TestWrapper.self, from: data)
+        XCTAssertEqual(decoded.correctionMode, .fillerRemoval,
+                       "Old promptEngineering should migrate to fillerRemoval")
+    }
 }

@@ -114,7 +114,7 @@ final class PipelineE2ETests: XCTestCase {
             return
         }
 
-        let provider = OpenAIProvider(model: .gpt54mini, authService: authService)
+        let provider = OpenAIProvider(model: .gpt54mini, authService: authService, oauthService: OAuthService())
         try await provider.setup()
         XCTAssertTrue(provider.isReady)
 
@@ -215,7 +215,7 @@ final class PipelineE2ETests: XCTestCase {
         let transcription = try await sttProvider.transcribe(audioBuffer: audio, language: nil, promptTokens: nil)
 
         // LLM correction (even on empty text, should not crash)
-        let llmProvider = OpenAIProvider(model: .gpt54mini, authService: authService)
+        let llmProvider = OpenAIProvider(model: .gpt54mini, authService: authService, oauthService: OAuthService())
         try await llmProvider.setup()
 
         let glossary = ["API", "backend", "React"]

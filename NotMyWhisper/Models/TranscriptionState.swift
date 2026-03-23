@@ -73,13 +73,15 @@ enum RecordingMode: String, CaseIterable, Codable {
 
 enum CorrectionMode: String, CaseIterable, Codable {
     case standard = "standard"
-    case promptEngineering = "promptEngineering"
+    case fillerRemoval = "fillerRemoval"
+    case structured = "structured"
     case custom = "custom"
 
     var displayName: String {
         switch self {
         case .standard: return "Standard (STT Correction)"
-        case .promptEngineering: return "Prompt Formatting"
+        case .fillerRemoval: return "Filler Removal"
+        case .structured: return "Structured"
         case .custom: return "Custom"
         }
     }
@@ -87,8 +89,20 @@ enum CorrectionMode: String, CaseIterable, Codable {
     var description: String {
         switch self {
         case .standard: return "Fix STT errors: spacing, punctuation, misheard words"
-        case .promptEngineering: return "Format speech into well-structured prompts for LLMs"
+        case .fillerRemoval: return "STT correction + remove fillers (음, 어, 그러니까)"
+        case .structured: return "STT correction + filler removal + organize with bullet points"
         case .custom: return "Use your own custom system prompt"
+        }
+    }
+
+    // Migration: "promptEngineering" → .fillerRemoval
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        if rawValue == "promptEngineering" {
+            self = .fillerRemoval
+        } else {
+            self = CorrectionMode(rawValue: rawValue) ?? .standard
         }
     }
 }
