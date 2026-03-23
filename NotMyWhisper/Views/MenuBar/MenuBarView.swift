@@ -61,6 +61,7 @@ struct MenuBarView: View {
                     appState.settings.save()
                 }
             ))
+            .toggleStyle(.switch)
             .font(.subheadline)
 
             // Recording mode
