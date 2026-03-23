@@ -27,7 +27,7 @@ struct DomainWordSet: Codable, Identifiable, Hashable {
                 "population", "mean", "median", "outlier", "bootstrap",
                 "Bayesian", "posterior", "prior", "likelihood",
                 "overfitting", "cross-validation", "feature", "gradient"
-            ], isEnabled: false)
+            ], isEnabled: true)
         case .custom:
             return DomainWordSet(id: UUID(), name: "사용자 정의", words: [], isEnabled: true)
         }
