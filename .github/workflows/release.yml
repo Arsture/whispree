@@ -122,35 +122,15 @@ jobs:
           EOF
 
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          release_name: Whispree v${{ steps.version.outputs.version }}
+          name: Whispree v${{ steps.version.outputs.version }}
+          files: |
+            Whispree.zip
+            Whispree.dmg
           draft: false
           prerelease: false
-
-      - name: Upload ZIP to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Whispree.zip
-          asset_name: Whispree.zip
-          asset_content_type: application/zip
-
-      - name: Upload DMG to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Whispree.dmg
-          asset_name: Whispree.dmg
-          asset_content_type: application/x-apple-diskimage
 
       - name: Push version commit and tags
         run: |
