@@ -6,22 +6,39 @@ struct ModelSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Speech-to-Text Model") {
+            Section("STT 모델") {
                 ModelRow(
-                    name: "Whisper Large V3 Turbo",
-                    description: "Fast, accurate STT for 99 languages",
+                    name: "WhisperKit Large V3 Turbo",
+                    description: "로컬 CoreML+ANE, 99개 언어",
                     size: "~1.5 GB",
                     state: appState.whisperModelState,
                     downloadProgress: appState.whisperDownloadProgress,
-                    onDownload: { Task { try? await modelManager.downloadWhisperModel() } },
+                    onDownload: {
+                        Task {
+                            try? await modelManager.downloadWhisperModel()
+                            await appState.switchSTTProvider(to: .whisperKit)
+                        }
+                    },
                     onDelete: { modelManager.deleteWhisperModel() }
+                )
+
+                ModelRow(
+                    name: "Qwen3-ASR-1.7B-8bit",
+                    description: "mlx-audio, 한중일영 (uv 필요)",
+                    size: "~1.0 GB",
+                    state: mlxAudioModelState,
+                    downloadProgress: 0,
+                    onDownload: {
+                        Task { await appState.switchSTTProvider(to: .mlxAudio) }
+                    },
+                    onDelete: { }
                 )
             }
 
-            Section("Text Correction Model") {
+            Section("LLM 모델") {
                 ModelRow(
                     name: "Qwen3 4B Instruct (4-bit)",
-                    description: "Korean/English text correction",
+                    description: "한국어/영어 텍스트 교정",
                     size: "~2.0 GB",
                     state: appState.llmModelState,
                     downloadProgress: appState.llmDownloadProgress,
@@ -30,22 +47,28 @@ struct ModelSettingsView: View {
                 )
             }
 
-            Section("Storage") {
+            Section("저장 공간") {
                 HStack {
-                    Text("Models location:")
+                    Text("모델 위치:")
                     Spacer()
-                    Text("~/Library/Application Support/NotMyWhisper/Models")
+                    Text("~/Library/Application Support/")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                Button("Open in Finder") {
+                Button("Finder에서 열기") {
                     NSWorkspace.shared.open(ModelManager.modelsDirectory)
                 }
             }
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private var mlxAudioModelState: ModelState {
+        if appState.settings.sttProviderType == .mlxAudio {
+            return appState.whisperModelState
+        }
+        return .notDownloaded
     }
 }
 
@@ -76,37 +99,44 @@ struct ModelRow: View {
 
             switch state {
             case .notDownloaded:
-                Button("Download") { onDownload() }
+                Button("다운로드") { onDownload() }
                     .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
             case .downloading(let progress):
-                ProgressView(value: progress)
-                Text("\(Int(progress * 100))%")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            case .loading:
-                HStack {
-                    ProgressView()
-                        .scaleEffect(0.7)
-                    Text("Loading...")
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: progress)
+                    Text("\(Int(progress * 100))% 다운로드 중...")
                         .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            case .loading:
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("로딩 중...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             case .ready:
                 HStack {
-                    Label("Ready", systemImage: "checkmark.circle.fill")
+                    Label("준비됨", systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                         .font(.caption)
                     Spacer()
-                    Button("Delete", role: .destructive) { onDelete() }
+                    Button("삭제", role: .destructive) { onDelete() }
                         .font(.caption)
+                        .controlSize(.small)
                 }
             case .error(let msg):
                 HStack {
                     Label(msg, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .font(.caption)
+                        .lineLimit(2)
                     Spacer()
-                    Button("Retry") { onDownload() }
+                    Button("재시도") { onDownload() }
                         .font(.caption)
+                        .controlSize(.small)
                 }
             }
         }

@@ -19,6 +19,38 @@ struct STTSettingsView: View {
                         Text(provider.displayName).tag(provider)
                     }
                 }
+
+                HStack {
+                    Text("상태:")
+                    Spacer()
+                    switch appState.whisperModelState {
+                    case .ready:
+                        Label("준비됨", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                    case .notDownloaded:
+                        Label("모델 필요", systemImage: "arrow.down.circle")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                    case .loading:
+                        HStack(spacing: 4) {
+                            ProgressView().controlSize(.small)
+                            Text("로딩 중...")
+                                .font(.caption)
+                        }
+                    case .downloading:
+                        HStack(spacing: 4) {
+                            ProgressView().controlSize(.small)
+                            Text("다운로드 중...")
+                                .font(.caption)
+                        }
+                    case .error(let msg):
+                        Label(msg, systemImage: "xmark.circle")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                }
             }
 
             if appState.settings.sttProviderType == .groq {
@@ -44,89 +76,18 @@ struct STTSettingsView: View {
                 }
             }
 
-            if appState.settings.sttProviderType == .whisperKit {
-                Section("WhisperKit 모델") {
-                    ModelRow(
-                        name: "Whisper Large V3 Turbo",
-                        description: "Fast, accurate STT for 99 languages",
-                        size: "~1.5 GB",
-                        state: appState.whisperModelState,
-                        downloadProgress: appState.whisperDownloadProgress,
-                        onDownload: {
-                            Task {
-                                try? await modelManager.downloadWhisperModel()
-                                await appState.switchSTTProvider(to: .whisperKit)
-                            }
-                        },
-                        onDelete: {
-                            modelManager.deleteWhisperModel()
-                        }
-                    )
-                }
-
-                if case .notDownloaded = appState.whisperModelState {
-                    Section {
-                        HStack {
-                            Image(systemName: "arrow.down.circle")
-                                .foregroundStyle(.blue)
-                            Text("WhisperKit을 사용하려면 모델 다운로드가 필요합니다.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-
-            if appState.settings.sttProviderType == .mlxAudio {
-                Section("MLX Audio") {
-                    HStack {
-                        Text("모델:")
-                        Spacer()
-                        Text(appState.settings.mlxAudioModelId.components(separatedBy: "/").last ?? "")
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    }
-
-                    HStack {
-                        Text("상태:")
-                        Spacer()
-                        switch appState.whisperModelState {
-                        case .ready:
-                            Label("준비됨", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                                .font(.caption)
-                        case .notDownloaded, .error:
-                            Label("준비 안 됨", systemImage: "xmark.circle")
-                                .foregroundStyle(.red)
-                                .font(.caption)
-                        case .loading:
-                            HStack(spacing: 4) {
-                                ProgressView().controlSize(.small)
-                                Text("모델 로딩 중...")
-                                    .font(.caption)
-                            }
-                        case .downloading:
-                            HStack(spacing: 4) {
-                                ProgressView().controlSize(.small)
-                                Text("모델 다운로드 중...")
-                                    .font(.caption)
-                            }
-                        }
-                    }
-
-                    Button("모델 로드") {
-                        Task { await appState.switchSTTProvider(to: .mlxAudio) }
-                    }
-                    .disabled(appState.whisperModelState == .loading)
-                }
-
+            if case .notDownloaded = appState.whisperModelState,
+               appState.settings.sttProviderType != .groq {
                 Section {
-                    Label("uv와 Python 3.11+이 필요합니다. 첫 실행 시 모델 다운로드에 시간이 걸립니다.", systemImage: "info.circle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.blue)
+                        Text("모델 탭에서 모델을 다운로드하세요.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
-
         }
         .formStyle(.grouped)
         .padding()

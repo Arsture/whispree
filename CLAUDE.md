@@ -6,9 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 하나의 feature/fix가 완료되면 반드시 다음을 수행:
 
-1. 빌드: `xcodebuild -project NotMyWhisper.xcodeproj -scheme NotMyWhisper -destination 'platform=macOS,arch=arm64' build`
-2. /Applications로 복사: `cp -R "$(find ~/Library/Developer/Xcode/DerivedData/NotMyWhisper-*/Build/Products/Debug -name 'NotMyWhisper.app' -maxdepth 1)" /Applications/`
-3. 커밋: feature/fix 단위로 커밋. 작업 도중에 중간 커밋하지 말 것 — 기능이 완결된 시점에만 커밋.
+1. 기존 앱 종료: `pkill -f "NotMyWhisper.app"`
+2. 빌드: `xcodebuild -project NotMyWhisper.xcodeproj -scheme NotMyWhisper -destination 'platform=macOS,arch=arm64' build`
+3. /Applications로 복사: `cp -R "$(find ~/Library/Developer/Xcode/DerivedData/NotMyWhisper-*/Build/Products/Debug -name 'NotMyWhisper.app' -maxdepth 1)" /Applications/`
+4. 앱 재실행: `open /Applications/NotMyWhisper.app`
+5. 커밋: feature/fix 단위로 커밋. 작업 도중에 중간 커밋하지 말 것 — 기능이 완결된 시점에만 커밋.
 
 파일 추가/삭제 시 빌드 전 `xcodegen generate` 필수.
 

@@ -121,19 +121,16 @@ struct LLMSettingsView: View {
                 }
             }
 
-            if appState.settings.llmProviderType == .local {
-                Section("로컬 LLM 모델") {
-                    ModelRow(
-                        name: "Qwen3 4B Instruct (4-bit)",
-                        description: "한국어/영어 텍스트 교정",
-                        size: "~2.5 GB",
-                        state: appState.llmModelState,
-                        downloadProgress: appState.llmDownloadProgress,
-                        onDownload: {
-                            Task { await appState.switchLLMProvider(to: .local) }
-                        },
-                        onDelete: { modelManager.deleteLLMModel() }
-                    )
+            if appState.settings.llmProviderType == .local,
+               !appState.llmModelState.isReady {
+                Section {
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.blue)
+                        Text("모델 탭에서 LLM 모델을 다운로드하세요.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
