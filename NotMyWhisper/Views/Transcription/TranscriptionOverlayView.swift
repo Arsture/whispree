@@ -1,4 +1,5 @@
 import SwiftUI
+import KeyboardShortcuts
 
 struct TranscriptionOverlayView: View {
     @EnvironmentObject var appState: AppState
@@ -20,6 +21,37 @@ struct TranscriptionOverlayView: View {
             NeonWaveformView()
                 .frame(height: 40)
                 .opacity(appState.isRecording ? 1 : 0.3)
+
+            if appState.isRecording {
+                HStack(spacing: 12) {
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Text("Stop")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(shortcutLabel)
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.tertiary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(.quaternary.opacity(0.5))
+                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                    }
+                    HStack(spacing: 4) {
+                        Text("Cancel")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("esc")
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.tertiary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(.quaternary.opacity(0.5))
+                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                    }
+                    Spacer()
+                }
+            }
         }
         .frame(width: 280)
         .padding(.horizontal, 12)
@@ -27,6 +59,13 @@ struct TranscriptionOverlayView: View {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+    }
+
+    private var shortcutLabel: String {
+        if let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) {
+            return shortcut.description
+        }
+        return "⌃⇧R"
     }
 
     private var statusIcon: some View {
