@@ -1,6 +1,6 @@
-name: FreeWhisper
+name: NotMyWhisper
 options:
-  bundleIdPrefix: com.freewhisper
+  bundleIdPrefix: com.notmywhisper
   deploymentTarget:
     macOS: "14.0"
   xcodeVersion: "16.0"
@@ -28,21 +28,21 @@ packages:
     from: "1.0.0"
 
 targets:
-  FreeWhisper:
+  NotMyWhisper:
     type: application
     platform: macOS
     sources:
-      - path: FreeWhisper
+      - path: NotMyWhisper
         excludes:
           - "**/.DS_Store"
     resources:
-      - path: FreeWhisper/Resources/Assets.xcassets
+      - path: NotMyWhisper/Resources/Assets.xcassets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.freewhisper.app
-        PRODUCT_NAME: FreeWhisper
-        INFOPLIST_FILE: FreeWhisper/Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: FreeWhisper/Resources/FreeWhisper.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.notmywhisper.app
+        PRODUCT_NAME: NotMyWhisper
+        INFOPLIST_FILE: NotMyWhisper/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: NotMyWhisper/Resources/NotMyWhisper.entitlements
         CODE_SIGN_STYLE: Automatic
         ENABLE_HARDENED_RUNTIME: "YES"
         COMBINE_HIDPI_IMAGES: "YES"
@@ -58,17 +58,18 @@ targets:
       - package: KeyboardShortcuts
       - package: LaunchAtLogin
     entitlements:
-      path: FreeWhisper/Resources/FreeWhisper.entitlements
+      path: NotMyWhisper/Resources/NotMyWhisper.entitlements
 
-  FreeWhisperTests:
+  NotMyWhisperTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: FreeWhisperTests
+      - path: NotMyWhisperTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.freewhisper.app.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.notmywhisper.app.tests
+        GENERATE_INFOPLIST_FILE: "YES"
         BUNDLE_LOADER: "$(TEST_HOST)"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/FreeWhisper.app/Contents/MacOS/FreeWhisper"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NotMyWhisper.app/Contents/MacOS/NotMyWhisper"
     dependencies:
-      - target: FreeWhisper
+      - target: NotMyWhisper
