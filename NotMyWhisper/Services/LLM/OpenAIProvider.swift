@@ -6,20 +6,24 @@ final class OpenAIProvider: LLMProvider {
     let requiresNetwork = true
 
     private let authService: CodexAuthService
+    private let oauthService: OAuthService
     private var model: OpenAIModel
 
-    var isReady: Bool { authService.isLoggedIn }
+    /// Codex CLI 토큰 또는 OAuth 토큰 중 하나라도 있으면 ready
+    var isReady: Bool {
+        authService.isLoggedIn || oauthService.isLoggedIn
+    }
 
-    init(model: OpenAIModel = .gpt54, authService: CodexAuthService) {
+    init(model: OpenAIModel = .gpt54, authService: CodexAuthService, oauthService: OAuthService) {
         self.model = model
         self.authService = authService
+        self.oauthService = oauthService
     }
 
     func setup() async throws {
+        // Auth is checked at correction time, not during setup
         authService.checkAuth()
-        if !authService.isLoggedIn {
-            throw AuthError.notAuthenticated
-        }
+        oauthService.checkAuth()
     }
 
     func teardown() async {
@@ -27,21 +31,19 @@ final class OpenAIProvider: LLMProvider {
     }
 
     func correct(text: String, systemPrompt: String, glossary: [String]?) async throws -> String {
-        guard let tokens = authService.loadTokens() else {
-            throw AuthError.notAuthenticated
-        }
-
         // glossary를 시스템 프롬프트에 동적 주입
         var fullPrompt = systemPrompt
         if let glossary, !glossary.isEmpty {
             fullPrompt += "\n\n용어 사전 (반드시 이 형태로 보존):\n" + glossary.joined(separator: ", ")
         }
 
+        let (accessToken, accountId) = try getAuth()
+
         // ChatGPT Responses API 요청 구성
         var request = URLRequest(url: URL(string: "https://chatgpt.com/backend-api/codex/responses")!)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(tokens.access_token)", forHTTPHeaderField: "Authorization")
-        request.setValue(tokens.account_id, forHTTPHeaderField: "ChatGPT-Account-ID")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(accountId, forHTTPHeaderField: "ChatGPT-Account-ID")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         request.setValue(Self.buildUserAgent(), forHTTPHeaderField: "User-Agent")
@@ -67,7 +69,28 @@ final class OpenAIProvider: LLMProvider {
         return try await parseSSEStream(request: request, originalText: text)
     }
 
-    /// SSE 스트리밍 응답 파싱
+    // MARK: - Auth Resolution
+
+    /// Codex 토큰 우선, 없으면 OAuth 토큰 사용
+    private func getAuth() throws -> (accessToken: String, accountId: String) {
+        // 1. Codex CLI 토큰
+        if let codexTokens = authService.loadTokens() {
+            return (codexTokens.access_token, codexTokens.account_id)
+        }
+
+        // 2. OAuth 토큰 (JWT에서 account_id 추출)
+        if let oauthTokens = oauthService.loadTokens() {
+            guard let accountId = oauthService.extractAccountId(from: oauthTokens.access_token) else {
+                throw AuthError.notAuthenticated
+            }
+            return (oauthTokens.access_token, accountId)
+        }
+
+        throw AuthError.notAuthenticated
+    }
+
+    // MARK: - SSE Streaming
+
     private func parseSSEStream(request: URLRequest, originalText: String) async throws -> String {
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
@@ -75,13 +98,9 @@ final class OpenAIProvider: LLMProvider {
             return originalText
         }
 
-        // 401 = 토큰 만료
+        // 401 = 토큰 만료 → 리프레시 시도
         if httpResponse.statusCode == 401 {
-            // 리프레시 시도
-            if let tokens = authService.loadTokens() {
-                let _ = try await authService.refreshToken(refreshToken: tokens.refresh_token)
-                // 재시도는 호출자가 처리
-            }
+            try await refreshCurrentAuth()
             throw AuthError.tokenExpired
         }
 
@@ -107,17 +126,29 @@ final class OpenAIProvider: LLMProvider {
         }
 
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // 마크다운 코드 펜스 제거
         let cleaned = Self.removeCodeFences(trimmed)
-
         return cleaned.isEmpty ? originalText : cleaned
     }
+
+    /// 현재 활성 인증 방식의 토큰을 리프레시
+    private func refreshCurrentAuth() async throws {
+        // Codex 토큰이 있으면 Codex 리프레시
+        if let codexTokens = authService.loadTokens() {
+            _ = try await authService.refreshToken(refreshToken: codexTokens.refresh_token)
+            return
+        }
+
+        // OAuth 토큰이 있으면 OAuth 리프레시
+        if oauthService.isLoggedIn {
+            _ = try await oauthService.refreshAccessToken()
+        }
+    }
+
+    // MARK: - Utilities
 
     /// 마크다운 코드 펜스 (```json ... ```) 제거
     private static func removeCodeFences(_ text: String) -> String {
         var result = text
-        // ```로 시작하고 끝나는 경우 제거
         if result.hasPrefix("```") {
             if let firstNewline = result.firstIndex(of: "\n") {
                 result = String(result[result.index(after: firstNewline)...])

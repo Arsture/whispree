@@ -3,7 +3,7 @@ import Foundation
 struct AppSettings: Codable {
     var recordingMode: RecordingMode = .pushToTalk
     var language: SupportedLanguage = .korean
-    var isLLMEnabled: Bool = false
+    var isLLMEnabled: Bool = true
     var hasCompletedOnboarding: Bool = false
     var launchAtLogin: Bool = false
     var showOverlay: Bool = true

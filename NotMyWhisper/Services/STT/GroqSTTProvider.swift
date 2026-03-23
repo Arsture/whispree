@@ -13,9 +13,8 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
     }
 
     func setup() async throws {
-        guard !apiKey.isEmpty else {
-            throw STTError.transcriptionFailed("Groq API key가 필요합니다. Settings에서 입력하세요.")
-        }
+        // API-based: no model download needed
+        // API key is validated at transcription time
     }
 
     func teardown() async {}
