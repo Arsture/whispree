@@ -19,6 +19,7 @@ macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 
 |-----------|---------|
 | `NotMyWhisper/` | 메인 앱 타겟 — Swift/SwiftUI (see `NotMyWhisper/AGENTS.md`) |
 | `NotMyWhisperTests/` | 유닛 + E2E 테스트 48개 (see `NotMyWhisperTests/AGENTS.md`) |
+| `mlx-worker/` | Python mlx-audio STT worker — stdin/stdout JSON 파이프 통신 |
 | `docs/` | 추가 문서 |
 
 ## Architecture Overview
@@ -42,8 +43,12 @@ macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 
     ├─────────┤              ├─────────────┤
     │WhisperKit│(local)      │NoneProvider │
     │Groq API │(cloud)      │LocalLLM     │(Qwen3-4B)
-    └─────────┘              │OpenAI       │(GPT SSE)
-                             └─────────────┘
+    │MLX Audio│(local)      │OpenAI       │(GPT SSE)
+    └─────────┘              └─────────────┘
+         │
+    ┌────┴────┐
+    │mlx-worker│ (Python, stdin/stdout JSON)
+    └─────────┘
 ```
 
 ## For AI Agents

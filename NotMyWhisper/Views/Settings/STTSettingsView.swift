@@ -79,6 +79,56 @@ struct STTSettingsView: View {
                 }
             }
 
+            if appState.settings.sttProviderType == .mlxAudio {
+                Section("MLX Audio") {
+                    HStack {
+                        Text("모델:")
+                        Spacer()
+                        Text(appState.settings.mlxAudioModelId.components(separatedBy: "/").last ?? "")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+
+                    HStack {
+                        Text("상태:")
+                        Spacer()
+                        switch appState.whisperModelState {
+                        case .ready:
+                            Label("준비됨", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        case .notDownloaded, .error:
+                            Label("준비 안 됨", systemImage: "xmark.circle")
+                                .foregroundStyle(.red)
+                                .font(.caption)
+                        case .loading:
+                            HStack(spacing: 4) {
+                                ProgressView().controlSize(.small)
+                                Text("모델 로딩 중...")
+                                    .font(.caption)
+                            }
+                        case .downloading:
+                            HStack(spacing: 4) {
+                                ProgressView().controlSize(.small)
+                                Text("모델 다운로드 중...")
+                                    .font(.caption)
+                            }
+                        }
+                    }
+
+                    Button("모델 로드") {
+                        Task { await appState.switchSTTProvider(to: .mlxAudio) }
+                    }
+                    .disabled(appState.whisperModelState == .loading)
+                }
+
+                Section {
+                    Label("uv와 Python 3.11+이 필요합니다. 첫 실행 시 모델 다운로드에 시간이 걸립니다.", systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
         }
         .formStyle(.grouped)
         .padding()

@@ -13,6 +13,7 @@ struct AppSettings: Codable {
     // Model preferences
     var whisperModelId: String = "openai_whisper-large-v3_turbo"
     var llmModelId: String = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+    var mlxAudioModelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit"
 
     // STT Provider
     var sttProviderType: STTProviderType = .groq
@@ -53,11 +54,13 @@ struct AppSettings: Codable {
 enum STTProviderType: String, Codable, CaseIterable {
     case whisperKit = "WhisperKit"
     case groq = "Groq"
+    case mlxAudio = "MLX Audio"
 
     var displayName: String {
         switch self {
         case .whisperKit: return "WhisperKit (로컬)"
         case .groq: return "Groq Cloud (빠름)"
+        case .mlxAudio: return "MLX Audio (로컬)"
         }
     }
 }

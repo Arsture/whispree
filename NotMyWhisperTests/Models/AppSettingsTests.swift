@@ -39,9 +39,10 @@ final class AppSettingsTests: XCTestCase {
     // MARK: - Provider Types
 
     func testSTTProviderTypeCases() {
-        XCTAssertEqual(STTProviderType.allCases.count, 2)
+        XCTAssertEqual(STTProviderType.allCases.count, 3)
         XCTAssertEqual(STTProviderType.whisperKit.rawValue, "WhisperKit")
         XCTAssertEqual(STTProviderType.groq.rawValue, "Groq")
+        XCTAssertEqual(STTProviderType.mlxAudio.rawValue, "MLX Audio")
     }
 
     func testLLMProviderTypeCases() {

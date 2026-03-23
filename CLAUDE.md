@@ -48,6 +48,7 @@ Hotkey → AudioService (record + FFT) → STTProvider.transcribe() → LLMProvi
 ### STT Providers (`protocol STTProvider` — NOT @MainActor, runs off main thread)
 - `WhisperKitProvider` — local CoreML+ANE, `whisper-large-v3-turbo`. Supports domain word → promptTokens injection
 - `GroqSTTProvider` — Groq Cloud API, same model but server-side. Converts [Float] → WAV → multipart upload
+- `MLXAudioProvider` — mlx-audio Python worker via stdin/stdout JSON pipe. Supports any mlx-audio STT model (default: Qwen3-ASR-1.7B-8bit)
 
 ### LLM Providers (`@MainActor protocol LLMProvider`)
 - `NoneProvider` — passthrough, no correction
@@ -85,7 +86,7 @@ Hotkey → AudioService (record + FFT) → STTProvider.transcribe() → LLMProvi
 ## Concurrency Notes
 
 - `AppState`, `RecordingCoordinator`, `AudioService`, `AppDelegate` — all `@MainActor`
-- `WhisperKitProvider`, `GroqSTTProvider` — nonisolated (NOT @MainActor), `@unchecked Sendable`
+- `WhisperKitProvider`, `GroqSTTProvider`, `MLXAudioProvider` — nonisolated (NOT @MainActor), `@unchecked Sendable`
 - Audio tap callback runs on audio thread; dispatches to MainActor via `Task { @MainActor in ... }`
 - `processPipeline()` runs in a `Task` on MainActor; `await sttProvider.transcribe()` suspends MainActor and runs inference on background executor
 
@@ -104,7 +105,7 @@ Hotkey → AudioService (record + FFT) → STTProvider.transcribe() → LLMProvi
 - @NotMyWhisper/Services/Hotkey/AGENTS.md — 전역 단축키
 - @NotMyWhisper/Services/LLM/AGENTS.md — LLM 교정 (None/Local/OpenAI)
 - @NotMyWhisper/Services/ModelManagement/AGENTS.md — ML 모델 다운로드
-- @NotMyWhisper/Services/STT/AGENTS.md — STT 프로바이더 (WhisperKit/Groq)
+- @NotMyWhisper/Services/STT/AGENTS.md — STT 프로바이더 (WhisperKit/Groq/MLX Audio)
 - @NotMyWhisper/Services/TextInsertion/AGENTS.md — 클립보드 + CGEvent 붙여넣기
 - @NotMyWhisper/Views/AGENTS.md — SwiftUI UI 레이어
 - @NotMyWhisperTests/AGENTS.md — 유닛 + E2E 테스트

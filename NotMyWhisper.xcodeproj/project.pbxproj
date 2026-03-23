@@ -36,7 +36,9 @@
 		7C95D7D381F2B4FC8C84F5C0 /* AppSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E67350366B6D039434973B4 /* AppSettingsTests.swift */; };
 		7CF9BDFA86460CE88461CF59 /* DomainWordSetsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B81AF975E1CB322798684A /* DomainWordSetsTests.swift */; };
 		82F9BB3AF978941613E4F034 /* WhisperKitProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8BDCC7329E9C006288D3531 /* WhisperKitProvider.swift */; };
+		83F5F1FFE9FB0A01193CA6E4 /* QuickFixPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBD662E94ECB98A4C5D7BDAF /* QuickFixPanelView.swift */; };
 		8E7C9E9814E0140B6D363000 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD949B8B0866A4A46A77B9D /* AppDelegate.swift */; };
+		8E831C44E24A26DF1F880778 /* MLXAudioProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5187134C8C89D6BEC8256F1F /* MLXAudioProvider.swift */; };
 		B3180A4642A732A9D6225599 /* AudioServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033996E1C4898EF94EE83AB /* AudioServiceTests.swift */; };
 		B6E0C259B2B03B0C6EBF1E96 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = F81C34506014BA5D52F6E2BE /* KeyboardShortcuts */; };
 		B7B7435EA28268D45C3738F7 /* LLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC22A58EFC7310ABCB9A36A9 /* LLMProvider.swift */; };
@@ -51,6 +53,7 @@
 		DFCF682363D0E7A51B1CC469 /* TranscriptionOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 054EE471317FAE65E35F136C /* TranscriptionOverlayView.swift */; };
 		E48540BA0F4F98403F22A309 /* STTSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65B3EC1E11F1465E4201E31 /* STTSettingsView.swift */; };
 		EA1226395656DDFF94F769E1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A74D71821FE92EB609F6A14 /* Assets.xcassets */; };
+		ED48B300B18DEBAA1F7B31EC /* QuickFixService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1442BA419AC674C8C298163 /* QuickFixService.swift */; };
 		EFDD2A5FAFDB2552BAB87BC0 /* GroqSTTProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641060E762BE70273D3C0C49 /* GroqSTTProvider.swift */; };
 		F5C1436EDD13C2B2D5C8D53C /* DomainWordSetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164851C88736DBBFE14D3301 /* DomainWordSetsView.swift */; };
 		F694F9C2DEBCA51D044606EF /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F292CE061745A0A8C3C2E63F /* GeneralSettingsView.swift */; };
@@ -81,6 +84,7 @@
 		4E46D2C90F9D63EA98FC9BAE /* ModelSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelSettingsView.swift; sourceTree = "<group>"; };
 		4F81673D7B0F64DA878D2678 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		516A1B65E5BB8F45129E994E /* NotMyWhisper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NotMyWhisper.entitlements; sourceTree = "<group>"; };
+		5187134C8C89D6BEC8256F1F /* MLXAudioProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLXAudioProvider.swift; sourceTree = "<group>"; };
 		5D76060F99F6F4BAF70C77AA /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		62576D904F9F092E0F96B799 /* ModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelInfo.swift; sourceTree = "<group>"; };
 		641060E762BE70273D3C0C49 /* GroqSTTProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroqSTTProvider.swift; sourceTree = "<group>"; };
@@ -92,6 +96,7 @@
 		8E1EC83ACE93BAE76170DF75 /* OpenAIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIModels.swift; sourceTree = "<group>"; };
 		8EBD23335F69D6416A33B769 /* CodexAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAuthService.swift; sourceTree = "<group>"; };
 		9A8097984380A0A7066FDB47 /* RecordingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingCoordinator.swift; sourceTree = "<group>"; };
+		A1442BA419AC674C8C298163 /* QuickFixService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFixService.swift; sourceTree = "<group>"; };
 		A161018219CFA9DE7E698ED6 /* NotMyWhisperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotMyWhisperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3B81AF975E1CB322798684A /* DomainWordSetsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainWordSetsTests.swift; sourceTree = "<group>"; };
 		B033996E1C4898EF94EE83AB /* AudioServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioServiceTests.swift; sourceTree = "<group>"; };
@@ -117,6 +122,7 @@
 		FA294B82EA52BCC2D0B65015 /* ModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManager.swift; sourceTree = "<group>"; };
 		FAD4E886190FAC31756A41F1 /* OAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthService.swift; sourceTree = "<group>"; };
 		FB5F96A39BEB4DF864EADDD9 /* TranscriptionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryView.swift; sourceTree = "<group>"; };
+		FBD662E94ECB98A4C5D7BDAF /* QuickFixPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFixPanelView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -244,6 +250,14 @@
 			path = LLM;
 			sourceTree = "<group>";
 		};
+		7A23B760C571613206D72533 /* QuickFix */ = {
+			isa = PBXGroup;
+			children = (
+				A1442BA419AC674C8C298163 /* QuickFixService.swift */,
+			);
+			path = QuickFix;
+			sourceTree = "<group>";
+		};
 		8C021E95956798D6CC1C6B9D /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -294,6 +308,7 @@
 				E86C757B0BE24C666575574E /* Dashboard */,
 				9AB5A34633518B3867DBF31B /* MenuBar */,
 				8C021E95956798D6CC1C6B9D /* Onboarding */,
+				E53A9678BD7853A0087BCFBE /* QuickFix */,
 				5B20261942C178A67DF539FB /* Settings */,
 				C2FE4AF187EA4037784B1BE5 /* Transcription */,
 			);
@@ -328,6 +343,14 @@
 			path = NotMyWhisperTests;
 			sourceTree = "<group>";
 		};
+		E53A9678BD7853A0087BCFBE /* QuickFix */ = {
+			isa = PBXGroup;
+			children = (
+				FBD662E94ECB98A4C5D7BDAF /* QuickFixPanelView.swift */,
+			);
+			path = QuickFix;
+			sourceTree = "<group>";
+		};
 		E5F09EBE34DFDACD8219B585 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -352,6 +375,7 @@
 			isa = PBXGroup;
 			children = (
 				641060E762BE70273D3C0C49 /* GroqSTTProvider.swift */,
+				5187134C8C89D6BEC8256F1F /* MLXAudioProvider.swift */,
 				F1F0E8967432DEE00D6F069C /* STTProvider.swift */,
 				1C7DBC5FD9ED39318090B1DC /* STTService.swift */,
 				C8BDCC7329E9C006288D3531 /* WhisperKitProvider.swift */,
@@ -375,6 +399,7 @@
 				24C41D0A29C2F41DEAC92988 /* Hotkey */,
 				68DEE02CD5840693136D831A /* LLM */,
 				07DFBC414012A56B7C9A2926 /* ModelManagement */,
+				7A23B760C571613206D72533 /* QuickFix */,
 				F1B472DA8F9E6DD03B2B7677 /* STT */,
 				D8C59CDDD6A41944D3822408 /* TextInsertion */,
 			);
@@ -508,6 +533,7 @@
 				1BD94B7D85B86DE3946916C1 /* LLMService.swift in Sources */,
 				0903E4EF2797A790BF9010B8 /* LLMSettingsView.swift in Sources */,
 				4CD83EE30C6F2B5E7B13864D /* LocalLLMProvider.swift in Sources */,
+				8E831C44E24A26DF1F880778 /* MLXAudioProvider.swift in Sources */,
 				1F836050025D76C777EC9DD1 /* MainDashboardView.swift in Sources */,
 				385425E8D9EC16044E789AE2 /* MenuBarView.swift in Sources */,
 				10598A1015EA2E9C60A6A192 /* ModelInfo.swift in Sources */,
@@ -519,6 +545,8 @@
 				0673707E880D2F2EE085262C /* OnboardingView.swift in Sources */,
 				7A93C7D0688A53EE36F2BF2D /* OpenAIModels.swift in Sources */,
 				65A28AC66418546E82F0C89A /* OpenAIProvider.swift in Sources */,
+				83F5F1FFE9FB0A01193CA6E4 /* QuickFixPanelView.swift in Sources */,
+				ED48B300B18DEBAA1F7B31EC /* QuickFixService.swift in Sources */,
 				CB77EE90928CF7D83CE5FFD6 /* RecordingCoordinator.swift in Sources */,
 				3452E85597CDE8F3CE4DFFA6 /* STTProvider.swift in Sources */,
 				05CA32E6AD703BAA41F1E855 /* STTService.swift in Sources */,

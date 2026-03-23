@@ -62,6 +62,8 @@ final class AppState: ObservableObject {
             sttProvider = WhisperKitProvider()
         case .groq:
             sttProvider = GroqSTTProvider(apiKey: settings.groqApiKey)
+        case .mlxAudio:
+            sttProvider = MLXAudioProvider(modelId: settings.mlxAudioModelId)
         }
         do {
             try await sttProvider?.setup()

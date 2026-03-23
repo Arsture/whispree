@@ -4,7 +4,7 @@
 # STT
 
 ## Purpose
-Speech-to-Text 프로바이더. 프로토콜 추상화로 WhisperKit / Groq Cloud 간 런타임 전환.
+Speech-to-Text 프로바이더. 프로토콜 추상화로 WhisperKit / Groq Cloud / MLX Audio 간 런타임 전환.
 
 ## Key Files
 
@@ -14,6 +14,7 @@ Speech-to-Text 프로바이더. 프로토콜 추상화로 WhisperKit / Groq Clou
 | `STTService.swift` | STT 오케스트레이션, 프로바이더 호출 래핑 |
 | `WhisperKitProvider.swift` | 로컬 CoreML+ANE, `whisper-large-v3-turbo`. 도메인 단어 → promptTokens 주입 지원. `@unchecked Sendable` |
 | `GroqSTTProvider.swift` | Groq Cloud API — `[Float]` → WAV 변환 → multipart 업로드. `@unchecked Sendable` |
+| `MLXAudioProvider.swift` | mlx-audio Python worker와 stdin/stdout 파이프 통신. 모델 ID만 바꾸면 다양한 STT 모델 지원. `@unchecked Sendable` |
 
 ## For AI Agents
 
@@ -22,6 +23,7 @@ Speech-to-Text 프로바이더. 프로토콜 추상화로 WhisperKit / Groq Clou
 - 모든 프로바이더는 `@unchecked Sendable` — concurrent 접근 안전성은 내부적으로 보장
 - `WhisperKitProvider`에 `promptTokens` 주입하면 도메인 특화 단어 인식률 향상
 - `GroqSTTProvider`는 `[Float]` → WAV 바이너리 변환이 핵심 — 헤더 포맷 주의
+- `MLXAudioProvider`는 `mlx-worker/` Python 프로세스와 stdin/stdout JSON 파이프로 통신. mlx-audio 지원 모델 전부 사용 가능
 
 ### Testing
 - `NotMyWhisperTests/Services/AudioServiceTests.swift` (오디오 관련)
