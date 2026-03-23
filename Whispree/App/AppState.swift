@@ -24,6 +24,7 @@ final class AppState: ObservableObject {
     // MARK: - Provider State
     @Published var sttProvider: (any STTProvider)?
     @Published var llmProvider: (any LLMProvider)?
+    var prewarmedMLXProvider: MLXAudioProvider?
 
     // MARK: - Auth
     let authService = CodexAuthService()
@@ -69,7 +70,12 @@ final class AppState: ObservableObject {
         case .groq:
             sttProvider = GroqSTTProvider(apiKey: settings.groqApiKey)
         case .mlxAudio:
-            sttProvider = MLXAudioProvider(modelId: settings.mlxAudioModelId)
+            if let prewarmed = prewarmedMLXProvider {
+                sttProvider = prewarmed
+                prewarmedMLXProvider = nil
+            } else {
+                sttProvider = MLXAudioProvider(modelId: settings.mlxAudioModelId)
+            }
         }
         do {
             try await sttProvider?.setup()

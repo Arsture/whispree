@@ -72,7 +72,7 @@ struct ModelSettingsView: View {
             if case .downloading = appState.whisperModelState { return appState.whisperModelState }
             if case .loading = appState.whisperModelState { return appState.whisperModelState }
         }
-        if modelManager.isDownloading { return .loading }
+        if modelManager.isWhisperKitDownloading { return .loading }
         return .notDownloaded
     }
 
@@ -81,7 +81,7 @@ struct ModelSettingsView: View {
             if case .downloading = appState.llmModelState { return appState.llmModelState }
             if case .loading = appState.llmModelState { return appState.llmModelState }
         }
-        if modelManager.isDownloading { return .loading }
+        if modelManager.isLocalLLMDownloading { return .loading }
         return .notDownloaded
     }
 }

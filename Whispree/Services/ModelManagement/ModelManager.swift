@@ -5,7 +5,10 @@ import Combine
 final class ModelManager: ObservableObject {
     @Published var whisperModelInfo = ModelInfo.whisperLargeV3Turbo
     @Published var llmModelInfo = ModelInfo.qwen3_4B
-    @Published var isDownloading = false
+    @Published var isWhisperKitDownloading = false
+    @Published var isMLXAudioDownloading = false
+    @Published var isLocalLLMDownloading = false
+    var isDownloading: Bool { isWhisperKitDownloading || isMLXAudioDownloading || isLocalLLMDownloading }
 
     // MARK: - 독립 모델 다운로드 상태 (Downloads 탭용, provider와 무관)
     @Published var whisperKitDownloaded: Bool = false
@@ -58,9 +61,11 @@ final class ModelManager: ObservableObject {
     // MARK: - 디스크 캐시 기반 모델 상태 확인
 
     func refreshCachedModelStates() {
-        whisperKitDownloaded = isModelCached(repoId: "argmaxinc/whisperkit-coreml")
-        mlxAudioDownloaded = isModelCached(repoId: "mlx-community/Qwen3-ASR-1.7B-8bit")
-        localLLMDownloaded = isModelCached(repoId: "mlx-community/Qwen3-4B-Instruct-2507-4bit")
+        // 이미 세션 중 다운로드 확인된 모델은 유지 (OR 로직)
+        // 삭제 시에만 명시적으로 false 설정됨
+        whisperKitDownloaded = whisperKitDownloaded || isModelCached(repoId: "argmaxinc/whisperkit-coreml")
+        mlxAudioDownloaded = mlxAudioDownloaded || isModelCached(repoId: "mlx-community/Qwen3-ASR-1.7B-8bit")
+        localLLMDownloaded = localLLMDownloaded || isModelCached(repoId: "mlx-community/Qwen3-4B-Instruct-2507-4bit")
 
         if mlxAudioDownloaded && mlxAudioDownloadState == .notDownloaded {
             mlxAudioDownloadState = .ready
@@ -82,13 +87,30 @@ final class ModelManager: ObservableObject {
         await appState.switchSTTProvider(to: appState.settings.sttProviderType)
         await appState.switchLLMProvider(to: appState.settings.llmProviderType)
         refreshCachedModelStates()
+
+        // MLX Audio가 다운로드되어 있고 현재 활성 프로바이더가 아니면 백그라운드 warmup
+        if mlxAudioDownloaded && appState.settings.sttProviderType != .mlxAudio {
+            Task { await warmupMLXAudioInBackground() }
+        }
+    }
+
+    /// MLX Audio 프로세스를 백그라운드에서 미리 시작하여 콜드 스타트 제거
+    func warmupMLXAudioInBackground() async {
+        guard appState.prewarmedMLXProvider == nil else { return }
+        let provider = MLXAudioProvider(modelId: appState.settings.mlxAudioModelId)
+        do {
+            try await provider.setup()
+            appState.prewarmedMLXProvider = provider
+        } catch {
+            // warmup 실패 시 무시 — 사용자가 전환할 때 콜드 스타트로 폴백
+        }
     }
 
     // MARK: - Downloads 탭 전용 (provider 전환 없이 다운로드)
 
     func downloadWhisperKitModel() async {
         let originalType = appState.settings.sttProviderType
-        isDownloading = true
+        isWhisperKitDownloading = true
 
         await appState.switchSTTProvider(to: .whisperKit)
         whisperKitDownloaded = true
@@ -96,12 +118,12 @@ final class ModelManager: ObservableObject {
         if originalType != .whisperKit {
             await appState.switchSTTProvider(to: originalType)
         }
-        isDownloading = false
+        isWhisperKitDownloading = false
     }
 
     func downloadMLXAudioModel() async {
         let originalType = appState.settings.sttProviderType
-        isDownloading = true
+        isMLXAudioDownloading = true
         mlxAudioDownloadState = .loading
 
         await appState.switchSTTProvider(to: .mlxAudio)
@@ -115,13 +137,17 @@ final class ModelManager: ObservableObject {
 
         if originalType != .mlxAudio {
             await appState.switchSTTProvider(to: originalType)
+            // 다운로드 성공 후 백그라운드 warmup (다음번 사용 시 콜드 스타트 제거)
+            if mlxAudioDownloaded {
+                Task { await warmupMLXAudioInBackground() }
+            }
         }
-        isDownloading = false
+        isMLXAudioDownloading = false
     }
 
     func downloadLocalLLMModel() async {
         let originalType = appState.settings.llmProviderType
-        isDownloading = true
+        isLocalLLMDownloading = true
 
         await appState.switchLLMProvider(to: .local)
         localLLMDownloaded = appState.llmModelState.isReady
@@ -129,13 +155,13 @@ final class ModelManager: ObservableObject {
         if originalType != .local {
             await appState.switchLLMProvider(to: originalType)
         }
-        isDownloading = false
+        isLocalLLMDownloading = false
     }
 
     // MARK: - 기존 메서드 (STT/LLM 탭에서 사용)
 
     func downloadWhisperModel() async throws {
-        isDownloading = true
+        isWhisperKitDownloading = true
         whisperModelInfo.state = .downloading(progress: 0)
         do {
             await appState.switchSTTProvider(to: appState.settings.sttProviderType)
@@ -148,11 +174,11 @@ final class ModelManager: ObservableObject {
             whisperModelInfo.state = .error(error.localizedDescription)
             throw error
         }
-        isDownloading = false
+        isWhisperKitDownloading = false
     }
 
     func downloadLLMModel() async throws {
-        isDownloading = true
+        isLocalLLMDownloading = true
         llmModelInfo.state = .downloading(progress: 0)
         do {
             await appState.switchLLMProvider(to: .local)
@@ -165,7 +191,7 @@ final class ModelManager: ObservableObject {
             llmModelInfo.state = .error(error.localizedDescription)
             throw error
         }
-        isDownloading = false
+        isLocalLLMDownloading = false
     }
 
     func downloadAllModels(

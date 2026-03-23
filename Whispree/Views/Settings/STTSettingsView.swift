@@ -35,7 +35,7 @@ struct STTSettingsView: View {
                     case .loading:
                         HStack(spacing: 4) {
                             ProgressView().controlSize(.small)
-                            Text("로딩 중...")
+                            Text(loadingStatusText)
                                 .font(.caption)
                         }
                     case .downloading:
@@ -50,6 +50,25 @@ struct STTSettingsView: View {
                             .font(.caption)
                             .lineLimit(1)
                     }
+                }
+
+                if case .loading = appState.whisperModelState,
+                   appState.settings.sttProviderType == .mlxAudio {
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.blue)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("콜드 스타트 중...")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                            Text("첫 실행 시 약 1분 소요됩니다. 이후엔 즉시 사용 가능합니다.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(8)
+                    .background(.blue.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
             }
 
@@ -91,5 +110,12 @@ struct STTSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private var loadingStatusText: String {
+        if appState.settings.sttProviderType == .mlxAudio {
+            return "콜드 스타트 중... (약 1분)"
+        }
+        return "로딩 중..."
     }
 }
