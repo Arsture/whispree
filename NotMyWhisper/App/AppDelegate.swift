@@ -174,15 +174,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 700, height: 550),
+            contentRect: NSRect(x: 0, y: 0, width: 880, height: 640),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         window.title = "NotMyWhisper"
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.styleMask.insert(.fullSizeContentView)
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.center()
         window.isReleasedWhenClosed = false
-        window.contentMinSize = NSSize(width: 600, height: 450)
+        window.contentMinSize = NSSize(width: 700, height: 500)
         window.contentView = NSHostingView(
             rootView: UnifiedView()
                 .environmentObject(appState)

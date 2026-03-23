@@ -34,7 +34,11 @@ final class AppState: ObservableObject {
     @Published var settings = AppSettings()
 
     // MARK: - History
-    @Published var transcriptionHistory: [TranscriptionRecord] = []
+    @Published var transcriptionHistory: [TranscriptionRecord] = [] {
+        didSet { saveHistory() }
+    }
+
+    private static let historyKey = "NotMyWhisperHistory"
 
     var isReady: Bool {
         sttProvider?.isReady ?? false
@@ -50,6 +54,8 @@ final class AppState: ObservableObject {
         oauthService.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }.store(in: &authCancellables)
+
+        loadHistory()
     }
 
     // MARK: - Provider Management
@@ -125,5 +131,20 @@ final class AppState: ObservableObject {
 
     func clearError() {
         currentError = nil
+    }
+
+    // MARK: - History Persistence
+
+    private func saveHistory() {
+        if let data = try? JSONEncoder().encode(transcriptionHistory) {
+            UserDefaults.standard.set(data, forKey: Self.historyKey)
+        }
+    }
+
+    private func loadHistory() {
+        if let data = UserDefaults.standard.data(forKey: Self.historyKey),
+           let history = try? JSONDecoder().decode([TranscriptionRecord].self, from: data) {
+            transcriptionHistory = history
+        }
     }
 }

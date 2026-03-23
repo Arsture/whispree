@@ -9,7 +9,7 @@ struct MainDashboardView: View {
         VStack(spacing: 0) {
             // Header
             headerSection
-                .padding(16)
+                .padding(24)
 
             Divider()
 
@@ -25,11 +25,8 @@ struct MainDashboardView: View {
 
                     // Providers
                     providersSection
-
-                    // Last transcription
-                    transcriptionSection
                 }
-                .padding(16)
+                .padding(24)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
