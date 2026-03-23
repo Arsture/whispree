@@ -2,25 +2,25 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleIdentifier</key>
-    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-    <key>CFBundleName</key>
-    <string>Whispree</string>
-    <key>LSUIElement</key>
-    <false/>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Whispree needs microphone access to record your voice for transcription.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Whispree needs accessibility access to insert transcribed text into applications.</string>
-    <key>CFBundleVersion</key>
-    <string>1.0.0</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
-    <key>SUFeedURL</key>
-    <string>https://github.com/Arsture/whispree/releases/appcast.xml</string>
-    <key>SUEnableAutomaticChecks</key>
-    <true/>
-    <key>SUAutomaticallyUpdate</key>
-    <true/>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>Whispree</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.0.3</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.3</string>
+	<key>LSUIElement</key>
+	<false/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Whispree needs accessibility access to insert transcribed text into applications.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Whispree needs microphone access to record your voice for transcription.</string>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/Arsture/whispree/releases/appcast.xml</string>
 </dict>
 </plist>
