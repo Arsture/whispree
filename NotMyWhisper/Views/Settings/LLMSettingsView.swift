@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LLMSettingsView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var modelManager: ModelManager
     @State private var customPrompt: String = ""
 
     var body: some View {
@@ -131,7 +132,7 @@ struct LLMSettingsView: View {
                         onDownload: {
                             Task { await appState.switchLLMProvider(to: .local) }
                         },
-                        onDelete: {}
+                        onDelete: { modelManager.deleteLLMModel() }
                     )
                 }
             }

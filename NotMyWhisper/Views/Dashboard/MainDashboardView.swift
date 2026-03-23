@@ -1,5 +1,4 @@
 import SwiftUI
-import KeyboardShortcuts
 
 struct MainDashboardView: View {
     @EnvironmentObject var appState: AppState
@@ -28,14 +27,8 @@ struct MainDashboardView: View {
                     // Last transcription
                     transcriptionSection
 
-                    // Model status
-                    modelStatusSection
-
-                    // Hotkey
-                    hotkeySection
-
-                    // Quick settings
-                    quickSettingsSection
+                    // Providers
+                    providersSection
                 }
                 .padding(16)
             }
@@ -243,51 +236,67 @@ struct MainDashboardView: View {
 
     // MARK: - Provider Status
 
-    private var modelStatusSection: some View {
+    private var providersSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Providers")
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
 
-            // STT Provider
+            // STT Provider with picker
             HStack {
                 Image(systemName: "mic.fill")
                     .frame(width: 20)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("STT: \(appState.settings.sttProviderType.rawValue)")
-                        .font(.subheadline)
-                    if appState.sttProvider?.isReady == true {
-                        Text(appState.settings.whisperModelId)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                Text("STT")
+                    .font(.subheadline)
+                Spacer()
+                Picker("", selection: sttProviderBinding) {
+                    ForEach(STTProviderType.allCases, id: \.self) { type in
+                        Text(type.displayName).tag(type)
                     }
                 }
-                Spacer()
+                .frame(width: 180)
                 providerStateBadge(appState.whisperModelState)
+            }
+
+            // Groq API key warning
+            if appState.settings.sttProviderType == .groq && appState.settings.groqApiKey.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.yellow)
+                        .font(.caption2)
+                    Text("Settings에서 Groq API Key를 입력하세요")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.leading, 28)
             }
 
             Divider()
 
-            // LLM Provider
+            // LLM Provider with picker
             HStack {
                 Image(systemName: llmProviderIcon)
                     .frame(width: 20)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("LLM: \(appState.settings.llmProviderType.rawValue)")
-                        .font(.subheadline)
-                    Text(llmProviderDetail)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+                Text("LLM")
+                    .font(.subheadline)
                 Spacer()
-                providerStateBadge(appState.llmModelState)
+                Picker("", selection: llmProviderBinding) {
+                    ForEach(LLMProviderType.allCases, id: \.self) { type in
+                        Text(type.rawValue).tag(type)
+                    }
+                }
+                .frame(width: 180)
+                if appState.settings.llmProviderType != .none {
+                    providerStateBadge(appState.llmModelState)
+                }
             }
 
-            if let modelDownloadError {
-                Text(modelDownloadError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .lineLimit(2)
+            // OpenAI model info
+            if appState.settings.llmProviderType == .openai {
+                Text(appState.settings.openaiModel.displayName)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 28)
             }
         }
         .padding(12)
@@ -297,19 +306,34 @@ struct MainDashboardView: View {
         )
     }
 
+    private var sttProviderBinding: Binding<STTProviderType> {
+        Binding(
+            get: { appState.settings.sttProviderType },
+            set: { newType in
+                appState.settings.sttProviderType = newType
+                appState.settings.save()
+                Task { await appState.switchSTTProvider(to: newType) }
+            }
+        )
+    }
+
+    private var llmProviderBinding: Binding<LLMProviderType> {
+        Binding(
+            get: { appState.settings.llmProviderType },
+            set: { newType in
+                appState.settings.llmProviderType = newType
+                appState.settings.isLLMEnabled = (newType != .none)
+                appState.settings.save()
+                Task { await appState.switchLLMProvider(to: newType) }
+            }
+        )
+    }
+
     private var llmProviderIcon: String {
         switch appState.settings.llmProviderType {
         case .none: return "xmark.circle"
         case .local: return "text.badge.checkmark"
         case .openai: return "globe"
-        }
-    }
-
-    private var llmProviderDetail: String {
-        switch appState.settings.llmProviderType {
-        case .none: return "교정 없음 — 원문 그대로 사용"
-        case .local: return appState.settings.llmModelId
-        case .openai: return appState.settings.openaiModel.displayName
         }
     }
 
@@ -349,91 +373,4 @@ struct MainDashboardView: View {
     }
 
 
-    // MARK: - Hotkey
-
-    private var hotkeySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Hotkey")
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
-
-            HStack {
-                Text("Recording shortcut:")
-                    .font(.subheadline)
-                Spacer()
-                KeyboardShortcuts.Recorder(for: .toggleRecording)
-            }
-
-            Text("Mode: \(appState.settings.recordingMode.displayName)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
-        )
-    }
-
-    // MARK: - Quick Settings
-
-    private var quickSettingsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Quick Settings")
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
-
-            Picker("STT:", selection: Binding(
-                get: { appState.settings.sttProviderType },
-                set: { newType in
-                    appState.settings.sttProviderType = newType
-                    appState.settings.save()
-                    Task { await appState.switchSTTProvider(to: newType) }
-                }
-            )) {
-                ForEach(STTProviderType.allCases, id: \.self) { type in
-                    Text(type.displayName).tag(type)
-                }
-            }
-            .font(.subheadline)
-
-            if appState.settings.sttProviderType == .groq && appState.settings.groqApiKey.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.yellow)
-                        .font(.caption2)
-                    Text("Settings에서 Groq API Key를 입력하세요")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Toggle("LLM Correction", isOn: Binding(
-                get: { appState.settings.isLLMEnabled },
-                set: {
-                    appState.settings.isLLMEnabled = $0
-                    appState.settings.save()
-                }
-            ))
-            .font(.subheadline)
-
-            Picker("Language:", selection: Binding(
-                get: { appState.settings.language },
-                set: {
-                    appState.settings.language = $0
-                    appState.settings.save()
-                }
-            )) {
-                ForEach(SupportedLanguage.allCases, id: \.self) { lang in
-                    Text(lang.displayName).tag(lang)
-                }
-            }
-            .font(.subheadline)
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
-        )
-    }
 }

@@ -10,14 +10,14 @@ struct SettingsView: View {
                     Label("General", systemImage: "gear")
                 }
 
+            STTSettingsView()
+                .tabItem {
+                    Label("STT", systemImage: "mic.fill")
+                }
+
             LLMSettingsView()
                 .tabItem {
                     Label("LLM", systemImage: "text.badge.checkmark")
-                }
-
-            ModelSettingsView()
-                .tabItem {
-                    Label("Models", systemImage: "arrow.down.circle")
                 }
 
             DomainWordSetsView()
