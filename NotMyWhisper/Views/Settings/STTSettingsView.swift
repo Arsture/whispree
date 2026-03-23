@@ -12,9 +12,7 @@ struct STTSettingsView: View {
                     set: { (newValue: STTProviderType) in
                         appState.settings.sttProviderType = newValue
                         appState.settings.save()
-                        if newValue == .groq {
-                            Task { await appState.switchSTTProvider(to: newValue) }
-                        }
+                        Task { await appState.switchSTTProvider(to: newValue) }
                     }
                 )) {
                     ForEach(STTProviderType.allCases, id: \.self) { provider in

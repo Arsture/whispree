@@ -23,22 +23,41 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
 
     init(modelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit") {
         self.modelId = modelId
+        self.workerPath = Self.resolveWorkerPath()
+    }
 
-        // mlx-worker/ 경로 탐색
-        let bundlePath = Bundle.main.resourcePath.map { $0 + "/mlx-worker" }
-        let projectPath = FileManager.default.currentDirectoryPath + "/mlx-worker"
-        let appSupportPath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first.map { $0.appendingPathComponent("NotMyWhisper/mlx-worker").path }
+    private static func resolveWorkerPath() -> String {
+        let fm = FileManager.default
 
-        if let bp = bundlePath, FileManager.default.fileExists(atPath: bp + "/mlx_worker.py") {
-            self.workerPath = bp
-        } else if FileManager.default.fileExists(atPath: projectPath + "/mlx_worker.py") {
-            self.workerPath = projectPath
-        } else if let asp = appSupportPath, FileManager.default.fileExists(atPath: asp + "/mlx_worker.py") {
-            self.workerPath = asp
-        } else {
-            self.workerPath = projectPath
+        // 1. Application Support (쓰기 가능한 런타임 경로)
+        let appSupportURL = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("NotMyWhisper/mlx-worker")
+        let appSupportPath = appSupportURL.path
+
+        if fm.fileExists(atPath: appSupportPath + "/mlx_worker.py") {
+            return appSupportPath
         }
+
+        // 2. 번들에서 Application Support로 복사
+        if let bundlePath = Bundle.main.resourcePath.map({ $0 + "/mlx-worker" }),
+           fm.fileExists(atPath: bundlePath + "/mlx_worker.py") {
+            try? fm.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+            for file in ["mlx_worker.py", "pyproject.toml"] {
+                let src = bundlePath + "/" + file
+                let dst = appSupportPath + "/" + file
+                try? fm.removeItem(atPath: dst)
+                try? fm.copyItem(atPath: src, toPath: dst)
+            }
+            return appSupportPath
+        }
+
+        // 3. 개발 모드 — 프로젝트 디렉토리
+        let devPath = fm.currentDirectoryPath + "/mlx-worker"
+        if fm.fileExists(atPath: devPath + "/mlx_worker.py") {
+            return devPath
+        }
+
+        return appSupportPath // fallback
     }
 
     func setup() async throws {
@@ -49,6 +68,9 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         guard FileManager.default.fileExists(atPath: workerPath + "/mlx_worker.py") else {
             throw STTError.transcriptionFailed("mlx-worker/mlx_worker.py를 찾을 수 없습니다: \(workerPath)")
         }
+
+        // 고아 프로세스 정리
+        Self.killOrphanedWorkers()
 
         let uvPath = FileManager.default.fileExists(atPath: "/opt/homebrew/bin/uv")
             ? "/opt/homebrew/bin/uv" : "/usr/local/bin/uv"
@@ -164,6 +186,16 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
                 continuation.finish()
             }
         }
+    }
+
+    // MARK: - Process Cleanup
+
+    private static func killOrphanedWorkers() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        task.arguments = ["-f", "mlx_worker\\.py"]
+        try? task.run()
+        task.waitUntilExit()
     }
 
     // MARK: - IPC Helpers

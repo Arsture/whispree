@@ -416,6 +416,7 @@
 				19D55308752E402004A90B94 /* Sources */,
 				C26DEF351ECFF4130C12206B /* Resources */,
 				0D0A342BAB13DAD989DBB0CA /* Frameworks */,
+				8A0DBA0B8534A108D714956D /* Copy mlx-worker to bundle */,
 			);
 			buildRules = (
 			);
@@ -511,6 +512,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		8A0DBA0B8534A108D714956D /* Copy mlx-worker to bundle */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy mlx-worker to bundle";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "mkdir -p \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker\"\ncp \"${SRCROOT}/mlx-worker/mlx_worker.py\" \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker/\"\ncp \"${SRCROOT}/mlx-worker/pyproject.toml\" \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker/\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		19D55308752E402004A90B94 /* Sources */ = {
