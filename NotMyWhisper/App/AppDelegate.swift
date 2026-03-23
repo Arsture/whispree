@@ -10,7 +10,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var mainWindow: NSWindow?
     private var onboardingWindow: NSWindow?
-    private var settingsWindow: NSWindow?
     private var overlayPanel: NSPanel?
     private var quickFixPanel: NSPanel?
     private var cancellables = Set<AnyCancellable>()
@@ -82,7 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openSettingsFromMenu() {
-        showSettings()
+        showMainWindow()
     }
 
     // MARK: - Edit Keyboard Shortcuts (Copy/Paste Fix)
@@ -165,7 +164,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         showMainWindow()
     }
 
-    // MARK: - Main Window (Dashboard)
+    // MARK: - Main Window (Unified)
 
     func showMainWindow() {
         if let mainWindow, mainWindow.isVisible {
@@ -175,7 +174,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
+            contentRect: NSRect(x: 0, y: 0, width: 700, height: 550),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -183,15 +182,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.title = "NotMyWhisper"
         window.center()
         window.isReleasedWhenClosed = false
-        window.contentMinSize = NSSize(width: 380, height: 400)
+        window.contentMinSize = NSSize(width: 600, height: 450)
         window.contentView = NSHostingView(
-            rootView: MainDashboardView(
-                modelManager: modelManager,
-                onOpenSettings: { [weak self] in
-                    self?.showSettings()
-                }
-            )
-            .environmentObject(appState)
+            rootView: UnifiedView()
+                .environmentObject(appState)
+                .environmentObject(hotkeyManager)
+                .environmentObject(modelManager)
         )
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -213,7 +209,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showOnboarding() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 680),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -237,39 +233,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
             .environmentObject(self.appState)
+            .environmentObject(self.hotkeyManager)
         )
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         self.onboardingWindow = window
-    }
-
-    // MARK: - Settings
-
-    func showSettings() {
-        if let settingsWindow, settingsWindow.isVisible {
-            settingsWindow.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 420),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "NotMyWhisper Settings"
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(
-            rootView: SettingsView()
-                .environmentObject(appState)
-                .environmentObject(hotkeyManager)
-                .environmentObject(modelManager)
-        )
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        self.settingsWindow = window
     }
 
     // MARK: - Quick Fix
@@ -277,8 +245,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleQuickFix() {
         // Capture the frontmost app (where the user selected text)
         let frontmost = NSWorkspace.shared.frontmostApplication
-        guard let targetApp = frontmost,
-              targetApp.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
+        guard let targetApp = frontmost else { return }
+
+        // Allow self-targeting during onboarding for Quick Fix demo
+        if targetApp.bundleIdentifier == Bundle.main.bundleIdentifier
+            && appState.settings.hasCompletedOnboarding {
+            return
+        }
 
         Task {
             // Simulate Cmd+C to capture selected text
@@ -293,7 +266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         quickFixPanel = nil
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 180),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 280),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false

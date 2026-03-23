@@ -16,10 +16,10 @@ struct AppSettings: Codable {
     var mlxAudioModelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit"
 
     // STT Provider
-    var sttProviderType: STTProviderType = .groq
+    var sttProviderType: STTProviderType = .whisperKit
 
     // LLM Provider
-    var llmProviderType: LLMProviderType = .openai
+    var llmProviderType: LLMProviderType = .none
 
     // OpenAI 모델 선택
     var openaiModel: OpenAIModel = .gpt54

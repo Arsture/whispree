@@ -4,10 +4,11 @@ struct TranscriptionHistoryView: View {
     @EnvironmentObject var appState: AppState
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(spacing: 0) {
+            // Header
             HStack {
-                Text("History")
-                    .font(.headline)
+                Text("기록")
+                    .font(.title2.bold())
                 Spacer()
                 if !appState.transcriptionHistory.isEmpty {
                     Button("Clear All") {
@@ -16,22 +17,29 @@ struct TranscriptionHistoryView: View {
                     .font(.caption)
                 }
             }
-            .padding(.horizontal)
+            .padding(16)
 
+            Divider()
+
+            // Content
             if appState.transcriptionHistory.isEmpty {
+                Spacer()
                 ContentUnavailableView(
                     "No Transcriptions Yet",
                     systemImage: "text.bubble",
                     description: Text("Your transcription history will appear here.")
                 )
+                Spacer()
             } else {
                 List {
                     ForEach(appState.transcriptionHistory) { record in
                         TranscriptionRow(record: record)
                     }
                 }
+                .listStyle(.plain)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

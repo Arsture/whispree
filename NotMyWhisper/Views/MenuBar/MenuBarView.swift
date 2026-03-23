@@ -85,7 +85,7 @@ struct MenuBarView: View {
             HStack {
                 Button("Settings...") {
                     if let appDelegate = NSApp.delegate as? AppDelegate {
-                        appDelegate.showSettings()
+                        appDelegate.showMainWindow()
                     }
                 }
                 .buttonStyle(.plain)

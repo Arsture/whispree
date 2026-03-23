@@ -202,15 +202,17 @@ final class RecordingCoordinator: ObservableObject {
                 }
             }
 
-            // Step 3: Insert text into the original app
+            // Step 3: Insert text into the original app (skip during onboarding demo)
             guard !Task.isCancelled else { return }
-            appState.transcriptionState = .inserting
+            if appState.settings.hasCompletedOnboarding {
+                appState.transcriptionState = .inserting
 
-            let success = await textInsertionService.insertText(textToInsert, targetApp: previousApp)
-            if !success {
-                // Copy to clipboard as last resort
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(textToInsert, forType: .string)
+                let success = await textInsertionService.insertText(textToInsert, targetApp: previousApp)
+                if !success {
+                    // Copy to clipboard as last resort
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(textToInsert, forType: .string)
+                }
             }
 
             // Record in history

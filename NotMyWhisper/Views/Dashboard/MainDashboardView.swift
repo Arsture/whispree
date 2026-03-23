@@ -2,8 +2,7 @@ import SwiftUI
 
 struct MainDashboardView: View {
     @EnvironmentObject var appState: AppState
-    @ObservedObject var modelManager: ModelManager
-    let onOpenSettings: () -> Void
+    @EnvironmentObject var modelManager: ModelManager
     @State private var modelDownloadError: String?
 
     var body: some View {
@@ -26,28 +25,14 @@ struct MainDashboardView: View {
 
                     // Providers
                     providersSection
+
+                    // Last transcription
+                    transcriptionSection
                 }
                 .padding(16)
             }
-
-            Divider()
-
-            // Footer
-            HStack {
-                Button("Settings") {
-                    onOpenSettings()
-                }
-
-                Spacer()
-
-                Button("Quit NotMyWhisper") {
-                    NSApp.terminate(nil)
-                }
-                .foregroundStyle(.red)
-            }
-            .padding(12)
         }
-        .frame(minWidth: 420, minHeight: 480)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Header
@@ -261,7 +246,7 @@ struct MainDashboardView: View {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundStyle(.yellow)
                         .font(.caption2)
-                    Text("Settings에서 Groq API Key를 입력하세요")
+                    Text("STT 설정에서 Groq API Key를 입력하세요")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -368,6 +353,4 @@ struct MainDashboardView: View {
             }
         }
     }
-
-
 }
