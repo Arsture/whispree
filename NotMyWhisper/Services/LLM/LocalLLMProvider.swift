@@ -9,7 +9,7 @@ final class LocalLLMProvider: LLMProvider {
 
     private var modelContainer: ModelContainer?
     private let modelId: String
-    private let correctionTimeout: TimeInterval = 5.0
+    private let correctionTimeout: TimeInterval = 15.0
 
     func validate() -> ProviderValidation {
         modelContainer != nil ? .valid : .invalid("로컬 LLM 모델이 로드되지 않았습니다. 모델을 다운로드해주세요.")
@@ -52,11 +52,19 @@ final class LocalLLMProvider: LLMProvider {
                         repetitionPenalty: 1.2
                     )
                     return try MLXLMCommon.generate(input: input, parameters: params, context: context) { tokens in
-                        if tokens.count > 200 { return .stop }
+                        if tokens.count > 500 { return .stop }
                         return .more
                     }
                 }
-                return output.output.trimmingCharacters(in: .whitespacesAndNewlines)
+                // Strip Qwen3 <think>...</think> blocks
+                var text = output.output.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let thinkEnd = text.range(of: "</think>") {
+                    text = String(text[thinkEnd.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                } else if text.hasPrefix("<think>") {
+                    // Thinking block never closed (token limit hit) → discard
+                    return ""
+                }
+                return text
             }
 
             group.addTask {

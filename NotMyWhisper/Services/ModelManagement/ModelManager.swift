@@ -50,10 +50,10 @@ final class ModelManager: ObservableObject {
     }
 
     func loadModelsIfAvailable() async {
-        // Load STT and LLM in parallel
-        async let stt: Void = appState.switchSTTProvider(to: appState.settings.sttProviderType)
-        async let llm: Void = appState.switchLLMProvider(to: appState.settings.llmProviderType)
-        _ = await (stt, llm)
+        // Sequential: local models (WhisperKit, MLX) can't load in parallel
+        // due to memory pressure and ANE/GPU contention
+        await appState.switchSTTProvider(to: appState.settings.sttProviderType)
+        await appState.switchLLMProvider(to: appState.settings.llmProviderType)
     }
 
     func downloadWhisperModel() async throws {

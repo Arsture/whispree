@@ -24,9 +24,6 @@ struct MainDashboardView: View {
                         accessibilityWarningSection
                     }
 
-                    // Last transcription
-                    transcriptionSection
-
                     // Providers
                     providersSection
                 }
