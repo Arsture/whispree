@@ -1,4 +1,4 @@
-# FreeWhisper
+# Whispree
 
 A free, fully local macOS menu bar app for speech-to-text with LLM post-processing. An open-source alternative to SuperWhisper, running entirely on Apple Silicon with no cloud dependencies.
 
@@ -19,6 +19,22 @@ A free, fully local macOS menu bar app for speech-to-text with LLM post-processi
 - Microphone permission
 - Accessibility permission (for text insertion)
 
+## Installation
+
+### Homebrew Cask (Recommended)
+
+```bash
+brew install --cask whispree
+```
+
+### From Releases
+
+Download the latest `.dmg` or `.zip` from [GitHub Releases](https://github.com/Arsture/whispree/releases).
+
+### Build from Source
+
+See [Build](#build) section below.
+
 ## Build
 
 ### Prerequisites
@@ -30,14 +46,14 @@ A free, fully local macOS menu bar app for speech-to-text with LLM post-processi
 
 ```bash
 # Clone
-git clone https://github.com/Arsture/FreeWhisper.git
-cd FreeWhisper
+git clone https://github.com/Arsture/Whispree.git
+cd Whispree
 
 # Generate Xcode project
 xcodegen generate
 
 # Open in Xcode
-open FreeWhisper.xcodeproj
+open Whispree.xcodeproj
 
 # Build and run (⌘R)
 ```
@@ -62,7 +78,7 @@ Access settings from the menu bar icon:
 ## Architecture
 
 ```
-FreeWhisper/
+Whispree/
 ├── App/                    # App entry point, delegate, state
 ├── Models/                 # Data models (settings, state, model info)
 ├── Services/

@@ -1,0 +1,651 @@
+import SwiftUI
+import AVFoundation
+import KeyboardShortcuts
+
+struct OnboardingView: View {
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var hotkeyManager: HotkeyManager
+    let onComplete: () -> Void
+
+    @State private var currentStep = 0
+    @State private var micGranted = false
+    @State private var axGranted = false
+    @State private var axCheckTimer: Timer?
+    @State private var demoText = ""
+    @State private var quickFixDemoText = "밸리데이션을 체크해서 컨트롤러의 로직을 리팩토링합니다"
+
+    private let totalSteps = 5
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Progress indicator
+            HStack(spacing: 8) {
+                ForEach(0..<totalSteps, id: \.self) { step in
+                    Capsule()
+                        .fill(step <= currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .frame(height: 4)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+
+            Group {
+                switch currentStep {
+                case 0: welcomeStep
+                case 1: permissionStep
+                case 2: providerSetupStep
+                case 3: recordingGuideStep
+                case 4: quickFixReadyStep
+                default: welcomeStep
+                }
+            }
+
+            Spacer()
+        }
+        .frame(width: 480, height: 640)
+    }
+
+    // MARK: - Step 0: Welcome
+
+    private var welcomeStep: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: "waveform.circle.fill")
+                .font(.system(size: 80))
+                .foregroundStyle(.blue)
+
+            Text("Welcome to Whispree")
+                .font(.largeTitle.bold())
+
+            Text("Free, local speech-to-text with AI correction.\nNo cloud. No subscription. Just your voice.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button("Get Started") {
+                withAnimation { currentStep = 1 }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.bottom, 40)
+        }
+        .padding(24)
+    }
+
+    // MARK: - Step 1: Permissions
+
+    private var permissionStep: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: "lock.shield")
+                .font(.system(size: 60))
+                .foregroundStyle(.orange)
+
+            Text("Permissions")
+                .font(.title.bold())
+
+            Text("각 항목을 클릭하여 권한을 허용하세요.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 0) {
+                // Microphone
+                Button {
+                    Task {
+                        micGranted = await AVCaptureDevice.requestAccess(for: .audio)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+                } label: {
+                    permissionCard(
+                        icon: "mic.fill",
+                        iconColor: .blue,
+                        title: "마이크",
+                        description: "음성 녹음에 필요합니다",
+                        isGranted: micGranted
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Divider().padding(.horizontal, 16)
+
+                // Accessibility
+                Button {
+                    TextInsertionService.requestAccessibilityPermission()
+                    startAccessibilityCheck()
+                } label: {
+                    permissionCard(
+                        icon: "hand.raised.fill",
+                        iconColor: .blue,
+                        title: "손쉬운 사용",
+                        description: "다른 앱에 텍스트를 붙여넣기 위해 필요합니다",
+                        isGranted: axGranted
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .background(.quaternary.opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Spacer()
+
+            navigationButtons(backStep: 0, nextStep: 2, nextLabel: "Continue")
+        }
+        .padding(24)
+        .onAppear {
+            micGranted = AudioService().checkPermission()
+            axGranted = TextInsertionService.isAccessibilityEnabled()
+        }
+        .onDisappear {
+            axCheckTimer?.invalidate()
+            axCheckTimer = nil
+        }
+    }
+
+    // MARK: - Step 2: Provider Setup
+
+    private var providerSetupStep: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: "key.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.blue)
+
+            Text("서비스 연동")
+                .font(.title.bold())
+
+            Text("사용할 서비스의 인증을 설정하세요.\n나중에 Settings에서도 변경할 수 있습니다.")
+                .multilineTextAlignment(.center)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 0) {
+                // Groq API Key
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "bolt.fill")
+                            .foregroundStyle(.orange)
+                            .frame(width: 24)
+                        Text("Groq Cloud STT")
+                            .font(.headline)
+                        Spacer()
+                        if !appState.settings.groqApiKey.isEmpty {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("선택사항")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Text("빠른 클라우드 음성 인식을 사용하려면 API Key를 입력하세요")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    SecureField("Groq API Key", text: Binding(
+                        get: { appState.settings.groqApiKey },
+                        set: {
+                            appState.settings.groqApiKey = $0
+                            appState.settings.save()
+                        }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                }
+                .padding(16)
+
+                Divider().padding(.horizontal, 16)
+
+                // OpenAI OAuth
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.green)
+                            .frame(width: 24)
+                        Text("OpenAI LLM 교정")
+                            .font(.headline)
+                        Spacer()
+                        if appState.authService.isLoggedIn || appState.oauthService.isLoggedIn {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("선택사항")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Text("GPT로 전사 결과를 교정하려면 로그인하세요")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if appState.authService.isLoggedIn {
+                        Label("Codex CLI 인증됨", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    } else if appState.oauthService.isLoggedIn {
+                        HStack {
+                            Label("로그인됨", systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                            Spacer()
+                            Button("로그아웃") {
+                                appState.oauthService.logout()
+                            }
+                            .font(.caption)
+                        }
+                    } else {
+                        Button {
+                            Task { await appState.oauthService.startLogin() }
+                        } label: {
+                            HStack {
+                                Image(systemName: "globe")
+                                Text("OpenAI 로그인")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.regular)
+                        .disabled(appState.oauthService.isLoggingIn)
+
+                        if appState.oauthService.isLoggingIn {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("브라우저에서 로그인 중...")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if let error = appState.oauthService.loginError {
+                            Label(error, systemImage: "xmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .background(.quaternary.opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Spacer()
+
+            navigationButtons(backStep: 1, nextStep: 3, nextLabel: "Continue")
+        }
+        .padding(24)
+        .onAppear {
+            appState.authService.checkAuth()
+            appState.oauthService.checkAuth()
+        }
+    }
+
+    // MARK: - Step 3: Recording Guide
+
+    private var recordingGuideStep: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Image(systemName: "mic.and.signal.meter")
+                .font(.system(size: 50))
+                .foregroundStyle(.blue)
+
+            Text("녹음 방법")
+                .font(.title.bold())
+
+            Text("녹음 모드를 선택하고 테스트해보세요")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            // Mode picker
+            VStack(spacing: 0) {
+                modeCard(
+                    mode: .pushToTalk,
+                    icon: "hand.tap.fill",
+                    title: "Push to Talk",
+                    description: "키를 누르고 있는 동안 녹음, 떼면 전사"
+                )
+                Divider().padding(.horizontal, 16)
+                modeCard(
+                    mode: .toggle,
+                    icon: "power",
+                    title: "Toggle",
+                    description: "한 번 눌러 시작, 다시 눌러 중지"
+                )
+            }
+            .background(.quaternary.opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            // Test area
+            recordingTestSection
+
+            Spacer()
+
+            navigationButtons(backStep: 2, nextStep: 4, nextLabel: "Continue")
+        }
+        .padding(24)
+        .onAppear { initializeProviders() }
+        .onChange(of: appState.transcriptionState) {
+            if appState.transcriptionState == .idle && !appState.finalText.isEmpty {
+                let result = appState.correctedText.isEmpty ? appState.finalText : appState.correctedText
+                withAnimation { demoText = result }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var recordingTestSection: some View {
+        VStack(spacing: 6) {
+            if case .ready = appState.whisperModelState {
+                // Active test area
+                HStack {
+                    recordingStatusIndicator
+                    Spacer()
+                    shortcutBadge(shortcutText(for: .toggleRecording))
+                }
+
+                TextEditor(text: $demoText)
+                    .font(.system(.body))
+                    .frame(height: 50)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.secondary.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(alignment: .topLeading) {
+                        if demoText.isEmpty && appState.transcriptionState == .idle {
+                            Text("여기에 전사 결과가 나타납니다")
+                                .font(.body)
+                                .foregroundStyle(.tertiary)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 8)
+                                .allowsHitTesting(false)
+                        }
+                    }
+
+                HStack(spacing: 4) {
+                    shortcutBadge("ESC")
+                    Text("녹음 중 취소")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            } else if case .loading = appState.whisperModelState {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    Text("STT 프로바이더 준비 중...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .background(Color.secondary.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            } else {
+                VStack(spacing: 4) {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                    Text("프로바이더 설정 후 대시보드에서 테스트할 수 있습니다")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .background(Color.secondary.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var recordingStatusIndicator: some View {
+        switch appState.transcriptionState {
+        case .recording:
+            HStack(spacing: 4) {
+                Circle().fill(.red).frame(width: 6, height: 6)
+                Text("녹음 중...")
+                    .font(.caption).foregroundStyle(.red)
+            }
+        case .transcribing:
+            HStack(spacing: 4) {
+                ProgressView().controlSize(.mini)
+                Text("전사 중...")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        case .correcting:
+            HStack(spacing: 4) {
+                ProgressView().controlSize(.mini)
+                Text("교정 중...")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        default:
+            if demoText.isEmpty {
+                Text("단축키를 눌러 테스트해보세요")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("전사 완료!")
+                        .font(.caption).foregroundStyle(.green)
+                }
+            }
+        }
+    }
+
+    // MARK: - Step 4: Quick Fix & Ready
+
+    private var quickFixReadyStep: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Image(systemName: "character.textbox")
+                .font(.system(size: 50))
+                .foregroundStyle(.orange)
+
+            Text("Quick Fix")
+                .font(.title.bold())
+
+            Text("잘못 전사된 단어를 바로 교정하고\n사전에 등록하세요")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            // How-to steps
+            VStack(alignment: .leading, spacing: 10) {
+                quickFixStepRow(number: 1, text: "교정할 텍스트를 드래그하여 선택")
+                quickFixStepRow(number: 2, text: "\(shortcutText(for: .quickFix))을 눌러 Quick Fix 호출")
+                quickFixStepRow(number: 3, text: "올바른 단어를 입력하고 저장")
+                quickFixStepRow(number: 4, text: "사전에 등록 → 다음부터 자동 교정")
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.quaternary.opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            // Test area
+            VStack(spacing: 6) {
+                HStack {
+                    Text("아래에서 단어를 선택하고 테스트해보세요")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                    Spacer()
+                    shortcutBadge(shortcutText(for: .quickFix))
+                }
+
+                TextEditor(text: $quickFixDemoText)
+                    .font(.system(.body))
+                    .frame(height: 50)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.secondary.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+
+            Spacer()
+
+            HStack {
+                Button("Back") {
+                    withAnimation { currentStep = 3 }
+                }
+                Spacer()
+                Button("시작하기") {
+                    onComplete()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+            .padding(.bottom, 40)
+        }
+        .padding(24)
+    }
+
+    // MARK: - Helpers
+
+    private func navigationButtons(backStep: Int, nextStep: Int, nextLabel: String) -> some View {
+        HStack {
+            Button("Back") {
+                withAnimation { currentStep = backStep }
+            }
+
+            Spacer()
+
+            Button(nextLabel) {
+                withAnimation { currentStep = nextStep }
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(.bottom, 40)
+    }
+
+    private func permissionCard(icon: String, iconColor: Color, title: String, description: String, isGranted: Bool) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .foregroundStyle(iconColor)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if isGranted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.green)
+            } else {
+                Text("허용하기")
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(iconColor)
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(14)
+        .contentShape(Rectangle())
+    }
+
+    private func modeCard(mode: RecordingMode, icon: String, title: String, description: String) -> some View {
+        Button {
+            hotkeyManager.updateMode(mode)
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(appState.settings.recordingMode == mode ? Color.accentColor.opacity(0.15) : Color.secondary.opacity(0.1))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .foregroundStyle(appState.settings.recordingMode == mode ? .blue : .secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.headline)
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: appState.settings.recordingMode == mode ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(appState.settings.recordingMode == mode ? .blue : .secondary.opacity(0.5))
+                    .font(.title3)
+            }
+            .padding(14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func quickFixStepRow(number: Int, text: String) -> some View {
+        HStack(spacing: 10) {
+            Text("\(number)")
+                .font(.caption.bold())
+                .foregroundStyle(.white)
+                .frame(width: 20, height: 20)
+                .background(.orange)
+                .clipShape(Circle())
+            Text(text)
+                .font(.subheadline)
+        }
+    }
+
+    private func shortcutBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.system(.caption, design: .rounded).bold())
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(.quaternary)
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+    }
+
+    private func shortcutText(for name: KeyboardShortcuts.Name) -> String {
+        if let shortcut = KeyboardShortcuts.getShortcut(for: name) {
+            return "\(shortcut)"
+        }
+        if name == .toggleRecording { return "⌃⇧R" }
+        if name == .quickFix { return "⌃⇧D" }
+        return "?"
+    }
+
+    private func startAccessibilityCheck() {
+        axCheckTimer?.invalidate()
+        axCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                let granted = TextInsertionService.isAccessibilityEnabled()
+                if granted {
+                    axGranted = true
+                    axCheckTimer?.invalidate()
+                    axCheckTimer = nil
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+            }
+        }
+    }
+
+    private func initializeProviders() {
+        // Auto-select providers based on step 2 configuration
+        if !appState.settings.groqApiKey.isEmpty {
+            appState.settings.sttProviderType = .groq
+        }
+        if appState.authService.isLoggedIn || appState.oauthService.isLoggedIn {
+            appState.settings.llmProviderType = .openai
+        }
+        appState.settings.save()
+
+        // Initialize providers for the demo
+        Task {
+            await appState.switchSTTProvider(to: appState.settings.sttProviderType)
+            await appState.switchLLMProvider(to: appState.settings.llmProviderType)
+        }
+    }
+}

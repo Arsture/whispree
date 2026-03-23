@@ -41,7 +41,25 @@ profile
 *.idea/
 *.vscode/
 
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+dist/
+
+# ML Models
+*.npz
+*.bin
+*.gguf
+*.mlmodel
+mlx_models/
+.cache/
+
 # Archives & Distribution
 *.dmg
 *.zip
 *.tar.gz
+
+# Docs (internal planning/handoff)
+docs/
