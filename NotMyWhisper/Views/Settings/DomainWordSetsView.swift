@@ -122,25 +122,24 @@ private struct WordSetRow: View {
                 .toggleStyle(.switch)
                 .labelsHidden()
 
-                Button(action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(wordSet.name)
-                                .font(.body)
-                                .foregroundStyle(.primary)
-                            Text("\(wordSet.words.count)개 단어")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(wordSet.name)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                    Text("\(wordSet.words.count)개 단어")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain)
+                Spacer()
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
+            }
 
             if isExpanded {
                 Divider()
