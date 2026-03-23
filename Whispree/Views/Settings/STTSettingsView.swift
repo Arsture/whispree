@@ -31,8 +31,8 @@ struct STTSettingsView: View {
                     ProviderCard(
                         provider: .mlxAudio,
                         title: "MLX Audio",
-                        accuracy: 75,
-                        latency: 80,
+                        accuracy: 65,
+                        latency: 65,
                         networkType: .offline,
                         isSelected: appState.settings.sttProviderType == .mlxAudio,
                         state: appState.whisperModelState,
@@ -46,8 +46,8 @@ struct STTSettingsView: View {
                     ProviderCard(
                         provider: .whisperKit,
                         title: "WhisperKit",
-                        accuracy: 70,
-                        latency: 50,
+                        accuracy: 75,
+                        latency: 55,
                         networkType: .offline,
                         isSelected: appState.settings.sttProviderType == .whisperKit,
                         state: appState.whisperModelState,
