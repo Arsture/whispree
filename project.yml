@@ -61,6 +61,8 @@ targets:
       - package: LaunchAtLogin
     entitlements:
       path: NotMyWhisper/Resources/NotMyWhisper.entitlements
+      properties:
+        com.apple.security.device.audio-input: true
 
   NotMyWhisperTests:
     type: bundle.unit-test
