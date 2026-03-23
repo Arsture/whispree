@@ -1,5 +1,22 @@
 import Foundation
 
+enum ProviderValidation {
+    case valid
+    case invalid(String)
+
+    var isValid: Bool {
+        if case .valid = self { return true }
+        return false
+    }
+
+    var message: String {
+        switch self {
+        case .valid: return ""
+        case .invalid(let reason): return reason
+        }
+    }
+}
+
 enum TranscriptionState: Equatable {
     case idle
     case recording

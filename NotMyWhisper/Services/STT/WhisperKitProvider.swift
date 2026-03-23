@@ -7,7 +7,9 @@ final class WhisperKitProvider: STTProvider, @unchecked Sendable {
 
     private var whisperKit: WhisperKit?
 
-    var isReady: Bool { whisperKit != nil }
+    func validate() -> ProviderValidation {
+        whisperKit != nil ? .valid : .invalid("WhisperKit 모델이 로드되지 않았습니다. 모델을 다운로드해주세요.")
+    }
 
     func setup() async throws {
         let config = WhisperKitConfig(

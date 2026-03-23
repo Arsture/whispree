@@ -8,7 +8,10 @@ final class LightningWhisperProvider: STTProvider, @unchecked Sendable {
     private var _isReady = false
     private let enginePath: String
 
-    var isReady: Bool { _isReady }
+    func validate() -> ProviderValidation {
+        _isReady ? .valid : .invalid("Lightning-SimulWhisper 서버가 실행되지 않았습니다.")
+    }
+
     var isAvailable: Bool {
         // uv가 설치되어 있는지 확인
         FileManager.default.fileExists(atPath: "/opt/homebrew/bin/uv")

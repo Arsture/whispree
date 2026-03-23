@@ -57,8 +57,13 @@ final class RecordingCoordinator: ObservableObject {
             appState.transcriptionState = .idle
         }
         guard appState.transcriptionState == .idle else { return }
-        guard appState.sttProvider?.isReady == true else {
-            appState.currentError = .sttError("Model is not ready yet. Please wait for model download to complete.")
+        guard let sttProvider = appState.sttProvider else {
+            appState.currentError = .sttError("STT 프로바이더가 설정되지 않았습니다.")
+            return
+        }
+        let sttValidation = sttProvider.validate()
+        guard sttValidation.isValid else {
+            appState.currentError = .sttError(sttValidation.message)
             return
         }
 

@@ -9,9 +9,11 @@ final class OpenAIProvider: LLMProvider {
     private let oauthService: OAuthService
     private var model: OpenAIModel
 
-    /// Codex CLI 토큰 또는 OAuth 토큰 중 하나라도 있으면 ready
-    var isReady: Bool {
-        authService.isLoggedIn || oauthService.isLoggedIn
+    func validate() -> ProviderValidation {
+        if authService.isLoggedIn || oauthService.isLoggedIn {
+            return .valid
+        }
+        return .invalid("OpenAI 인증이 필요합니다. Codex CLI 로그인 또는 OAuth 인증을 해주세요.")
     }
 
     init(model: OpenAIModel = .gpt54, authService: CodexAuthService, oauthService: OAuthService) {

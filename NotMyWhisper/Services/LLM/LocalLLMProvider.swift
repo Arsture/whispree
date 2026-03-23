@@ -11,7 +11,9 @@ final class LocalLLMProvider: LLMProvider {
     private let modelId: String
     private let correctionTimeout: TimeInterval = 5.0
 
-    var isReady: Bool { modelContainer != nil }
+    func validate() -> ProviderValidation {
+        modelContainer != nil ? .valid : .invalid("로컬 LLM 모델이 로드되지 않았습니다. 모델을 다운로드해주세요.")
+    }
 
     init(modelId: String = "mlx-community/Qwen3-4B-Instruct-2507-4bit") {
         self.modelId = modelId

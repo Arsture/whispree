@@ -3,8 +3,9 @@ import Foundation
 @MainActor
 final class NoneProvider: LLMProvider {
     let name = "없음 (원문 사용)"
-    let isReady = true
     let requiresNetwork = false
+
+    func validate() -> ProviderValidation { .valid }
 
     func setup() async throws {
         // 설정 불필요

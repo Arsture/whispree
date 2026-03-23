@@ -4,9 +4,9 @@ import Foundation
 /// @MainActor 제거: ML 추론은 백그라운드에서 실행되어야 함 (MainActor deadlock 방지)
 protocol STTProvider: AnyObject, Sendable {
     var name: String { get }
-    var isReady: Bool { get }
     var isAvailable: Bool { get }
 
+    func validate() -> ProviderValidation
     func setup() async throws
     func teardown() async
 
@@ -15,6 +15,10 @@ protocol STTProvider: AnyObject, Sendable {
 
     func transcribeStream(audioBuffer: [Float], language: SupportedLanguage?,
                           promptTokens: [Int]?) -> AsyncStream<PartialTranscription>
+}
+
+extension STTProvider {
+    var isReady: Bool { validate().isValid }
 }
 
 struct TranscriptionResult {

@@ -3,13 +3,15 @@ import Foundation
 final class GroqSTTProvider: STTProvider, @unchecked Sendable {
     let name = "Groq Cloud"
     var isAvailable: Bool { true }
-    var isReady: Bool { !apiKey.isEmpty }
-
     private let apiKey: String
     private let model = "whisper-large-v3-turbo"
 
     init(apiKey: String) {
         self.apiKey = apiKey
+    }
+
+    func validate() -> ProviderValidation {
+        apiKey.isEmpty ? .invalid("Groq API Key를 설정해주세요. Settings에서 입력할 수 있습니다.") : .valid
     }
 
     func setup() async throws {
