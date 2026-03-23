@@ -5,12 +5,14 @@ import Combine
 
 extension KeyboardShortcuts.Name {
     static let toggleRecording = Self("toggleRecording", default: .init(.r, modifiers: [.control, .shift]))
+    static let quickFix = Self("quickFix", default: .init(.d, modifiers: [.control, .shift]))
 }
 
 @MainActor
 final class HotkeyManager: ObservableObject {
     var onRecordingToggle: ((Bool) -> Void)?
     var onCancel: (() -> Void)?
+    var onQuickFix: (() -> Void)?
 
     private let appState: AppState
     private var isKeyDown = false
@@ -30,6 +32,7 @@ final class HotkeyManager: ObservableObject {
         case .toggle:
             setupToggleMode()
         }
+        setupQuickFixHotkey()
     }
 
     func updateMode(_ mode: RecordingMode) {
@@ -44,6 +47,7 @@ final class HotkeyManager: ObservableObject {
         case .toggle:
             setupToggleMode()
         }
+        setupQuickFixHotkey()
     }
 
     private func setupPushToTalk() {
@@ -65,6 +69,14 @@ final class HotkeyManager: ObservableObject {
             guard let self else { return }
             let shouldRecord = self.appState.transcriptionState == .idle
             self.onRecordingToggle?(shouldRecord)
+        }
+    }
+
+    // MARK: - Quick Fix Hotkey
+
+    private func setupQuickFixHotkey() {
+        KeyboardShortcuts.onKeyDown(for: .quickFix) { [weak self] in
+            self?.onQuickFix?()
         }
     }
 

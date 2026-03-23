@@ -1,10 +1,41 @@
 import Foundation
 
+struct CorrectionMapping: Codable, Identifiable, Hashable {
+    let id: UUID
+    var from: String
+    var to: String
+
+    init(id: UUID = UUID(), from: String, to: String) {
+        self.id = id
+        self.from = from
+        self.to = to
+    }
+}
+
 struct DomainWordSet: Codable, Identifiable, Hashable {
     let id: UUID
     var name: String
     var words: [String]
+    var corrections: [CorrectionMapping]
     var isEnabled: Bool
+
+    init(id: UUID = UUID(), name: String, words: [String], corrections: [CorrectionMapping] = [], isEnabled: Bool = true) {
+        self.id = id
+        self.name = name
+        self.words = words
+        self.corrections = corrections
+        self.isEnabled = isEnabled
+    }
+
+    // Backward-compatible decoder: existing data without `corrections` decodes as []
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        words = try container.decode([String].self, forKey: .words)
+        corrections = try container.decodeIfPresent([CorrectionMapping].self, forKey: .corrections) ?? []
+        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+    }
 
     static func generateDefault(domain: DomainCategory) -> DomainWordSet {
         switch domain {

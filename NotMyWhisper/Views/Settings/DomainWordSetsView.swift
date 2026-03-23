@@ -3,6 +3,8 @@ import SwiftUI
 struct DomainWordSetsView: View {
     @EnvironmentObject var appState: AppState
     @State private var newWordText: [UUID: String] = [:]
+    @State private var newCorrectionFrom: [UUID: String] = [:]
+    @State private var newCorrectionTo: [UUID: String] = [:]
 
     var body: some View {
         Form {
@@ -27,8 +29,18 @@ struct DomainWordSetsView: View {
                                 get: { newWordText[appState.settings.domainWordSets[index].id] ?? "" },
                                 set: { newWordText[appState.settings.domainWordSets[index].id] = $0 }
                             ),
+                            newCorrectionFrom: Binding(
+                                get: { newCorrectionFrom[appState.settings.domainWordSets[index].id] ?? "" },
+                                set: { newCorrectionFrom[appState.settings.domainWordSets[index].id] = $0 }
+                            ),
+                            newCorrectionTo: Binding(
+                                get: { newCorrectionTo[appState.settings.domainWordSets[index].id] ?? "" },
+                                set: { newCorrectionTo[appState.settings.domainWordSets[index].id] = $0 }
+                            ),
                             onAddWord: { addWord(at: index) },
                             onDeleteWord: { wordIndex in deleteWord(at: wordIndex, setIndex: index) },
+                            onAddCorrection: { addCorrection(at: index) },
+                            onDeleteCorrection: { corrIndex in deleteCorrection(at: corrIndex, setIndex: index) },
                             onToggle: { save() }
                         )
                     }
@@ -88,6 +100,23 @@ struct DomainWordSetsView: View {
         save()
     }
 
+    private func addCorrection(at index: Int) {
+        let id = appState.settings.domainWordSets[index].id
+        let from = (newCorrectionFrom[id] ?? "").trimmingCharacters(in: .whitespaces)
+        let to = (newCorrectionTo[id] ?? "").trimmingCharacters(in: .whitespaces)
+        guard !from.isEmpty, !to.isEmpty else { return }
+        let mapping = CorrectionMapping(from: from, to: to)
+        appState.settings.domainWordSets[index].corrections.append(mapping)
+        newCorrectionFrom[id] = ""
+        newCorrectionTo[id] = ""
+        save()
+    }
+
+    private func deleteCorrection(at corrIndex: Int, setIndex: Int) {
+        appState.settings.domainWordSets[setIndex].corrections.remove(at: corrIndex)
+        save()
+    }
+
     private func save() {
         appState.settings.save()
     }
@@ -104,8 +133,12 @@ struct DomainWordSetsView: View {
 private struct WordSetRow: View {
     @Binding var wordSet: DomainWordSet
     @Binding var newWordText: String
+    @Binding var newCorrectionFrom: String
+    @Binding var newCorrectionTo: String
     let onAddWord: () -> Void
     let onDeleteWord: (Int) -> Void
+    let onAddCorrection: () -> Void
+    let onDeleteCorrection: (Int) -> Void
     let onToggle: () -> Void
 
     @State private var isExpanded: Bool = false
@@ -126,9 +159,15 @@ private struct WordSetRow: View {
                     Text(wordSet.name)
                         .font(.body)
                         .foregroundStyle(.primary)
-                    Text("\(wordSet.words.count)개 단어")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text("\(wordSet.words.count)개 단어")
+                        if !wordSet.corrections.isEmpty {
+                            Text("\(wordSet.corrections.count)개 매핑")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
@@ -142,8 +181,14 @@ private struct WordSetRow: View {
             }
 
             if isExpanded {
+                // MARK: Words section
                 Divider()
                     .padding(.vertical, 6)
+
+                Text("단어 (STT + LLM)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 4)
 
                 if wordSet.words.isEmpty {
                     Text("단어가 없습니다.")
@@ -188,6 +233,71 @@ private struct WordSetRow: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(newWordText.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                .padding(.bottom, 8)
+
+                // MARK: Corrections section
+                Divider()
+                    .padding(.vertical, 6)
+
+                Text("교정 매핑 (LLM only)")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .padding(.bottom, 4)
+
+                if wordSet.corrections.isEmpty {
+                    Text("교정 매핑이 없습니다.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .padding(.bottom, 6)
+                } else {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(wordSet.corrections.indices, id: \.self) { corrIndex in
+                            HStack(spacing: 6) {
+                                Text(wordSet.corrections[corrIndex].from)
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundStyle(.red)
+                                Image(systemName: "arrow.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(wordSet.corrections[corrIndex].to)
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundStyle(.green)
+                                Spacer()
+                                Button(action: { onDeleteCorrection(corrIndex) }) {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundStyle(.red.opacity(0.8))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.vertical, 2)
+
+                            if corrIndex < wordSet.corrections.count - 1 {
+                                Divider()
+                            }
+                        }
+                    }
+                    .padding(.bottom, 6)
+                }
+
+                HStack(spacing: 6) {
+                    TextField("잘못된 표현", text: $newCorrectionFrom)
+                        .textFieldStyle(.roundedBorder)
+                    Image(systemName: "arrow.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("올바른 단어", text: $newCorrectionTo)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { onAddCorrection() }
+                    Button(action: onAddCorrection) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(
+                        newCorrectionFrom.trimmingCharacters(in: .whitespaces).isEmpty ||
+                        newCorrectionTo.trimmingCharacters(in: .whitespaces).isEmpty
+                    )
                 }
                 .padding(.bottom, 4)
             }

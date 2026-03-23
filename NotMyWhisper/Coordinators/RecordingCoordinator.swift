@@ -162,7 +162,7 @@ final class RecordingCoordinator: ObservableObject {
                 appState.transcriptionState = .correcting
 
                 do {
-                    let systemPrompt: String
+                    var systemPrompt: String
                     switch appState.settings.correctionMode {
                     case .custom:
                         systemPrompt = appState.settings.customLLMPrompt ?? CorrectionPrompts.codeSwitchPrompt
@@ -171,6 +171,15 @@ final class RecordingCoordinator: ObservableObject {
                             for: appState.settings.correctionMode,
                             language: appState.settings.language
                         )
+                    }
+
+                    // 교정 매핑 주입 (항상, correction mode와 무관)
+                    let corrections = appState.settings.domainWordSets
+                        .filter { $0.isEnabled }
+                        .flatMap { $0.corrections }
+                    if !corrections.isEmpty {
+                        let mappingText = corrections.map { "\($0.from) → \($0.to)" }.joined(separator: "\n")
+                        systemPrompt += "\n\n교정 매핑 (왼쪽 표현이 텍스트에 있으면 오른쪽으로 교정):\n" + mappingText
                     }
 
                     // 활성화된 도메인 단어 세트에서 glossary 생성

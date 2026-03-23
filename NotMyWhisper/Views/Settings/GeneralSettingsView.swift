@@ -15,6 +15,14 @@ struct GeneralSettingsView: View {
                     Spacer()
                     KeyboardShortcuts.Recorder(for: .toggleRecording)
                 }
+                HStack {
+                    Text("Quick Fix shortcut:")
+                    Spacer()
+                    KeyboardShortcuts.Recorder(for: .quickFix)
+                }
+                Text("텍스트를 선택한 후 Quick Fix 단축키를 누르면 단어를 즉시 교정하고 사전에 저장합니다.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Recording Mode") {
