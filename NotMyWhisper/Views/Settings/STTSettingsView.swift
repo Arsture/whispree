@@ -79,35 +79,6 @@ struct STTSettingsView: View {
                 }
             }
 
-            if appState.settings.sttProviderType == .lightning {
-                Section("Lightning Whisper MLX") {
-                    HStack {
-                        Text("서버 상태:")
-                        Spacer()
-                        switch appState.whisperModelState {
-                        case .ready:
-                            Label("연결됨", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                                .font(.caption)
-                        case .notDownloaded, .error:
-                            Label("연결 안 됨", systemImage: "xmark.circle")
-                                .foregroundStyle(.red)
-                                .font(.caption)
-                        case .loading:
-                            HStack(spacing: 4) {
-                                ProgressView().controlSize(.small)
-                                Text("확인 중...")
-                                    .font(.caption)
-                            }
-                        case .downloading:
-                            ProgressView().controlSize(.small)
-                        }
-                    }
-                    Text("stt-engine/ 디렉토리에서 FastAPI 서버를 실행하세요.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
         }
         .formStyle(.grouped)
         .padding()

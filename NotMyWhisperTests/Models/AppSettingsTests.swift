@@ -41,7 +41,7 @@ final class AppSettingsTests: XCTestCase {
     func testSTTProviderTypeCases() {
         XCTAssertEqual(STTProviderType.allCases.count, 2)
         XCTAssertEqual(STTProviderType.whisperKit.rawValue, "WhisperKit")
-        XCTAssertEqual(STTProviderType.lightning.rawValue, "Lightning-SimulWhisper")
+        XCTAssertEqual(STTProviderType.groq.rawValue, "Groq")
     }
 
     func testLLMProviderTypeCases() {

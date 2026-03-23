@@ -19,7 +19,6 @@ macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 
 |-----------|---------|
 | `NotMyWhisper/` | 메인 앱 타겟 — Swift/SwiftUI (see `NotMyWhisper/AGENTS.md`) |
 | `NotMyWhisperTests/` | 유닛 + E2E 테스트 48개 (see `NotMyWhisperTests/AGENTS.md`) |
-| `stt-engine/` | Python FastAPI STT 서버 — Lightning-SimulWhisper+MLX (see `stt-engine/AGENTS.md`) |
 | `docs/` | 추가 문서 |
 
 ## Architecture Overview
@@ -43,12 +42,8 @@ macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 
     ├─────────┤              ├─────────────┤
     │WhisperKit│(local)      │NoneProvider │
     │Groq API │(cloud)      │LocalLLM     │(Qwen3-4B)
-    │Lightning│(python)     │OpenAI       │(GPT SSE)
-    └─────────┘              └─────────────┘
-         │
-    ┌────┴────┐
-    │stt-engine│ (Python FastAPI, localhost:8000)
-    └─────────┘
+    └─────────┘              │OpenAI       │(GPT SSE)
+                             └─────────────┘
 ```
 
 ## For AI Agents
@@ -58,7 +53,6 @@ macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 
 xcodegen generate                    # project.yml 변경 후
 xcodebuild ... build                 # 빌드
 xcodebuild ... test                  # 테스트 (48개, E2E 포함)
-cd stt-engine && uv run python server.py  # Lightning STT 서버
 ```
 
 ### Key Design Constraints

@@ -1,6 +1,6 @@
 import Foundation
 
-/// STT Provider Protocol - WhisperKit과 Lightning-SimulWhisper 간 전환 가능
+/// STT Provider Protocol - WhisperKit과 Groq Cloud 간 전환 가능
 /// @MainActor 제거: ML 추론은 백그라운드에서 실행되어야 함 (MainActor deadlock 방지)
 protocol STTProvider: AnyObject, Sendable {
     var name: String { get }

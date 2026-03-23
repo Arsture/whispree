@@ -53,13 +53,11 @@ struct AppSettings: Codable {
 enum STTProviderType: String, Codable, CaseIterable {
     case whisperKit = "WhisperKit"
     case groq = "Groq"
-    case lightning = "Lightning-SimulWhisper"
 
     var displayName: String {
         switch self {
         case .whisperKit: return "WhisperKit (로컬)"
         case .groq: return "Groq Cloud (빠름)"
-        case .lightning: return "Lightning-SimulWhisper"
         }
     }
 }

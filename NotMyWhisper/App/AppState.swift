@@ -28,6 +28,7 @@ final class AppState: ObservableObject {
     // MARK: - Auth
     let authService = CodexAuthService()
     let oauthService = OAuthService()
+    private var authCancellables = Set<AnyCancellable>()
 
     // MARK: - Settings
     @Published var settings = AppSettings()
@@ -37,6 +38,18 @@ final class AppState: ObservableObject {
 
     var isReady: Bool {
         sttProvider?.isReady ?? false
+    }
+
+    init() {
+        // authService/oauthService의 @Published 변경을 AppState로 전파
+        // (SwiftUI가 중첩 ObservableObject 변경을 자동 감지하지 않으므로)
+        authService.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &authCancellables)
+
+        oauthService.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &authCancellables)
     }
 
     // MARK: - Provider Management
@@ -49,8 +62,6 @@ final class AppState: ObservableObject {
             sttProvider = WhisperKitProvider()
         case .groq:
             sttProvider = GroqSTTProvider(apiKey: settings.groqApiKey)
-        case .lightning:
-            sttProvider = LightningWhisperProvider()
         }
         do {
             try await sttProvider?.setup()
