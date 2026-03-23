@@ -32,17 +32,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupOverlayObserver()
         checkFirstLaunch()
-
-        // Auto-request permissions
-        if !TextInsertionService.isAccessibilityEnabled() {
-            TextInsertionService.requestAccessibilityPermission()
-        }
-        Task {
-            let micGranted = await AVCaptureDevice.requestAccess(for: .audio)
-            if !micGranted {
-                print("Microphone permission denied")
-            }
-        }
     }
 
     // MARK: - Main Menu
@@ -226,7 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.center()
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(
-            rootView: OnboardingView(modelManager: modelManager) { [weak self] in
+            rootView: OnboardingView() { [weak self] in
                 guard let self else { return }
                 self.appState.settings.hasCompletedOnboarding = true
                 self.appState.settings.save()

@@ -1,22 +1,22 @@
 import SwiftUI
+import AVFoundation
 
 struct OnboardingView: View {
     @EnvironmentObject var appState: AppState
-    @ObservedObject var modelManager: ModelManager
     let onComplete: () -> Void
 
     @State private var currentStep = 0
-    @State private var isDownloading = false
-    @State private var downloadError: String?
     @State private var micGranted = false
     @State private var axGranted = false
     @State private var axCheckTimer: Timer?
+
+    private let totalSteps = 4
 
     var body: some View {
         VStack(spacing: 0) {
             // Progress indicator
             HStack(spacing: 8) {
-                ForEach(0..<4, id: \.self) { step in
+                ForEach(0..<totalSteps, id: \.self) { step in
                     Capsule()
                         .fill(step <= currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
                         .frame(height: 4)
@@ -30,7 +30,7 @@ struct OnboardingView: View {
                 switch currentStep {
                 case 0: welcomeStep
                 case 1: permissionStep
-                case 2: downloadStep
+                case 2: providerSetupStep
                 case 3: readyStep
                 default: welcomeStep
                 }
@@ -41,7 +41,7 @@ struct OnboardingView: View {
         .frame(width: 480, height: 560)
     }
 
-    // MARK: - Steps
+    // MARK: - Step 0: Welcome
 
     private var welcomeStep: some View {
         VStack(spacing: 20) {
@@ -69,6 +69,8 @@ struct OnboardingView: View {
         .padding(24)
     }
 
+    // MARK: - Step 1: Permissions
+
     private var permissionStep: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -79,140 +81,203 @@ struct OnboardingView: View {
             Text("Permissions")
                 .font(.title.bold())
 
-            Text("NotMyWhisper needs these permissions to work properly.")
+            Text("각 항목을 클릭하여 권한을 허용하세요.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 // Microphone
                 Button {
                     Task {
-                        micGranted = await AudioService().requestPermission()
-                        // Bring app back to front after system dialog
+                        micGranted = await AVCaptureDevice.requestAccess(for: .audio)
                         NSApp.activate(ignoringOtherApps: true)
                     }
                 } label: {
-                    permissionRow(
+                    permissionCard(
                         icon: "mic.fill",
-                        title: "Microphone",
-                        description: "Record your voice for transcription",
+                        iconColor: .blue,
+                        title: "마이크",
+                        description: "음성 녹음에 필요합니다",
                         isGranted: micGranted
                     )
                 }
                 .buttonStyle(.plain)
 
-                Divider()
+                Divider().padding(.horizontal, 16)
 
                 // Accessibility
                 Button {
                     TextInsertionService.requestAccessibilityPermission()
-                    // Poll until user grants or comes back
                     startAccessibilityCheck()
                 } label: {
-                    permissionRow(
+                    permissionCard(
                         icon: "hand.raised.fill",
-                        title: "Accessibility",
-                        description: "Insert text into other applications",
+                        iconColor: .blue,
+                        title: "손쉬운 사용",
+                        description: "다른 앱에 텍스트를 붙여넣기 위해 필요합니다",
                         isGranted: axGranted
                     )
                 }
                 .buttonStyle(.plain)
             }
-            .padding()
             .background(.quaternary.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            if !micGranted || !axGranted {
-                Text("Click each item to grant permission")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-
             Spacer()
 
-            navigationButtons(
-                backStep: 0,
-                nextStep: 2,
-                nextLabel: "Continue"
-            )
+            navigationButtons(backStep: 0, nextStep: 2, nextLabel: "Continue")
         }
         .padding(24)
         .onAppear {
             micGranted = AudioService().checkPermission()
             axGranted = TextInsertionService.isAccessibilityEnabled()
         }
+        .onDisappear {
+            axCheckTimer?.invalidate()
+            axCheckTimer = nil
+        }
     }
 
-    private var downloadStep: some View {
+    // MARK: - Step 2: Provider Setup (Groq API + OpenAI OAuth)
+
+    private var providerSetupStep: some View {
         VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "arrow.down.circle.fill")
+            Image(systemName: "key.fill")
                 .font(.system(size: 60))
                 .foregroundStyle(.blue)
 
-            Text("Download Models")
+            Text("서비스 연동")
                 .font(.title.bold())
 
-            Text("NotMyWhisper needs AI models (~3.5 GB total).\nThis is a one-time download.")
+            Text("사용할 서비스의 인증을 설정하세요.\n나중에 Settings에서도 변경할 수 있습니다.")
                 .multilineTextAlignment(.center)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 16) {
-                downloadRow(
-                    name: "Whisper Large V3 Turbo",
-                    size: "~1.5 GB",
-                    state: modelManager.whisperModelInfo.state
-                )
+            VStack(spacing: 0) {
+                // Groq API Key
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "bolt.fill")
+                            .foregroundStyle(.orange)
+                            .frame(width: 24)
+                        Text("Groq Cloud STT")
+                            .font(.headline)
+                        Spacer()
+                        if !appState.settings.groqApiKey.isEmpty {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("선택사항")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
-                downloadRow(
-                    name: "Qwen 2.5 3B (LLM)",
-                    size: "~2.0 GB",
-                    state: modelManager.llmModelInfo.state
-                )
+                    Text("빠른 클라우드 음성 인식을 사용하려면 API Key를 입력하세요")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    SecureField("Groq API Key", text: Binding(
+                        get: { appState.settings.groqApiKey },
+                        set: {
+                            appState.settings.groqApiKey = $0
+                            appState.settings.save()
+                        }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                }
+                .padding(16)
+
+                Divider().padding(.horizontal, 16)
+
+                // OpenAI OAuth
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.green)
+                            .frame(width: 24)
+                        Text("OpenAI LLM 교정")
+                            .font(.headline)
+                        Spacer()
+                        if appState.authService.isLoggedIn || appState.oauthService.isLoggedIn {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("선택사항")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Text("GPT로 전사 결과를 교정하려면 로그인하세요")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if appState.authService.isLoggedIn {
+                        Label("Codex CLI 인증됨", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    } else if appState.oauthService.isLoggedIn {
+                        HStack {
+                            Label("로그인됨", systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                            Spacer()
+                            Button("로그아웃") {
+                                appState.oauthService.logout()
+                            }
+                            .font(.caption)
+                        }
+                    } else {
+                        Button {
+                            Task { await appState.oauthService.startLogin() }
+                        } label: {
+                            HStack {
+                                Image(systemName: "globe")
+                                Text("OpenAI 로그인")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.regular)
+                        .disabled(appState.oauthService.isLoggingIn)
+
+                        if appState.oauthService.isLoggingIn {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("브라우저에서 로그인 중...")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if let error = appState.oauthService.loginError {
+                            Label(error, systemImage: "xmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+                .padding(16)
             }
-            .padding()
             .background(.quaternary.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            if let error = downloadError {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-
             Spacer()
 
-            HStack {
-                Button("Back") {
-                    withAnimation { currentStep = 1 }
-                }
-
-                Spacer()
-
-                if isDownloading {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                    Text("Downloading...")
-                        .foregroundStyle(.secondary)
-                } else if modelManager.whisperModelInfo.state.isReady {
-                    Button("Continue") {
-                        withAnimation { currentStep = 3 }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                } else {
-                    Button("Download All") {
-                        startDownload()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                }
-            }
-            .padding(.bottom, 40)
+            navigationButtons(backStep: 1, nextStep: 3, nextLabel: "Continue")
         }
         .padding(24)
+        .onAppear {
+            appState.authService.checkAuth()
+            appState.oauthService.checkAuth()
+        }
     }
+
+    // MARK: - Step 3: Ready
 
     private var readyStep: some View {
         VStack(spacing: 20) {
@@ -221,10 +286,10 @@ struct OnboardingView: View {
                 .font(.system(size: 80))
                 .foregroundStyle(.green)
 
-            Text("You're All Set!")
+            Text("준비 완료!")
                 .font(.largeTitle.bold())
 
-            Text("Press **Control+Shift+R** to start dictating.\nYour text will appear at the cursor position.\n\nYou can change the hotkey in the dashboard.")
+            Text("**Control+Shift+R**을 누르면 받아쓰기가 시작됩니다.\n텍스트가 커서 위치에 자동으로 입력됩니다.\n\n단축키는 대시보드에서 변경할 수 있습니다.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
@@ -237,7 +302,7 @@ struct OnboardingView: View {
 
                 Spacer()
 
-                Button("Open Dashboard") {
+                Button("시작하기") {
                     onComplete()
                 }
                 .buttonStyle(.borderedProminent)
@@ -266,74 +331,41 @@ struct OnboardingView: View {
         .padding(.bottom, 40)
     }
 
-    private func permissionRow(icon: String, title: String, description: String, isGranted: Bool) -> some View {
-        HStack {
-            Image(systemName: icon)
-                .frame(width: 24)
-                .foregroundStyle(.blue)
-            VStack(alignment: .leading) {
-                Text(title).font(.headline)
-                Text(description).font(.caption).foregroundStyle(.secondary)
+    private func permissionCard(icon: String, iconColor: Color, title: String, description: String, isGranted: Bool) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .foregroundStyle(iconColor)
             }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Spacer()
+
             if isGranted {
                 Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
                     .foregroundStyle(.green)
             } else {
-                Text("Click to grant")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                Text("허용하기")
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(iconColor)
+                    .clipShape(Capsule())
             }
         }
-        .padding(6)
+        .padding(14)
         .contentShape(Rectangle())
-    }
-
-    private func downloadRow(name: String, size: String, state: ModelState) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(name).font(.headline)
-                Spacer()
-                Text(size).font(.caption).foregroundStyle(.secondary)
-            }
-
-            switch state {
-            case .ready:
-                Label("Downloaded", systemImage: "checkmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-            case .downloading(let progress):
-                if progress > 0 {
-                    HStack {
-                        ProgressView(value: progress)
-                        Text("\(Int(progress * 100))%")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 36, alignment: .trailing)
-                    }
-                } else {
-                    HStack {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                        Text("Downloading...")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            case .loading:
-                HStack {
-                    ProgressView()
-                        .scaleEffect(0.7)
-                    Text("Loading model...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            case .error(let msg):
-                Text(msg).font(.caption).foregroundStyle(.red).lineLimit(2)
-            default:
-                Text("Not downloaded").font(.caption).foregroundStyle(.secondary)
-            }
-        }
     }
 
     private func startAccessibilityCheck() {
@@ -345,26 +377,9 @@ struct OnboardingView: View {
                     axGranted = true
                     axCheckTimer?.invalidate()
                     axCheckTimer = nil
-                    // Bring app back to front
                     NSApp.activate(ignoringOtherApps: true)
                 }
             }
-        }
-    }
-
-    private func startDownload() {
-        isDownloading = true
-        downloadError = nil
-
-        Task {
-            do {
-                try await modelManager.downloadWhisperModel()
-                try await modelManager.downloadLLMModel()
-                withAnimation { currentStep = 3 }
-            } catch {
-                downloadError = error.localizedDescription
-            }
-            isDownloading = false
         }
     }
 }
