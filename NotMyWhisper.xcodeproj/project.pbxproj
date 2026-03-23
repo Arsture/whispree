@@ -9,11 +9,13 @@
 /* Begin PBXBuildFile section */
 		05CA32E6AD703BAA41F1E855 /* STTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7DBC5FD9ED39318090B1DC /* STTService.swift */; };
 		0673707E880D2F2EE085262C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F81673D7B0F64DA878D2678 /* OnboardingView.swift */; };
+		07E943063F5DDD576A14C89E /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = F1C2C19521B78DD4637F1641 /* AGENTS.md */; };
 		0903E4EF2797A790BF9010B8 /* LLMSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E74812927C46D7B89D0931 /* LLMSettingsView.swift */; };
 		10598A1015EA2E9C60A6A192 /* ModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62576D904F9F092E0F96B799 /* ModelInfo.swift */; };
 		1972B52268090A8E1B43F290 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878FCDE4E907DCB1C1DC0D43 /* Constants.swift */; };
 		1BD94B7D85B86DE3946916C1 /* LLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDDCD7FEA2A8701869111C2E /* LLMService.swift */; };
 		1F836050025D76C777EC9DD1 /* MainDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9021910E4186F44785A69B9 /* MainDashboardView.swift */; };
+		30435EC4CADEC405453C8E20 /* OAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD4E886190FAC31756A41F1 /* OAuthService.swift */; };
 		33393DE51E502B8E90C82BE2 /* TextInsertionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F2EB32A056284F93E15902 /* TextInsertionService.swift */; };
 		3452E85597CDE8F3CE4DFFA6 /* STTProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F0E8967432DEE00D6F069C /* STTProvider.swift */; };
 		384CAB46F3C01AFC5D392BE9 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = A03394E7242826862CC736AE /* LaunchAtLogin */; };
@@ -108,10 +110,12 @@
 		E2968138ADC127A6AF31E84E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EC22A58EFC7310ABCB9A36A9 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
 		F19FFAB08BBA7809B1D2F524 /* NotMyWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotMyWhisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1C2C19521B78DD4637F1641 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 		F1F0E8967432DEE00D6F069C /* STTProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STTProvider.swift; sourceTree = "<group>"; };
 		F25B783173834CD1AF6119B7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		F292CE061745A0A8C3C2E63F /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		FA294B82EA52BCC2D0B65015 /* ModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManager.swift; sourceTree = "<group>"; };
+		FAD4E886190FAC31756A41F1 /* OAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthService.swift; sourceTree = "<group>"; };
 		FB5F96A39BEB4DF864EADDD9 /* TranscriptionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -192,6 +196,7 @@
 			isa = PBXGroup;
 			children = (
 				8EBD23335F69D6416A33B769 /* CodexAuthService.swift */,
+				FAD4E886190FAC31756A41F1 /* OAuthService.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -314,6 +319,7 @@
 		E2A3CBA1B7CF21E86B8C478B /* NotMyWhisperTests */ = {
 			isa = PBXGroup;
 			children = (
+				F1C2C19521B78DD4637F1641 /* AGENTS.md */,
 				4C71D0AA1A591F62C378642B /* E2E */,
 				06FD5014D4C80061E1D03400 /* Models */,
 				D781586B631C2942F6942E73 /* Services */,
@@ -407,6 +413,7 @@
 			buildConfigurationList = ABBB14DF44578DD411832E97 /* Build configuration list for PBXNativeTarget "NotMyWhisperTests" */;
 			buildPhases = (
 				50BEBE20D9D55B4440CC0ADC /* Sources */,
+				43A9B910C3D5E135CFD657AD /* Resources */,
 			);
 			buildRules = (
 			);
@@ -430,6 +437,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					4995F3508EDF74271106DAED = {
+						DevelopmentTeam = DRDT2F8525;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -461,6 +469,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		43A9B910C3D5E135CFD657AD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07E943063F5DDD576A14C89E /* AGENTS.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C26DEF351ECFF4130C12206B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -500,6 +516,7 @@
 				F99C1F1F7A00F430514A0F26 /* ModelSettingsView.swift in Sources */,
 				41748FC5F2237B4DF9E4845B /* NoneProvider.swift in Sources */,
 				BD1943449DB05E6EB792E1D4 /* NotMyWhisperApp.swift in Sources */,
+				30435EC4CADEC405453C8E20 /* OAuthService.swift in Sources */,
 				0673707E880D2F2EE085262C /* OnboardingView.swift in Sources */,
 				7A93C7D0688A53EE36F2BF2D /* OpenAIModels.swift in Sources */,
 				65A28AC66418546E82F0C89A /* OpenAIProvider.swift in Sources */,
@@ -643,6 +660,7 @@
 				CODE_SIGN_ENTITLEMENTS = NotMyWhisper/Resources/NotMyWhisper.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = DRDT2F8525;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = NotMyWhisper/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
@@ -660,6 +678,7 @@
 				CODE_SIGN_ENTITLEMENTS = NotMyWhisper/Resources/NotMyWhisper.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = DRDT2F8525;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = NotMyWhisper/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";

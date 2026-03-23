@@ -45,40 +45,78 @@ struct LLMSettingsView: View {
                 }
 
                 Section("OpenAI 인증") {
-                    HStack {
-                        Text("로그인 상태:")
-                        Spacer()
-                        if appState.authService.isLoggedIn {
-                            Label("로그인됨", systemImage: "checkmark.circle.fill")
+                    if appState.authService.isLoggedIn {
+                        // Codex CLI 인증 활성
+                        HStack {
+                            Text("인증 방식:")
+                            Spacer()
+                            Label("Codex CLI", systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                                 .font(.caption)
-                            if let accountId = appState.authService.currentAccountId {
+                        }
+                        if let accountId = appState.authService.currentAccountId {
+                            HStack {
+                                Text("Account:")
+                                Spacer()
                                 Text(accountId)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                        } else {
-                            Label("로그인 필요", systemImage: "xmark.circle.fill")
+                        }
+                    } else if appState.oauthService.isLoggedIn {
+                        // OAuth 인증 활성
+                        HStack {
+                            Text("인증 방식:")
+                            Spacer()
+                            Label("OpenAI 로그인", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        }
+                        Button("로그아웃") {
+                            appState.oauthService.logout()
+                        }
+                        .font(.caption)
+                    } else {
+                        // 미인증 상태
+                        Label("로그인이 필요합니다", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+
+                        Button {
+                            Task { await appState.oauthService.startLogin() }
+                        } label: {
+                            HStack {
+                                Image(systemName: "globe")
+                                Text("OpenAI 로그인")
+                            }
+                        }
+                        .disabled(appState.oauthService.isLoggingIn)
+
+                        if appState.oauthService.isLoggingIn {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("브라우저에서 로그인 중...")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if let error = appState.oauthService.loginError {
+                            Label(error, systemImage: "xmark.circle.fill")
                                 .foregroundStyle(.red)
                                 .font(.caption)
                         }
-                    }
 
-                    Button("로그인 (Codex CLI)") {
-                        let task = Process()
-                        task.launchPath = "/usr/bin/env"
-                        task.arguments = ["codex", "login"]
-                        task.launch()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        Text("Codex CLI가 설치되어 있으면 자동 감지됩니다")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Button("Codex 인증 확인") {
                             appState.authService.checkAuth()
                         }
+                        .font(.caption)
                     }
-                    .disabled(appState.authService.isLoggedIn)
-
-                    Button("상태 새로고침") {
-                        appState.authService.checkAuth()
-                    }
-                    .font(.caption)
                 }
             }
 
@@ -157,6 +195,7 @@ struct LLMSettingsView: View {
             customPrompt = appState.settings.customLLMPrompt
                 ?? CorrectionPrompts.defaultSystemPrompt
             appState.authService.checkAuth()
+            appState.oauthService.checkAuth()
         }
     }
 

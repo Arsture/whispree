@@ -27,6 +27,7 @@ final class AppState: ObservableObject {
 
     // MARK: - Auth
     let authService = CodexAuthService()
+    let oauthService = OAuthService()
 
     // MARK: - Settings
     @Published var settings = AppSettings()
@@ -76,7 +77,11 @@ final class AppState: ObservableObject {
                 llmModelState = .error(error.localizedDescription)
             }
         case .openai:
-            let provider = OpenAIProvider(model: settings.openaiModel, authService: authService)
+            let provider = OpenAIProvider(
+                model: settings.openaiModel,
+                authService: authService,
+                oauthService: oauthService
+            )
             llmProvider = provider
             do {
                 try await provider.setup()
