@@ -49,6 +49,7 @@
 		BF70833CF5BCD708D861C9C0 /* MainDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F39F8149E5767C91BE64A4 /* MainDashboardView.swift */; };
 		C5C1A041CEDB353D25DD9F21 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = BB46F89D447827481991D44B /* LaunchAtLogin */; };
 		CA8C7A774D69110C1B259F81 /* RecordingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 094E3E0F3362A36A11DCF16D /* RecordingCoordinator.swift */; };
+		CBFBF3E9DD3D092C6736CE00 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D660CCA9AD1E5C5F7C893393 /* Sparkle */; };
 		D3E89AFE7CB9E67F14473C02 /* TranscriptionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D698193154230750F5B9E1E /* TranscriptionHistoryView.swift */; };
 		DD4D806C0EF5D3FBF3A67E36 /* STTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5289E79A211F3F361D41BBB /* STTService.swift */; };
 		DE378C5C601D476782F8A65A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665171FE5EE58490AEB49200 /* SettingsView.swift */; };
@@ -137,6 +138,7 @@
 				A387DF9F9196AE93828C5764 /* MLXLMCommon in Frameworks */,
 				4D536067E06B6EFD6AD848F7 /* KeyboardShortcuts in Frameworks */,
 				C5C1A041CEDB353D25DD9F21 /* LaunchAtLogin in Frameworks */,
+				CBFBF3E9DD3D092C6736CE00 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -451,6 +453,7 @@
 				96BFCA699A3C10406C60F1AA /* MLXLMCommon */,
 				E22B958C0AEE6456673185B8 /* KeyboardShortcuts */,
 				BB46F89D447827481991D44B /* LaunchAtLogin */,
+				D660CCA9AD1E5C5F7C893393 /* Sparkle */,
 			);
 			productName = Whispree;
 			productReference = D293DF7DF2D0071D59D02022 /* Whispree.app */;
@@ -484,6 +487,7 @@
 			packageReferences = (
 				92539196ED15118278D0DCB2 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				993FF359E1C39F15BED8443A /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				25FBF926B2EC067CFFFD889B /* XCRemoteSwiftPackageReference "Sparkle" */,
 				CE78C99F56207696E4CD02DD /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				FE1BE1E2C6DF286E8B563D17 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 			);
@@ -834,6 +838,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		25FBF926B2EC067CFFFD889B /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
 		92539196ED15118278D0DCB2 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -888,6 +900,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 993FF359E1C39F15BED8443A /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
+		};
+		D660CCA9AD1E5C5F7C893393 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 25FBF926B2EC067CFFFD889B /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 		E22B958C0AEE6456673185B8 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;

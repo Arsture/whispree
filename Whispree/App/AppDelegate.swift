@@ -3,6 +3,7 @@ import AVFoundation
 import SwiftUI
 import KeyboardShortcuts
 import Combine
+import Sparkle
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -13,6 +14,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlayPanel: NSPanel?
     private var quickFixPanel: NSPanel?
     private var cancellables = Set<AnyCancellable>()
+
+    // Sparkle Updater
+    private var updaterController: SPUStandardUpdaterController!
 
     // Services
     private(set) var audioService: AudioService!
@@ -32,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupServices()
         setupStatusItem()
         setupOverlayObserver()
+        setupSparkleUpdater()
         checkFirstLaunch()
     }
 
@@ -82,6 +87,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openSettingsFromMenu() {
         showMainWindow()
+    }
+
+    // MARK: - Sparkle Updater
+
+    private func setupSparkleUpdater() {
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     }
 
     // MARK: - Edit Keyboard Shortcuts (Copy/Paste Fix)

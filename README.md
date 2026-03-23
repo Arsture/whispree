@@ -19,6 +19,22 @@ A free, fully local macOS menu bar app for speech-to-text with LLM post-processi
 - Microphone permission
 - Accessibility permission (for text insertion)
 
+## Installation
+
+### Homebrew Cask (Recommended)
+
+```bash
+brew install --cask whispree
+```
+
+### From Releases
+
+Download the latest `.dmg` or `.zip` from [GitHub Releases](https://github.com/Arsture/whispree/releases).
+
+### Build from Source
+
+See [Build](#build) section below.
+
 ## Build
 
 ### Prerequisites

@@ -1,0 +1,154 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.0'
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Read current version
+        id: version
+        run: |
+          CURRENT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" Whispree/Resources/Info.plist)
+          echo "Current version: $CURRENT_VERSION"
+
+          # Parse version and increment patch
+          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version in Info.plist
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.version }}" Whispree/Resources/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.version }}" Whispree/Resources/Info.plist
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add Whispree/Resources/Info.plist
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
+
+      - name: Build app
+        run: |
+          xcodebuild -project Whispree.xcodeproj \
+            -scheme Whispree \
+            -destination 'platform=macOS,arch=arm64' \
+            -configuration Release \
+            clean build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Find built app
+        id: find_app
+        run: |
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData/Whispree-*/Build/Products/Release -name 'Whispree.app' -maxdepth 1 | head -1)
+          echo "App path: $APP_PATH"
+          echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
+
+      - name: Create ZIP archive
+        run: |
+          cd "$(dirname "${{ steps.find_app.outputs.app_path }}")"
+          ditto -c -k --sequesterRsrc --keepParent Whispree.app Whispree.zip
+          mv Whispree.zip $GITHUB_WORKSPACE/
+
+      - name: Create DMG
+        run: |
+          cd "$(dirname "${{ steps.find_app.outputs.app_path }}")"
+          hdiutil create -volname Whispree -srcfolder Whispree.app -ov -format UDZO $GITHUB_WORKSPACE/Whispree.dmg
+
+      - name: Generate Sparkle appcast
+        run: |
+          # Download Sparkle generate_appcast tool
+          curl -L -o sparkle.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.6.0/Sparkle-2.6.0.tar.xz
+          tar -xf sparkle.tar.xz
+
+          # Note: This requires SPARKLE_PRIVATE_KEY secret to be set
+          # For now, we'll create a placeholder appcast
+          mkdir -p appcast
+          cat > appcast/appcast.xml << EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <channel>
+              <title>Whispree</title>
+              <link>https://github.com/Arsture/whispree/releases</link>
+              <description>Most recent updates to Whispree</description>
+              <language>en</language>
+              <item>
+                <title>Version ${{ steps.version.outputs.version }}</title>
+                <sparkle:version>${{ steps.version.outputs.version }}</sparkle:version>
+                <sparkle:shortVersionString>${{ steps.version.outputs.version }}</sparkle:shortVersionString>
+                <pubDate>$(date -R)</pubDate>
+                <enclosure url="https://github.com/Arsture/whispree/releases/download/v${{ steps.version.outputs.version }}/Whispree.zip"
+                           sparkle:version="${{ steps.version.outputs.version }}"
+                           type="application/octet-stream" />
+              </item>
+            </channel>
+          </rss>
+          EOF
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: Whispree v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload ZIP to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Whispree.zip
+          asset_name: Whispree.zip
+          asset_content_type: application/zip
+
+      - name: Upload DMG to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Whispree.dmg
+          asset_name: Whispree.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Push version commit and tags
+        run: |
+          git tag v${{ steps.version.outputs.version }}
+          git push origin main
+          git push origin v${{ steps.version.outputs.version }}
+
+      - name: Deploy appcast to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./appcast
+          destination_dir: releases
