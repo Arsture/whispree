@@ -54,7 +54,8 @@ final class AppState: ObservableObject {
         }
         do {
             try await sttProvider?.setup()
-            whisperModelState = .ready
+            let validation = sttProvider?.validate() ?? .valid
+            whisperModelState = validation.isValid ? .ready : .error(validation.message)
         } catch {
             whisperModelState = .error(error.localizedDescription)
         }
@@ -72,7 +73,8 @@ final class AppState: ObservableObject {
             llmProvider = provider
             do {
                 try await provider.setup()
-                llmModelState = .ready
+                let validation = provider.validate()
+                llmModelState = validation.isValid ? .ready : .error(validation.message)
             } catch {
                 llmModelState = .error(error.localizedDescription)
             }
@@ -85,7 +87,8 @@ final class AppState: ObservableObject {
             llmProvider = provider
             do {
                 try await provider.setup()
-                llmModelState = .ready
+                let validation = provider.validate()
+                llmModelState = validation.isValid ? .ready : .error(validation.message)
             } catch {
                 llmModelState = .error(error.localizedDescription)
             }
