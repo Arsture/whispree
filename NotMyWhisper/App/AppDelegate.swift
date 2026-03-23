@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var onboardingWindow: NSWindow?
     private var settingsWindow: NSWindow?
     private var overlayPanel: NSPanel?
+    private var quickFixPanel: NSPanel?
     private var cancellables = Set<AnyCancellable>()
 
     // Services
@@ -21,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var textInsertionService: TextInsertionService!
     private(set) var modelManager: ModelManager!
     private(set) var hotkeyManager: HotkeyManager!
+    private(set) var quickFixService: QuickFixService!
 
     // Coordinators
     private(set) var recordingCoordinator: RecordingCoordinator!
@@ -119,6 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         textInsertionService = TextInsertionService()
         modelManager = ModelManager(appState: appState, sttService: sttService, llmService: llmService)
         hotkeyManager = HotkeyManager(appState: appState)
+        quickFixService = QuickFixService()
 
         recordingCoordinator = RecordingCoordinator(
             appState: appState,
@@ -137,6 +140,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         hotkeyManager.onCancel = { [weak self] in
             self?.recordingCoordinator.cancel()
+        }
+
+        hotkeyManager.onQuickFix = { [weak self] in
+            self?.handleQuickFix()
         }
     }
 
@@ -223,6 +230,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.onboardingWindow?.orderOut(nil)
                     self.onboardingWindow = nil
                     self.showMainWindow()
+                    Task {
+                        await self.appState.switchSTTProvider(to: self.appState.settings.sttProviderType)
+                        await self.appState.switchLLMProvider(to: self.appState.settings.llmProviderType)
+                    }
                 }
             }
             .environmentObject(self.appState)
@@ -259,6 +270,72 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         self.settingsWindow = window
+    }
+
+    // MARK: - Quick Fix
+
+    private func handleQuickFix() {
+        // Capture the frontmost app (where the user selected text)
+        let frontmost = NSWorkspace.shared.frontmostApplication
+        guard let targetApp = frontmost,
+              targetApp.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
+
+        Task {
+            // Simulate Cmd+C to capture selected text
+            guard let selectedText = await quickFixService.captureSelectedText() else { return }
+
+            showQuickFixPanel(originalText: selectedText, targetApp: targetApp)
+        }
+    }
+
+    private func showQuickFixPanel(originalText: String, targetApp: NSRunningApplication) {
+        quickFixPanel?.orderOut(nil)
+        quickFixPanel = nil
+
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 180),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        panel.level = .floating
+        panel.title = "Quick Fix"
+        panel.center()
+        panel.isReleasedWhenClosed = false
+
+        panel.contentView = NSHostingView(
+            rootView: QuickFixPanelView(
+                originalText: originalText,
+                onConfirmWord: { [weak self] correctedText in
+                    guard let self else { return }
+                    self.quickFixPanel?.orderOut(nil)
+                    self.quickFixPanel = nil
+
+                    Task {
+                        _ = await self.quickFixService.replaceText(with: correctedText, in: targetApp)
+                        self.quickFixService.addWordToDictionary(correctedText, appState: self.appState)
+                    }
+                },
+                onConfirmMapping: { [weak self] fromText, toText in
+                    guard let self else { return }
+                    self.quickFixPanel?.orderOut(nil)
+                    self.quickFixPanel = nil
+
+                    Task {
+                        _ = await self.quickFixService.replaceText(with: toText, in: targetApp)
+                        self.quickFixService.addCorrectionToDictionary(from: fromText, to: toText, appState: self.appState)
+                    }
+                },
+                onCancel: { [weak self] in
+                    self?.quickFixPanel?.orderOut(nil)
+                    self?.quickFixPanel = nil
+                }
+            )
+        )
+
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        self.quickFixPanel = panel
     }
 
     // MARK: - Recording Overlay
