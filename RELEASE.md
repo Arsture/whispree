@@ -14,11 +14,31 @@ Whispree follows [Semantic Versioning](https://semver.org/):
 
 Every push to the `main` branch triggers an automated release:
 
-1. **Version Bump**: GitHub Actions reads `CFBundleVersion` from `Info.plist`, increments the patch version, and commits the change.
-2. **Build**: Builds the app for macOS arm64 (unsigned for now).
-3. **Package**: Creates `.zip` and `.dmg` archives.
-4. **Release**: Creates a GitHub Release with semantic version tag (e.g., `v1.0.1`).
-5. **Appcast**: Generates Sparkle `appcast.xml` and deploys to GitHub Pages (`/releases/appcast.xml`).
+### Version Determination
+
+The workflow automatically determines the version:
+
+- **Manual version** (커밋 메시지에 `GO LIVE X.X.X` 포함):
+  ```bash
+  git commit -m "feat: new feature GO LIVE 2.0.0"
+  git push origin main
+  ```
+  → 버전이 **2.0.0**으로 설정됩니다.
+
+- **Auto-increment** (기본값, 커밋 메시지에 패턴 없음):
+  ```bash
+  git commit -m "fix: bug fix"
+  git push origin main
+  ```
+  → 버전이 자동으로 **패치 증가** (1.0.0 → 1.0.1)
+
+### Release Process
+
+1. **Version Bump**: GitHub Actions가 버전을 결정하고 `Info.plist`를 업데이트한 후 커밋.
+2. **Build**: macOS arm64용 앱 빌드 (현재 unsigned).
+3. **Package**: `.zip` 및 `.dmg` 아카이브 생성.
+4. **Release**: GitHub Release 생성 (semantic version 태그).
+5. **Appcast**: Sparkle `appcast.xml` 생성 및 GitHub Pages 배포 (`/releases/appcast.xml`).
 
 ## Sparkle Auto-Updates
 
@@ -28,22 +48,30 @@ The app checks for updates automatically using Sparkle:
 - **Auto-Download**: Enabled (background download)
 - **User Notification**: User is notified when update is ready to install
 
-## Manual Release Steps
+## Version Bump Examples
 
-For major/minor version bumps, manually update `Info.plist` before pushing to `main`:
-
+### Major Version (Breaking Changes)
 ```bash
-# Update version in Info.plist
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion 2.0.0" Whispree/Resources/Info.plist
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 2.0.0" Whispree/Resources/Info.plist
-
-# Commit and push
-git add Whispree/Resources/Info.plist
-git commit -m "chore: bump version to 2.0.0"
+git commit -m "feat!: complete redesign GO LIVE 2.0.0"
 git push origin main
+# → v2.0.0 릴리즈 생성
 ```
 
-GitHub Actions will handle the rest (build, package, release, appcast).
+### Minor Version (New Features)
+```bash
+git commit -m "feat: add new STT provider GO LIVE 1.1.0"
+git push origin main
+# → v1.1.0 릴리즈 생성
+```
+
+### Patch Version (Bug Fixes - 자동)
+```bash
+git commit -m "fix: resolve crash on startup"
+git push origin main
+# → v1.0.1 릴리즈 자동 생성 (패치 증가)
+```
+
+**팁**: PR 제목에도 `GO LIVE X.X.X`를 포함하면 merge 시 자동으로 해당 버전으로 릴리즈됩니다.
 
 ## Code Signing (TODO)
 
