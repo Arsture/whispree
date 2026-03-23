@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ModelSettingsView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var modelManager: ModelManager
 
     var body: some View {
         Form {
@@ -12,20 +13,20 @@ struct ModelSettingsView: View {
                     size: "~1.5 GB",
                     state: appState.whisperModelState,
                     downloadProgress: appState.whisperDownloadProgress,
-                    onDownload: {},
-                    onDelete: {}
+                    onDownload: { Task { try? await modelManager.downloadWhisperModel() } },
+                    onDelete: { modelManager.deleteWhisperModel() }
                 )
             }
 
             Section("Text Correction Model") {
                 ModelRow(
-                    name: "Qwen 2.5 3B Instruct (4-bit)",
+                    name: "Qwen3 4B Instruct (4-bit)",
                     description: "Korean/English text correction",
                     size: "~2.0 GB",
                     state: appState.llmModelState,
                     downloadProgress: appState.llmDownloadProgress,
-                    onDownload: {},
-                    onDelete: {}
+                    onDownload: { Task { try? await modelManager.downloadLLMModel() } },
+                    onDelete: { modelManager.deleteLLMModel() }
                 )
             }
 
@@ -77,9 +78,9 @@ struct ModelRow: View {
             case .notDownloaded:
                 Button("Download") { onDownload() }
                     .buttonStyle(.borderedProminent)
-            case .downloading:
-                ProgressView(value: downloadProgress)
-                Text("\(Int(downloadProgress * 100))%")
+            case .downloading(let progress):
+                ProgressView(value: progress)
+                Text("\(Int(progress * 100))%")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .loading:

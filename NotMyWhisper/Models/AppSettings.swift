@@ -2,7 +2,7 @@ import Foundation
 
 struct AppSettings: Codable {
     var recordingMode: RecordingMode = .pushToTalk
-    var language: SupportedLanguage = .auto
+    var language: SupportedLanguage = .korean
     var isLLMEnabled: Bool = false
     var hasCompletedOnboarding: Bool = false
     var launchAtLogin: Bool = false
@@ -15,10 +15,10 @@ struct AppSettings: Codable {
     var llmModelId: String = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
 
     // STT Provider
-    var sttProviderType: STTProviderType = .whisperKit
+    var sttProviderType: STTProviderType = .groq
 
     // LLM Provider
-    var llmProviderType: LLMProviderType = .none
+    var llmProviderType: LLMProviderType = .openai
 
     // OpenAI 모델 선택
     var openaiModel: OpenAIModel = .gpt54

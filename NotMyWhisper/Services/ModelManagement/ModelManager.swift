@@ -50,11 +50,10 @@ final class ModelManager: ObservableObject {
     }
 
     func loadModelsIfAvailable() async {
-        // Load STT via Provider system
-        await appState.switchSTTProvider(to: appState.settings.sttProviderType)
-
-        // Load LLM via Provider system
-        await appState.switchLLMProvider(to: appState.settings.llmProviderType)
+        // Load STT and LLM in parallel
+        async let stt: Void = appState.switchSTTProvider(to: appState.settings.sttProviderType)
+        async let llm: Void = appState.switchLLMProvider(to: appState.settings.llmProviderType)
+        _ = await (stt, llm)
     }
 
     func downloadWhisperModel() async throws {

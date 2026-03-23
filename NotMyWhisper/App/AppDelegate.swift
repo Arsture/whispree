@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMainMenu()
+        setupEditKeyboardShortcuts()
         setupServices()
         setupStatusItem()
         setupOverlayObserver()
@@ -91,6 +92,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openSettingsFromMenu() {
         showSettings()
+    }
+
+    // MARK: - Edit Keyboard Shortcuts (Copy/Paste Fix)
+
+    /// SwiftUI의 NSHostingView에서 Edit 메뉴 키보드 단축키가 동작하지 않는 문제를 해결.
+    /// NSEvent 로컬 모니터로 Cmd+C/V/X/A/Z를 가로채서 직접 first responder에 dispatch.
+    private func setupEditKeyboardShortcuts() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.modifierFlags.contains(.command) else { return event }
+
+            let action: Selector?
+            let isShift = event.modifierFlags.contains(.shift)
+
+            switch event.charactersIgnoringModifiers {
+            case "v": action = #selector(NSText.paste(_:))
+            case "c": action = #selector(NSText.copy(_:))
+            case "x": action = #selector(NSText.cut(_:))
+            case "a": action = #selector(NSText.selectAll(_:))
+            case "z": action = isShift ? NSSelectorFromString("redo:") : NSSelectorFromString("undo:")
+            default: action = nil
+            }
+
+            if let action, NSApp.sendAction(action, to: nil, from: nil) {
+                return nil // 이벤트 소비됨
+            }
+            return event
+        }
     }
 
     // MARK: - Services
@@ -237,6 +265,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: SettingsView()
                 .environmentObject(appState)
                 .environmentObject(hotkeyManager)
+                .environmentObject(modelManager)
         )
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

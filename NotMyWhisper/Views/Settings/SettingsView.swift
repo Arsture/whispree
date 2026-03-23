@@ -15,6 +15,11 @@ struct SettingsView: View {
                     Label("LLM", systemImage: "text.badge.checkmark")
                 }
 
+            ModelSettingsView()
+                .tabItem {
+                    Label("Models", systemImage: "arrow.down.circle")
+                }
+
             DomainWordSetsView()
                 .tabItem {
                     Label("단어 사전", systemImage: "text.book.closed")
