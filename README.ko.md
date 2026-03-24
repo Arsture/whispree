@@ -2,7 +2,7 @@
 
 LLM 후처리가 포함된 완전 로컬 macOS 메뉴바 음성인식 앱. SuperWhisper의 무료 오픈소스 대안으로, Apple Silicon에서 클라우드 없이 모든 처리가 온디바이스로 이루어집니다.
 
-English | [한국어](README.ko.md)
+[English](README.md) | 한국어
 
 ![License](https://img.shields.io/github/license/Arsture/whispree)
 ![Version](https://img.shields.io/github/v/release/Arsture/whispree)
