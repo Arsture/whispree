@@ -34,6 +34,7 @@ struct TranscriptionHistoryView: View {
                 List {
                     ForEach(appState.transcriptionHistory) { record in
                         TranscriptionRow(record: record)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 24, bottom: 8, trailing: 24))
                     }
                 }
                 .listStyle(.plain)

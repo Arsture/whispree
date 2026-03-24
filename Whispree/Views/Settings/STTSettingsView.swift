@@ -217,13 +217,12 @@ struct ProviderCard: View {
             .padding(DesignTokens.Spacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .fill(DesignTokens.cardBackground)
+                    .fill(.quaternary.opacity(0.3))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
                     .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.5) : Color.clear, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.03), radius: 1, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
