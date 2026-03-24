@@ -1,6 +1,6 @@
 # Whispree
 
-> OpenAI 계정 하나로 쓰는 거의 무료 macOS 음성인식. 빠르고, 정확하고, 메뉴바에서 바로.
+> OpenAI 계정 하나로 SuperWhisper 급을 공짜로 써보자구요.
 
 [English](README.md) | 한국어
 
@@ -18,17 +18,27 @@
 
 ### 거의 무료
 
-Groq STT는 무료이고, OpenAI LLM 교정은 [Codex CLI](https://github.com/openai/codex) 인증 토큰을 그대로 가져다 씁니다. OpenAI 계정만 있으면 사실상 추가 비용 없이 고품질 STT + LLM 교정을 쓸 수 있습니다.
+STT는 Groq을 쓰고, LLM은 Codex OAuth를 빌려씁니다.
+Groq STT는 무료이고, OpenAI LLM 교정은 [Codex CLI](https://github.com/openai/codex) 인증 토큰을 그대로 가져다 씁니다.
+OpenAI 계정만 있으면 사실상 추가 비용 없이 고품질 STT + LLM 교정을 쓸 수 있습니다.
 
 ### 프로바이더 선택
 
-[OpenCode](https://github.com/nicepkg/opencode)처럼 STT와 LLM 프로바이더를 직접 골라 쓸 수 있습니다.
+[OpenCode](https://github.com/nicepkg/opencode)가 되고 싶습니다. 아직은 갈길이 멀지만, STT와 LLM 프로바이더를 직접 골라 쓸 수 있습니다.
 
-| | STT | LLM |
-|---|---|---|
-| **클라우드 (권장)** | [Groq](https://groq.com/) — 무료, 빠름 | [OpenAI via Codex CLI](https://github.com/openai/codex) — 기존 계정 그대로 |
-| **로컬** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML + ANE | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — Qwen3-4B |
-| **로컬** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — Qwen3-ASR, Python worker | — |
+| | STT                                                                  | LLM                                                                   |
+|---|----------------------------------------------------------------------|-----------------------------------------------------------------------|
+| **클라우드 (권장)** | [Groq](https://groq.com/) — 정확, 빠름                                   | [OpenAI via Codex CLI](https://github.com/openai/codex) — 기존 계정 그대로   |
+| **로컬** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — 적당히 정확, 좀 느림 | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — 느리고 아쉽네요 |
+| **로컬** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — 덜 정확, 조금 빠름   | —                                                                     |
+
+### 지원 모델
+
+| 종류 | 모델 |
+|-----|------|
+| **WhisperKit** | `openai_whisper-large-v3_turbo` (CoreML + ANE 최적화) |
+| **MLX Audio** | `Qwen3-ASR-1.7B-8bit` (Python worker 기본값, 다른 mlx-audio 모델로 변경 가능) |
+| **로컬 LLM** | `Qwen3-4B-Instruct-2507-4bit` (mlx-swift-lm) |
 
 ### 코드스위칭 최적화
 
@@ -43,35 +53,19 @@ Groq STT는 무료이고, OpenAI LLM 교정은 [Codex CLI](https://github.com/op
 ### 스마트 받아쓰기
 
 - **녹음** — `Ctrl+Shift+R`. Push to Talk(누르고 있으면 녹음) 또는 Toggle(한 번 누르면 시작, 다시 누르면 중지) 모드 지원
-- **Quick Fix** — `Ctrl+Shift+D`. 잘못 인식된 단어를 교정 사전에 바로 등록
+- **Quick Fix** — `Ctrl+Shift+D`. 잘못 인식된 단어를 교정 사전에 바로 등록 & Replace
 - **취소** — `ESC`. 녹음 중 언제든 취소
 
 ### 교정 모드
 
-| 모드 | 설명 |
-|---|---|
-| Standard | STT 오류 교정 — 띄어쓰기, 맞춤법, 잘못 인식된 단어 |
-| Filler Removal | STT 교정 + 추임새 제거 (음, 어, 그러니까, 뭐랄까) |
-| Structured | STT 교정 + 추임새 제거 + 불릿포인트로 구조화 |
-| Custom | 직접 작성한 시스템 프롬프트로 교정 |
+| 모드                      | 설명 |
+|-------------------------|------|
+| Standard                | STT 오류 교정 — 띄어쓰기, 맞춤법, 잘못 인식된 단어 |
+| Filler Removal          | STT 교정 + 추임새 제거 (음, 어, 그러니까, 뭐랄까) |
+| Structured (for Prompt) | STT 교정 + 추임새 제거 + 불릿포인트로 구조화 |
+| Custom                  | 직접 작성한 시스템 프롬프트로 교정 |
 
-## 이름의 유래
-
-> 처음엔 **FreeWhisper**였다. 나만 쓸 도구를 Swift로 대충 만든 거라 이름 따위는 신경도 안 썼다.
->
-> 근데 이걸 오픈소스로 공개하려니까 이름이 필요해졌다. "Oh My ..." 시리즈는 솔직히 좀 유행 지난 느낌이었고, **OpenWhisper**는 이미 있는 것 같았다.
->
-> API 키를 빌려다 쓰는 게 마치 남의 양지바른 자리에 슬쩍 눌러앉는 고양이 같아서 **Not My Whisper**라는 방향도 생각해봤다. 근데 매일 쓰다 보니 오히려 애착이 생겨버렸다. *"잠깐, 이거 내 Whisper 아닌가?"*
->
-> 그래서 **Whispree**가 됐다.
-
-## 꿀팁
-
-> **직장인 팁**: 에어팟 끼고 통화하는 척하면 됩니다. 아무도 당신이 장보기 목록을 받아쓰고 있다는 걸 모릅니다.
-
-> **Zoom 회의**: 음소거 걸고 Whispree에 속삭이세요. 회의록이 실시간으로 완성됩니다. 아무도 모릅니다.
-
-> **대중교통**: "아주 중요한 전화를 받고 있는" 표정이 핵심입니다. 살짝 귀찮은 표정으로 말하면 완벽합니다.
+> **직장인 팁**: 에어팟 끼고 통화하는 척하면 됩니다. 사물과 대화하는 사람으로 보이지 않아요.
 
 ## 설치
 
@@ -126,6 +120,22 @@ SPM 의존성은 첫 빌드 시 자동으로 해결됩니다.
 - Apple Silicon (M1/M2/M3/M4)
 - 마이크 권한
 - 접근성 권한 (텍스트 자동 삽입에 필요)
+
+## 이름의 유래
+
+> 처음엔 **FreeWhisper**였습니다. 저만 쓸 도구였고, 그래서 맥 전용 Swift로 만들었습니다.
+>
+> 근데 이걸 오픈소스로 공개하려니까 FreeWhisper는 짜치더라구요. "Oh My ..." 시리즈는 솔직히 좀 유행 지난 느낌이었고, **OpenWhisper**는 이미 있는 것 같았습니다.
+>
+> API 키를 빌려다 쓴다가 생각나서 빌려온 고양이? Borrowed Whisper? **Not My Whisper**!?(Not cute anymore)라는 이름이 떠오르더군요.
+>
+> 그래서 그렇게 바꾸고 계속 쓰다보니 애착이 생겨서 *"잠깐, 이거 내 Whisper 인데?"* 라는 생각이 들었습니다.
+>
+> 그래서 **Whispree**가 되었습니다.
+
+## 팁
+
+> **직장인 팁**: 에어팟 끼고 통화하는 척하면 됩니다. 사물과 대화하는 사람으로 보이지 않아요.
 
 ## 기여하기
 

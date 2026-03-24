@@ -33,6 +33,14 @@ Like [OpenCode](https://github.com/nicepkg/opencode), but for voice. Mix and mat
 | **LLM** | [OpenAI](https://openai.com/) — GPT via Codex CLI auth | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — Qwen3-4B on-device |
 | | | None — raw transcription, no correction |
 
+### Supported Models
+
+| Provider | Model |
+|----------|-------|
+| **WhisperKit** | `openai_whisper-large-v3_turbo` (CoreML + ANE optimized) |
+| **MLX Audio** | `Qwen3-ASR-1.7B-8bit` (Python worker default, swappable with other mlx-audio models) |
+| **Local LLM** | `Qwen3-4B-Instruct-2507-4bit` (mlx-swift-lm) |
+
 ### Built for Korean Developers Who Mix English
 
 Whispree is optimized for **code-switching** — the way Korean developers actually talk. The LLM correction layer handles things like:
@@ -57,24 +65,6 @@ English-only mode works too. But let's be honest — this was built because no o
 | Filler Removal | Standard + strip fillers (음, 어, 그러니까, 뭐랄까) |
 | Structured | Filler removal + organize into bullet points |
 | Custom | Your own system prompt |
-
-## The Name
-
-I originally called it **FreeWhisper** — just a personal tool I hacked together in Swift. Nobody else was going to use it, so the name didn't matter.
-
-When I decided to open-source it, I needed a proper name. Something "Oh My ..." felt dated. **OpenWhisper** was already taken.
-
-Then I thought about how I was borrowing API keys like a cat borrowing someone's sunny spot — so **Not My Whisper** had a nice ring to it. But after using it every day, I got attached. *"Wait, this IS my whisper."*
-
-So: **Whispree**. Free whisper. My whisper. Your whisper.
-
-## Tips & Tricks
-
-**The AirPods Gambit** — Wear AirPods and look mildly annoyed while speaking. Congratulations, you're now "on a call" and nobody will question you dictating your entire PR description out loud.
-
-**The Zoom Maneuver** — Mute yourself on Zoom. Whisper into Whispree. Paste perfectly structured meeting notes before anyone finishes saying "can everyone see my screen?"
-
-**The Subway Stare** — Public transport dictation requires commitment. Maintain the "important business call" face. The key is looking slightly stressed. Nobody bothers someone who looks stressed on a train.
 
 ## Installation
 
@@ -124,6 +114,24 @@ Access from the menu bar icon:
 - Apple Silicon (M1/M2/M3/M4)
 - Microphone permission
 - Accessibility permission (for automatic text insertion)
+
+## The Name
+
+I originally called it **FreeWhisper** — just a personal tool I hacked together in Swift. Nobody else was going to use it, so the name didn't matter.
+
+When I decided to open-source it, I needed a proper name. Something "Oh My ..." felt dated. **OpenWhisper** was already taken.
+
+Then I thought about how I was borrowing API keys like a cat borrowing someone's sunny spot — so **Not My Whisper** had a nice ring to it. But after using it every day, I got attached. *"Wait, this IS my whisper."*
+
+So: **Whispree**. Free whisper. My whisper. Your whisper.
+
+## Tips & Tricks
+
+**The AirPods Gambit** — Wear AirPods and look mildly annoyed while speaking. Congratulations, you're now "on a call" and nobody will question you dictating your entire PR description out loud.
+
+**The Zoom Maneuver** — Mute yourself on Zoom. Whisper into Whispree. Paste perfectly structured meeting notes before anyone finishes saying "can everyone see my screen?"
+
+**The Subway Stare** — Public transport dictation requires commitment. Maintain the "important business call" face. The key is looking slightly stressed. Nobody bothers someone who looks stressed on a train.
 
 ## Contributing
 
