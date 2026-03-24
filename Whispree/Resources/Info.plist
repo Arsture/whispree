@@ -20,7 +20,9 @@
 	<true/>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
+	<key>SUPublicEDKey</key>
+	<string>s44fNNpNBumMWbemL71UC323Ke9lgOL90FIqX/ArQFY=</string>
 	<key>SUFeedURL</key>
-	<string>https://github.com/Arsture/whispree/releases/appcast.xml</string>
+	<string>https://arsture.github.io/whispree/appcast.xml</string>
 </dict>
 </plist>
