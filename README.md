@@ -1,6 +1,6 @@
 # Whispree
 
-A free, fully local macOS menu bar app for speech-to-text with LLM post-processing. An open-source alternative to SuperWhisper, running entirely on Apple Silicon with no cloud dependencies.
+A macOS menu bar speech-to-text app with swappable STT and LLM providers. Near-zero latency, high accuracy, and practically free with just an OpenAI account.
 
 [한국어](README.ko.md) | English
 
@@ -16,26 +16,39 @@ A free, fully local macOS menu bar app for speech-to-text with LLM post-processi
 
 ## Features
 
-- **Local STT** — WhisperKit (large-v3-turbo) for high-accuracy speech recognition in 99+ languages
-- **LLM Correction** — mlx-swift-lm (Qwen3-4B) for automatic text correction (spacing, punctuation, homophones)
-- **Global Hotkey** — Push-to-talk and toggle recording modes with customizable shortcuts
-- **Text Insertion** — Automatically inserts transcribed text at cursor position via Accessibility API (clipboard fallback)
-- **Streaming** — Real-time partial transcription results displayed in a floating overlay
-- **Privacy First** — All processing happens on-device. Zero network calls after initial model download.
-- **Auto-Updates** — Background update checks via Sparkle. Get notified when a new version is ready.
+### Choose Your Providers
+
+Pick your own STT and LLM providers — like [OpenCode](https://github.com/nicepkg/opencode), but for voice.
+
+| Provider | STT Options | LLM Options |
+|----------|-------------|-------------|
+| Cloud (Recommended) | [Groq API](https://groq.com/) — free, fast, accurate | [OpenAI via Codex CLI](https://github.com/openai/codex) — use your existing account |
+| Local | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — on-device, CoreML + ANE | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — Qwen3-4B on Apple Silicon |
+| Local | [MLX Audio](https://github.com/ml-explore/mlx-audio) — Qwen3-ASR via Python worker | — |
+
+### Built for Korean Developers Who Mix English
+
+Whispree is optimized for **code-switching** — speaking Korean with English technical terms. The LLM correction layer handles things like:
+
+- "밸리데이션" → "validation"
+- "리액트 컴포넌트" → "React 컴포넌트"
+- Spoken prompts restructured into clean written text
+
+### Smart Dictation
+
+- **Record & transcribe** — Press `Ctrl+Shift+R` to start, press again to stop and transcribe
+- **Quick Fix** — Misheard a word? Press `Ctrl+Shift+D` to save corrections to your personal dictionary
+- **Multiple correction modes** — STT correction, code-switch correction, prompt engineering mode
 
 ## The Name
 
-> Started as **FreeWhisper** — just a personal tool, nothing fancy.
+> I originally called it **FreeWhisper** — just a personal tool I hacked together in Swift. Nobody else was going to use it, so the name didn't matter.
 >
-> Then I thought about going open-source, so **OpenWhisper** felt right.
-> Turns out that name was taken.
+> When I decided to open-source it, I needed a proper name. Something "Oh My ..." felt dated. **OpenWhisper** was already taken.
 >
-> Settled on **not-my-whisper** for a while.
-> But it was too long, and honestly — it felt too much like *my* whisper
-> to keep calling it "not mine."
+> Then I thought about how I was borrowing API keys like a cat borrowing someone's sunny spot — so **Not My Whisper** had a nice ring to it. But after using it every day, I got attached. *"Wait, this IS my whisper."*
 >
-> So here we are: **Whispree**. Free whisper. My whisper. Your whisper.
+> So: **Whispree**. Free whisper. My whisper. Your whisper.
 
 ## Tips & Tricks
 
@@ -72,24 +85,25 @@ SPM dependencies resolve automatically on first build.
 
 ## Usage
 
-1. **First Launch** — Grant microphone and accessibility permissions when prompted. Models download automatically (~3.5GB).
-2. **Record** — Press the global hotkey (default: `Option+Space`) to start recording.
-3. **Transcribe** — Release the key (push-to-talk) or press again (toggle mode) to transcribe.
+1. **First Launch** — Grant microphone and accessibility permissions when prompted.
+2. **Download Models** — Go to Settings > Models and download the STT/LLM models you want to use.
+3. **Record** — Press `Ctrl+Shift+R` to start recording. Press again to stop and transcribe.
 4. **Insert** — Corrected text is automatically inserted at your cursor position.
+5. **Quick Fix** — If a word was misheard, select it and press `Ctrl+Shift+D` to save the correction.
 
 ### Settings
 
 Access settings from the menu bar icon:
 
 - **General** — Hotkey customization, recording mode, launch at login
-- **Models** — Model selection, download management, disk usage
-- **LLM** — Enable/disable LLM correction, custom prompts
+- **STT** — Choose STT provider (WhisperKit, Groq, MLX Audio)
+- **LLM** — Choose LLM provider (None, Local, OpenAI via Codex), correction mode
+- **Models** — Model download and management
 
 ## Requirements
 
 - macOS 14.0+ (Sonoma)
 - Apple Silicon (M1/M2/M3/M4)
-- ~4GB disk space for models (WhisperKit ~1.5GB + LLM ~2GB)
 - Microphone permission
 - Accessibility permission (for text insertion)
 
