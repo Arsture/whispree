@@ -91,15 +91,29 @@ jobs:
           cd "$(dirname "${{ steps.find_app.outputs.app_path }}")"
           hdiutil create -volname Whispree -srcfolder Whispree.app -ov -format UDZO $GITHUB_WORKSPACE/Whispree.dmg
 
-      - name: Generate Sparkle appcast
+      - name: Sign update with Sparkle
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          # Download Sparkle generate_appcast tool
           curl -L -o sparkle.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.6.0/Sparkle-2.6.0.tar.xz
           tar -xf sparkle.tar.xz
 
-          # Note: This requires SPARKLE_PRIVATE_KEY secret to be set
-          # For now, we'll create a placeholder appcast
+          # Sign the ZIP and capture signature + length
+          SIGN_OUTPUT=$(echo "$SPARKLE_PRIVATE_KEY" | ./bin/sign_update Whispree.zip -f -)
+          echo "Signature output: $SIGN_OUTPUT"
+
+          # Parse sparkle:edSignature and length
+          ED_SIGNATURE=$(echo "$SIGN_OUTPUT" | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p')
+          LENGTH=$(echo "$SIGN_OUTPUT" | sed -n 's/.*length="\([^"]*\)".*/\1/p')
+
+          echo "ed_signature=$ED_SIGNATURE" >> $GITHUB_OUTPUT
+          echo "length=$LENGTH" >> $GITHUB_OUTPUT
+        id: sign
+
+      - name: Generate appcast.xml
+        run: |
           mkdir -p appcast
+          PUBDATE=$(date -R)
           cat > appcast/appcast.xml << EOF
           <?xml version="1.0" encoding="utf-8"?>
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -112,9 +126,11 @@ jobs:
                 <title>Version ${{ steps.version.outputs.version }}</title>
                 <sparkle:version>${{ steps.version.outputs.version }}</sparkle:version>
                 <sparkle:shortVersionString>${{ steps.version.outputs.version }}</sparkle:shortVersionString>
-                <pubDate>$(date -R)</pubDate>
+                <pubDate>${PUBDATE}</pubDate>
                 <enclosure url="https://github.com/Arsture/whispree/releases/download/v${{ steps.version.outputs.version }}/Whispree.zip"
                            sparkle:version="${{ steps.version.outputs.version }}"
+                           sparkle:edSignature="${{ steps.sign.outputs.ed_signature }}"
+                           length="${{ steps.sign.outputs.length }}"
                            type="application/octet-stream" />
               </item>
             </channel>
@@ -122,45 +138,22 @@ jobs:
           EOF
 
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          release_name: Whispree v${{ steps.version.outputs.version }}
+          name: Whispree v${{ steps.version.outputs.version }}
+          files: |
+            Whispree.zip
+            Whispree.dmg
           draft: false
           prerelease: false
 
-      - name: Upload ZIP to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Whispree.zip
-          asset_name: Whispree.zip
-          asset_content_type: application/zip
-
-      - name: Upload DMG to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Whispree.dmg
-          asset_name: Whispree.dmg
-          asset_content_type: application/x-apple-diskimage
-
-      - name: Push version commit and tags
+      - name: Push version commit
         run: |
-          git tag v${{ steps.version.outputs.version }}
           git push origin main
-          git push origin v${{ steps.version.outputs.version }}
 
       - name: Deploy appcast to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./appcast
-          destination_dir: releases
