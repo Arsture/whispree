@@ -2,22 +2,48 @@
 
 A free, fully local macOS menu bar app for speech-to-text with LLM post-processing. An open-source alternative to SuperWhisper, running entirely on Apple Silicon with no cloud dependencies.
 
+[한국어](README.ko.md) | English
+
+![License](https://img.shields.io/github/license/Arsture/whispree)
+![Version](https://img.shields.io/github/v/release/Arsture/whispree)
+![Build](https://img.shields.io/github/actions/workflow/status/Arsture/whispree/release.yml)
+![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
+
+<!-- Demo video -->
+<p align="center">
+  <em>Demo video coming soon</em>
+</p>
+
 ## Features
 
 - **Local STT** — WhisperKit (large-v3-turbo) for high-accuracy speech recognition in 99+ languages
-- **LLM Correction** — mlx-swift-lm (Qwen2.5-3B-Instruct-4bit) for automatic text correction (spacing, punctuation, homophones)
+- **LLM Correction** — mlx-swift-lm (Qwen3-4B) for automatic text correction (spacing, punctuation, homophones)
 - **Global Hotkey** — Push-to-talk and toggle recording modes with customizable shortcuts
 - **Text Insertion** — Automatically inserts transcribed text at cursor position via Accessibility API (clipboard fallback)
 - **Streaming** — Real-time partial transcription results displayed in a floating overlay
 - **Privacy First** — All processing happens on-device. Zero network calls after initial model download.
+- **Auto-Updates** — Background update checks via Sparkle. Get notified when a new version is ready.
 
-## Requirements
+## The Name
 
-- macOS 14.0+ (Sonoma)
-- Apple Silicon (M1/M2/M3/M4)
-- ~4GB disk space for models (WhisperKit ~1.5GB + LLM ~2GB)
-- Microphone permission
-- Accessibility permission (for text insertion)
+> Started as **FreeWhisper** — just a personal tool, nothing fancy.
+>
+> Then I thought about going open-source, so **OpenWhisper** felt right.
+> Turns out that name was taken.
+>
+> Settled on **not-my-whisper** for a while.
+> But it was too long, and honestly — it felt too much like *my* whisper
+> to keep calling it "not mine."
+>
+> So here we are: **Whispree**. Free whisper. My whisper. Your whisper.
+
+## Tips & Tricks
+
+> **Pro tip**: Wear AirPods and pretend you're on a call. Nobody will know you're dictating your grocery list in the office.
+
+> **Meeting hack**: Mute yourself on Zoom, whisper into Whispree, and paste perfectly formatted notes before anyone notices.
+
+> **Public transport**: The "I'm on a very important call" face works wonders. Just look slightly annoyed while speaking.
 
 ## Installation
 
@@ -33,32 +59,16 @@ Download the latest `.dmg` or `.zip` from [GitHub Releases](https://github.com/A
 
 ### Build from Source
 
-See [Build](#build) section below.
-
-## Build
-
-### Prerequisites
-
-- Xcode 16.0+
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
-
-### Steps
-
 ```bash
-# Clone
-git clone https://github.com/Arsture/Whispree.git
-cd Whispree
-
-# Generate Xcode project
+git clone https://github.com/Arsture/whispree.git
+cd whispree
+brew install xcodegen
 xcodegen generate
-
-# Open in Xcode
 open Whispree.xcodeproj
-
-# Build and run (⌘R)
+# Build and run (Cmd+R)
 ```
 
-SPM dependencies (WhisperKit, mlx-swift-lm, KeyboardShortcuts, LaunchAtLogin) resolve automatically on first build.
+SPM dependencies resolve automatically on first build.
 
 ## Usage
 
@@ -75,37 +85,18 @@ Access settings from the menu bar icon:
 - **Models** — Model selection, download management, disk usage
 - **LLM** — Enable/disable LLM correction, custom prompts
 
-## Architecture
+## Requirements
 
-```
-Whispree/
-├── App/                    # App entry point, delegate, state
-├── Models/                 # Data models (settings, state, model info)
-├── Services/
-│   ├── Audio/              # AVAudioEngine microphone capture
-│   ├── STT/                # WhisperKit integration
-│   ├── LLM/                # mlx-swift-lm integration
-│   ├── TextInsertion/      # AX API + clipboard fallback
-│   ├── ModelManagement/    # Model download & cache
-│   └── Hotkey/             # KeyboardShortcuts integration
-├── Coordinators/           # Pipeline orchestration
-├── Views/                  # SwiftUI views
-└── Resources/              # Assets, entitlements, Info.plist
-```
+- macOS 14.0+ (Sonoma)
+- Apple Silicon (M1/M2/M3/M4)
+- ~4GB disk space for models (WhisperKit ~1.5GB + LLM ~2GB)
+- Microphone permission
+- Accessibility permission (for text insertion)
 
-**Pattern**: MVVM + Services with `AppState` as the central `@MainActor ObservableObject`.
+## Contributing
 
-**Pipeline**: Hotkey → Record → Transcribe (WhisperKit) → [Correct (LLM)] → Insert Text
-
-## Tech Stack
-
-| Component | Library | Purpose |
-|-----------|---------|---------|
-| STT | [WhisperKit](https://github.com/argmaxinc/WhisperKit) | On-device speech recognition via CoreML + ANE |
-| LLM | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) | On-device text correction via MLX GPU |
-| Hotkey | [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) | Global hotkey registration |
-| Login | [LaunchAtLogin](https://github.com/sindresorhus/LaunchAtLogin-Modern) | Login item support |
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT
+[MIT](LICENSE)
