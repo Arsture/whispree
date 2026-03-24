@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Whispree</title>
+    <link>https://github.com/Arsture/whispree/releases</link>
+    <description>Most recent updates to Whispree</description>
+    <language>en</language>
+    <item>
+      <title>Version 0.0.7</title>
+      <sparkle:version>0.0.7</sparkle:version>
+      <sparkle:shortVersionString>0.0.7</sparkle:shortVersionString>
+      <pubDate>Tue, 24 Mar 2026 12:55:07 +0000</pubDate>
+      <enclosure url="https://github.com/Arsture/whispree/releases/download/v0.0.7/Whispree.zip"
+                 sparkle:version="0.0.7"
+                 sparkle:edSignature="hCoVIAKt9fcNBZJPdatK/8Q7l0CbKln1ZbrAQE/+N3qBMRflJeldqdB9YKTZehNhYh8dUuTGb/ZsEVskAmh1Dg=="
+                 length="24755734"
+                 type="application/octet-stream" />
+    </item>
+  </channel>
+</rss>
