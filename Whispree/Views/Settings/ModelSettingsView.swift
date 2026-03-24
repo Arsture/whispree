@@ -5,62 +5,98 @@ struct ModelSettingsView: View {
     @EnvironmentObject var modelManager: ModelManager
 
     var body: some View {
-        Form {
-            Section("STT 모델") {
-                ModelRow(
-                    name: "WhisperKit Large V3 Turbo",
-                    description: "로컬 CoreML+ANE, 99개 언어",
-                    size: "~1.5 GB",
-                    state: modelManager.whisperKitDownloaded ? .ready : activeWhisperKitState,
-                    downloadProgress: appState.whisperDownloadProgress,
-                    onDownload: {
-                        Task { await modelManager.downloadWhisperKitModel() }
-                    },
-                    onDelete: { modelManager.deleteWhisperModel() }
-                )
-
-                ModelRow(
-                    name: "Qwen3-ASR-1.7B-8bit",
-                    description: "mlx-audio, 한중일영 (uv 필요)",
-                    size: "~1.0 GB",
-                    state: modelManager.mlxAudioDownloaded ? .ready : modelManager.mlxAudioDownloadState,
-                    downloadProgress: 0,
-                    onDownload: {
-                        Task { await modelManager.downloadMLXAudioModel() }
-                    },
-                    onDelete: { modelManager.deleteMLXAudioModel() }
-                )
-            }
-
-            Section("LLM 모델") {
-                ModelRow(
-                    name: "Qwen3 4B Instruct (4-bit)",
-                    description: "한국어/영어 텍스트 교정",
-                    size: "~2.0 GB",
-                    state: modelManager.localLLMDownloaded ? .ready : activeLLMState,
-                    downloadProgress: appState.llmDownloadProgress,
-                    onDownload: {
-                        Task { await modelManager.downloadLocalLLMModel() }
-                    },
-                    onDelete: { modelManager.deleteLLMModel() }
-                )
-            }
-
-            Section("저장 공간") {
-                HStack {
-                    Text("모델 위치:")
-                    Spacer()
-                    Text("~/Library/Application Support/")
-                        .font(.caption)
+        ScrollView {
+            VStack(spacing: 20) {
+                // STT Models Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("STT 모델")
+                        .font(.caption.bold())
                         .foregroundStyle(.secondary)
+
+                    VStack(spacing: 12) {
+                        ModelRow(
+                            name: "WhisperKit Large V3 Turbo",
+                            description: "로컬 CoreML+ANE, 99개 언어",
+                            size: "~1.5 GB",
+                            state: modelManager.whisperKitDownloaded ? .ready : activeWhisperKitState,
+                            downloadProgress: appState.whisperDownloadProgress,
+                            onDownload: {
+                                Task { await modelManager.downloadWhisperKitModel() }
+                            },
+                            onDelete: { modelManager.deleteWhisperModel() }
+                        )
+
+                        ModelRow(
+                            name: "Qwen3-ASR-1.7B-8bit",
+                            description: "mlx-audio, 한중일영 (uv 필요)",
+                            size: "~1.0 GB",
+                            state: modelManager.mlxAudioDownloaded ? .ready : modelManager.mlxAudioDownloadState,
+                            downloadProgress: 0,
+                            onDownload: {
+                                Task { await modelManager.downloadMLXAudioModel() }
+                            },
+                            onDelete: { modelManager.deleteMLXAudioModel() }
+                        )
+                    }
                 }
-                Button("Finder에서 열기") {
-                    NSWorkspace.shared.open(ModelManager.modelsDirectory)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
+
+                // LLM Models Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("LLM 모델")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
+                    ModelRow(
+                        name: "Qwen3 4B Instruct (4-bit)",
+                        description: "한국어/영어 텍스트 교정",
+                        size: "~2.0 GB",
+                        state: modelManager.localLLMDownloaded ? .ready : activeLLMState,
+                        downloadProgress: appState.llmDownloadProgress,
+                        onDownload: {
+                            Task { await modelManager.downloadLocalLLMModel() }
+                        },
+                        onDelete: { modelManager.deleteLLMModel() }
+                    )
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
+
+                // Storage Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("저장 공간")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("모델 위치:")
+                        Spacer()
+                        Text("~/Library/Application Support/")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Button("Finder에서 열기") {
+                        NSWorkspace.shared.open(ModelManager.modelsDirectory)
+                    }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
             }
+            .padding(24)
         }
-        .formStyle(.grouped)
-        .padding()
         .onAppear {
             modelManager.refreshCachedModelStates()
         }

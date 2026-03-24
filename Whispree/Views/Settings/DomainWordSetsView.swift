@@ -7,20 +7,31 @@ struct DomainWordSetsView: View {
     @State private var newCorrectionTo: [UUID: String] = [:]
 
     var body: some View {
-        Form {
-            Section {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Info
                 Text("도메인별 단어 세트를 활성화하면 음성 인식 시 해당 단어들이 더 정확하게 인식됩니다.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
 
-            Section("단어 세트") {
+                // Word Sets
                 if appState.settings.domainWordSets.isEmpty {
                     Text("등록된 단어 세트가 없습니다. 아래에서 기본 세트를 추가하세요.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 8)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.quaternary.opacity(0.5))
+                        )
                 } else {
                     ForEach(appState.settings.domainWordSets.indices, id: \.self) { index in
                         WordSetRow(
@@ -43,47 +54,58 @@ struct DomainWordSetsView: View {
                             onDeleteCorrection: { corrIndex in deleteCorrection(at: corrIndex, setIndex: index) },
                             onToggle: { save() }
                         )
-                    }
-                    .onDelete { offsets in
-                        appState.settings.domainWordSets.remove(atOffsets: offsets)
-                        save()
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.quaternary.opacity(0.5))
+                        )
                     }
                 }
-            }
 
-            Section("기본 세트 추가") {
-                ForEach(DomainCategory.allCases, id: \.self) { category in
-                    let alreadyAdded = appState.settings.domainWordSets.contains {
-                        $0.name == DomainWordSet.generateDefault(domain: category).name
-                    }
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(category.rawValue)
-                                .font(.body)
-                            Text(categoryDescription(for: category))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                // Default Sets
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("기본 세트 추가")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
+                    ForEach(DomainCategory.allCases, id: \.self) { category in
+                        let alreadyAdded = appState.settings.domainWordSets.contains {
+                            $0.name == DomainWordSet.generateDefault(domain: category).name
                         }
-                        Spacer()
-                        if alreadyAdded {
-                            Label("추가됨", systemImage: "checkmark.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.green)
-                        } else {
-                            Button("추가") {
-                                let newSet = DomainWordSet.generateDefault(domain: category)
-                                appState.settings.domainWordSets.append(newSet)
-                                save()
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(category.rawValue)
+                                    .font(.body)
+                                Text(categoryDescription(for: category))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
-                            .buttonStyle(.bordered)
-                            .font(.caption)
+                            Spacer()
+                            if alreadyAdded {
+                                Label("추가됨", systemImage: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            } else {
+                                Button("추가") {
+                                    let newSet = DomainWordSet.generateDefault(domain: category)
+                                    appState.settings.domainWordSets.append(newSet)
+                                    save()
+                                }
+                                .buttonStyle(.bordered)
+                                .font(.caption)
+                            }
                         }
                     }
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
             }
+            .padding(24)
         }
-        .formStyle(.grouped)
-        .padding()
     }
 
     private func addWord(at index: Int) {
