@@ -3,8 +3,6 @@ import AVFoundation
 import SwiftUI
 import KeyboardShortcuts
 import Combine
-import Sparkle
-
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let appState = AppState()
@@ -14,9 +12,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlayPanel: NSPanel?
     private var quickFixPanel: NSPanel?
     private var cancellables = Set<AnyCancellable>()
-
-    // Sparkle Updater
-    private var updaterController: SPUStandardUpdaterController!
 
     // Services
     private(set) var audioService: AudioService!
@@ -36,7 +31,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupServices()
         setupStatusItem()
         setupOverlayObserver()
-        setupSparkleUpdater()
         checkFirstLaunch()
     }
 
@@ -51,7 +45,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(withTitle: "About Whispree", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Settings...", action: #selector(openSettingsFromMenu), keyEquivalent: ",")
-        appMenu.addItem(withTitle: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Hide Whispree", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         let hideOthers = appMenu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
@@ -90,15 +83,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         showMainWindow()
     }
 
-    @objc private func checkForUpdates() {
-        updaterController.checkForUpdates(nil)
-    }
-
-    // MARK: - Sparkle Updater
-
-    private func setupSparkleUpdater() {
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-    }
 
     // MARK: - Edit Keyboard Shortcuts (Copy/Paste Fix)
 
