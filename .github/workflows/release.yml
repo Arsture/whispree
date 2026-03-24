@@ -132,11 +132,9 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Push version commit and tags
+      - name: Push version commit
         run: |
-          git tag v${{ steps.version.outputs.version }}
           git push origin main
-          git push origin v${{ steps.version.outputs.version }}
 
       - name: Deploy appcast to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
