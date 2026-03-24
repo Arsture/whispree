@@ -82,23 +82,33 @@ struct GeneralSettingsView: View {
                 // General Settings
                 SettingsCard(title: "General") {
                     VStack(spacing: 8) {
-                        Toggle("Show transcription overlay", isOn: Binding(
-                            get: { appState.settings.showOverlay },
-                            set: {
-                                appState.settings.showOverlay = $0
-                                appState.settings.save()
-                            }
-                        ))
-                        .toggleStyle(.switch)
+                        HStack {
+                            Text("Show transcription overlay")
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.showOverlay },
+                                set: {
+                                    appState.settings.showOverlay = $0
+                                    appState.settings.save()
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
 
-                        Toggle("Launch at login", isOn: Binding(
-                            get: { appState.settings.launchAtLogin },
-                            set: {
-                                appState.settings.launchAtLogin = $0
-                                appState.settings.save()
-                            }
-                        ))
-                        .toggleStyle(.switch)
+                        HStack {
+                            Text("Launch at login")
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.launchAtLogin },
+                                set: {
+                                    appState.settings.launchAtLogin = $0
+                                    appState.settings.save()
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
                     }
                 }
 
@@ -147,10 +157,13 @@ struct GeneralSettingsView: View {
                             }
                         }
 
-                        Button("Refresh Status") {
-                            refreshPermissions()
+                        HStack {
+                            Spacer()
+                            Button("Refresh Status") {
+                                refreshPermissions()
+                            }
+                            .font(.caption)
                         }
-                        .font(.caption)
                     }
                 }
             }

@@ -115,7 +115,6 @@ struct STTSettingsView: View {
             }
             .padding(DesignTokens.Spacing.xl)
         }
-        .background(DesignTokens.surfaceBackground)
     }
 }
 

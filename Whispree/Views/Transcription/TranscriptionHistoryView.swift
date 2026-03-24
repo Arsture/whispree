@@ -17,7 +17,7 @@ struct TranscriptionHistoryView: View {
                     .font(.caption)
                 }
             }
-            .padding(16)
+            .padding(24)
 
             Divider()
 
