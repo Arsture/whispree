@@ -6,10 +6,14 @@ struct ModelSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: DesignTokens.Spacing.md) {
+            VStack(spacing: 20) {
                 // STT Models Section
-                SettingsCard(title: "STT 모델", description: "음성 인식 모델") {
-                    VStack(spacing: DesignTokens.Spacing.md) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("STT 모델")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
+                    VStack(spacing: 12) {
                         ModelRow(
                             name: "WhisperKit Large V3 Turbo",
                             description: "로컬 CoreML+ANE, 99개 언어",
@@ -35,9 +39,19 @@ struct ModelSettingsView: View {
                         )
                     }
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
 
                 // LLM Models Section
-                SettingsCard(title: "LLM 모델", description: "텍스트 교정 모델") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("LLM 모델")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
                     ModelRow(
                         name: "Qwen3 4B Instruct (4-bit)",
                         description: "한국어/영어 텍스트 교정",
@@ -50,27 +64,39 @@ struct ModelSettingsView: View {
                         onDelete: { modelManager.deleteLLMModel() }
                     )
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
 
                 // Storage Section
-                SettingsCard(title: "저장 공간") {
-                    VStack(spacing: DesignTokens.Spacing.sm) {
-                        SettingsRow(label: "모델 위치") {
-                            Text("~/Library/Application Support/")
-                                .font(.caption)
-                                .foregroundStyle(DesignTokens.textSecondary)
-                        }
-                        Button("Finder에서 열기") {
-                            NSWorkspace.shared.open(ModelManager.modelsDirectory)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("저장 공간")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("모델 위치:")
+                        Spacer()
+                        Text("~/Library/Application Support/")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Button("Finder에서 열기") {
+                        NSWorkspace.shared.open(ModelManager.modelsDirectory)
                     }
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
             }
-            .padding(DesignTokens.Spacing.xl)
+            .padding(24)
         }
-        .background(DesignTokens.surfaceBackground)
         .onAppear {
             modelManager.refreshCachedModelStates()
         }
@@ -106,20 +132,19 @@ struct ModelRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading) {
                     Text(name)
-                        .font(.system(.body, design: .default, weight: .medium))
-                        .foregroundStyle(DesignTokens.textPrimary)
+                        .font(.headline)
                     Text(description)
                         .font(.caption)
-                        .foregroundStyle(DesignTokens.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(size)
                     .font(.caption)
-                    .foregroundStyle(DesignTokens.textTertiary)
+                    .foregroundStyle(.tertiary)
             }
 
             switch state {
@@ -130,43 +155,40 @@ struct ModelRow: View {
             case .downloading(let progress):
                 VStack(alignment: .leading, spacing: 4) {
                     ProgressView(value: progress)
-                        .tint(DesignTokens.accentPrimary)
                     Text("\(Int(progress * 100))% 다운로드 중...")
                         .font(.caption)
-                        .foregroundStyle(DesignTokens.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
             case .loading:
                 HStack(spacing: 6) {
                     ProgressView()
                         .controlSize(.small)
-                        .tint(DesignTokens.accentPrimary)
                     Text("로딩 중...")
                         .font(.caption)
-                        .foregroundStyle(DesignTokens.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
             case .ready:
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    StatusBadge("준비됨", icon: "checkmark.circle.fill", style: .success)
+                HStack {
+                    Label("준비됨", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.caption)
                     Spacer()
                     Button("삭제", role: .destructive) { onDelete() }
-                        .buttonStyle(.bordered)
+                        .font(.caption)
                         .controlSize(.small)
                 }
             case .error(let msg):
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    StatusBadge(msg, icon: "exclamationmark.triangle.fill", style: .error)
+                HStack {
+                    Label(msg, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                        .font(.caption)
                         .lineLimit(2)
                     Spacer()
                     Button("재시도") { onDownload() }
-                        .buttonStyle(.bordered)
+                        .font(.caption)
                         .controlSize(.small)
                 }
             }
         }
-        .padding(DesignTokens.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        )
     }
 }

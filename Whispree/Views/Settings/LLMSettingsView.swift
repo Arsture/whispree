@@ -7,9 +7,13 @@ struct LLMSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: DesignTokens.Spacing.md) {
+            VStack(spacing: 20) {
                 // LLM Provider Section
-                SettingsCard(title: "LLM Provider", description: "텍스트 교정 엔진") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("LLM Provider")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
                     Picker("Provider", selection: Binding(
                         get: { appState.settings.llmProviderType },
                         set: { (newValue: LLMProviderType) in
@@ -25,10 +29,20 @@ struct LLMSettingsView: View {
                     }
                     .labelsHidden()
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
 
                 // OpenAI Model Section
                 if appState.settings.llmProviderType == .openai {
-                    SettingsCard(title: "OpenAI 모델") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OpenAI 모델")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
                         Picker("Model", selection: Binding(
                             get: { appState.settings.openaiModel },
                             set: {
@@ -41,101 +55,132 @@ struct LLMSettingsView: View {
                                     Text(model.displayName)
                                     Text(model.description)
                                         .font(.caption)
-                                        .foregroundStyle(DesignTokens.textSecondary)
+                                        .foregroundStyle(.secondary)
                                 }
                                 .tag(model)
                             }
                         }
                         .pickerStyle(.radioGroup)
                     }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
 
                     // OpenAI Auth Section
-                    SettingsCard(title: "OpenAI 인증") {
-                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                            if appState.authService.isLoggedIn {
-                                // Codex CLI auth active
-                                SettingsRow(label: "인증 방식") {
-                                    StatusBadge("Codex CLI", icon: "checkmark.circle.fill", style: .success)
-                                }
-                                if let accountId = appState.authService.currentAccountId {
-                                    SettingsRow(label: "Account") {
-                                        Text(accountId)
-                                            .font(.caption)
-                                            .foregroundStyle(DesignTokens.textSecondary)
-                                    }
-                                }
-                            } else if appState.oauthService.isLoggedIn {
-                                // OAuth auth active
-                                SettingsRow(label: "인증 방식") {
-                                    StatusBadge("OpenAI 로그인", icon: "checkmark.circle.fill", style: .success)
-                                }
-                                Button("로그아웃") {
-                                    appState.oauthService.logout()
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                            } else {
-                                // Not authenticated
-                                StatusBadge("로그인이 필요합니다", icon: "exclamationmark.triangle.fill", style: .warning)
-                                    .padding(.bottom, DesignTokens.Spacing.xs)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OpenAI 인증")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
 
-                                Button {
-                                    Task { await appState.oauthService.startLogin() }
-                                } label: {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "globe")
-                                        Text("OpenAI 로그인")
-                                    }
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(appState.oauthService.isLoggingIn)
-
-                                if appState.oauthService.isLoggingIn {
-                                    HStack(spacing: 6) {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                        Text("브라우저에서 로그인 중...")
-                                            .font(.caption)
-                                            .foregroundStyle(DesignTokens.textSecondary)
-                                    }
-                                }
-
-                                if let error = appState.oauthService.loginError {
-                                    StatusBadge(error, icon: "xmark.circle.fill", style: .error)
-                                }
-
-                                Text("Codex CLI가 설치되어 있으면 자동 감지됩니다")
+                        if appState.authService.isLoggedIn {
+                            // Codex CLI auth active
+                            HStack {
+                                Text("인증 방식:")
+                                Spacer()
+                                Label("Codex CLI", systemImage: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
                                     .font(.caption)
-                                    .foregroundStyle(DesignTokens.textTertiary)
-                                    .padding(.top, DesignTokens.Spacing.xs)
-
-                                Button("Codex 인증 확인") {
-                                    appState.authService.checkAuth()
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
                             }
+                            if let accountId = appState.authService.currentAccountId {
+                                HStack {
+                                    Text("Account:")
+                                    Spacer()
+                                    Text(accountId)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        } else if appState.oauthService.isLoggedIn {
+                            // OAuth auth active
+                            HStack {
+                                Text("인증 방식:")
+                                Spacer()
+                                Label("OpenAI 로그인", systemImage: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                    .font(.caption)
+                            }
+                            Button("로그아웃") {
+                                appState.oauthService.logout()
+                            }
+                            .font(.caption)
+                        } else {
+                            // Not authenticated
+                            Label("로그인이 필요합니다", systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+
+                            Button {
+                                Task { await appState.oauthService.startLogin() }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "globe")
+                                    Text("OpenAI 로그인")
+                                }
+                            }
+                            .disabled(appState.oauthService.isLoggingIn)
+
+                            if appState.oauthService.isLoggingIn {
+                                HStack(spacing: 6) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("브라우저에서 로그인 중...")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            if let error = appState.oauthService.loginError {
+                                Label(error, systemImage: "xmark.circle.fill")
+                                    .foregroundStyle(.red)
+                                    .font(.caption)
+                            }
+
+                            Text("Codex CLI가 설치되어 있으면 자동 감지됩니다")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Button("Codex 인증 확인") {
+                                appState.authService.checkAuth()
+                            }
+                            .font(.caption)
                         }
                     }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
                 }
 
                 // Model Download Notice
                 if appState.settings.llmProviderType == .local,
                    !appState.llmModelState.isReady {
-                    SettingsCard {
-                        HStack(spacing: 8) {
-                            Image(systemName: "info.circle")
-                                .foregroundStyle(DesignTokens.statusInfo)
-                            Text("모델 탭에서 LLM 모델을 다운로드하세요.")
-                                .font(.caption)
-                                .foregroundStyle(DesignTokens.textSecondary)
-                        }
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.blue)
+                        Text("모델 탭에서 LLM 모델을 다운로드하세요.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
                 }
 
                 // Correction Mode Section
                 if appState.settings.llmProviderType != .none {
-                    SettingsCard(title: "Correction Mode", description: "교정 방식") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Correction Mode")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
                         Picker("Mode", selection: Binding(
                             get: { appState.settings.correctionMode },
                             set: {
@@ -149,60 +194,63 @@ struct LLMSettingsView: View {
                                     Text(mode.displayName)
                                     Text(mode.description)
                                         .font(.caption)
-                                        .foregroundStyle(DesignTokens.textSecondary)
+                                        .foregroundStyle(.secondary)
                                 }
                                 .tag(mode)
                             }
                         }
                         .pickerStyle(.radioGroup)
                     }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
 
                     // System Prompt Section
-                    SettingsCard(title: "System Prompt") {
-                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                            if appState.settings.correctionMode == .custom {
-                                TextEditor(text: $customPrompt)
-                                    .font(.system(.body, design: .monospaced))
-                                    .frame(minHeight: 120)
-                                    .padding(DesignTokens.Spacing.xs)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                            .fill(Color(nsColor: .textBackgroundColor))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                            .strokeBorder(DesignTokens.textTertiary.opacity(0.2), lineWidth: 1)
-                                    )
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("System Prompt")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
 
+                        if appState.settings.correctionMode == .custom {
+                            TextEditor(text: $customPrompt)
+                                .font(.system(.body, design: .monospaced))
+                                .frame(minHeight: 120)
+
+                            HStack {
+                                Spacer()
                                 Button("Save Prompt") {
                                     appState.settings.customLLMPrompt = customPrompt
                                     appState.settings.save()
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                            } else {
-                                Text(currentPromptPreview)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundStyle(DesignTokens.textSecondary)
-                                    .frame(minHeight: 80, alignment: .topLeading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(DesignTokens.Spacing.xs)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
-                                            .fill(DesignTokens.textTertiary.opacity(0.05))
-                                    )
-
-                                Text("Switch to \"Custom\" mode to edit the prompt.")
-                                    .font(.caption)
-                                    .foregroundStyle(DesignTokens.textTertiary)
                             }
+                        } else {
+                            Text(currentPromptPreview)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(minHeight: 80, alignment: .topLeading)
+                                .padding(4)
+                                .background(.quaternary.opacity(0.3))
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                            Text("Switch to \"Custom\" mode to edit the prompt.")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         }
                     }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
                 }
             }
-            .padding(DesignTokens.Spacing.xl)
+            .padding(24)
         }
-        .background(DesignTokens.surfaceBackground)
         .onAppear {
             customPrompt = appState.settings.customLLMPrompt
                 ?? CorrectionPrompts.defaultSystemPrompt

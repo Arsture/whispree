@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// MainDashboardView 스타일과 일치하는 카드 컨테이너
 struct SettingsCard<Content: View>: View {
     let title: String?
     let description: String?
@@ -16,28 +17,28 @@ struct SettingsCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+        VStack(alignment: .leading, spacing: 8) {
             if let title = title {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(.subheadline, design: .default, weight: .semibold))
-                        .foregroundStyle(DesignTokens.textPrimary)
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
 
                     if let description = description {
                         Text(description)
                             .font(.caption)
-                            .foregroundStyle(DesignTokens.textTertiary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
 
             content
         }
-        .padding(DesignTokens.Spacing.md)
+        .padding(DesignTokens.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                .fill(DesignTokens.cardBackground)
-                .shadow(color: .black.opacity(0.03), radius: 1, x: 0, y: 1)
+            RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
+                .fill(.quaternary.opacity(0.5))  // MainDashboardView와 동일
         )
     }
 }

@@ -1,18 +1,32 @@
 import SwiftUI
 
+/// MainDashboardView 스타일을 기반으로 한 디자인 토큰
 enum DesignTokens {
-    // Semantic Colors
-    static let cardBackground = Color(nsColor: .controlBackgroundColor)
-    static let cardBackgroundHover = Color(nsColor: .controlBackgroundColor).opacity(0.8)
-    static let surfaceBackground = Color(nsColor: .windowBackgroundColor)
+    // Layout (MainDashboardView 기준)
+    static let outerPadding: CGFloat = 24      // ScrollView 외부 패딩
+    static let sectionSpacing: CGFloat = 20    // 섹션 간 간격
+    static let cardPadding: CGFloat = 12       // 카드 내부 패딩
+    static let cardRadius: CGFloat = 8         // 카드 코너 반경
 
-    // Accent States
-    static let accentPrimary = Color.accentColor
-    static let accentSubdued = Color.accentColor.opacity(0.1)
+    // Component Spacing
+    enum Spacing {
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 24
+    }
+
+    // Border Radius
+    enum Radius {
+        static let sm: CGFloat = 4
+        static let md: CGFloat = 8
+        static let lg: CGFloat = 12
+    }
 
     // Status Colors
     static let statusSuccess = Color.green
-    static let statusWarning = Color.orange
+    static let statusWarning = Color.yellow
     static let statusError = Color.red
     static let statusInfo = Color.blue
 
@@ -21,21 +35,10 @@ enum DesignTokens {
     static let textSecondary = Color.secondary
     static let textTertiary = Color(nsColor: .tertiaryLabelColor)
 
-    // Spacing Scale (4px base)
-    enum Spacing {
-        static let xxs: CGFloat = 4
-        static let xs: CGFloat = 8
-        static let sm: CGFloat = 12
-        static let md: CGFloat = 16
-        static let lg: CGFloat = 20
-        static let xl: CGFloat = 24
-        static let xxl: CGFloat = 32
-    }
+    // Accent
+    static let accentPrimary = Color.accentColor
 
-    // Corner Radius
-    enum Radius {
-        static let sm: CGFloat = 6
-        static let md: CGFloat = 8
-        static let lg: CGFloat = 12
-    }
+    // Backgrounds
+    static let surfaceBackground = Color(nsColor: .windowBackgroundColor)
+    static let cardBackground = Color(nsColor: .controlBackgroundColor)
 }
