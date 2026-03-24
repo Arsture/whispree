@@ -18,8 +18,8 @@
 
 ### Nearly Free
 
-STT uses Groq, LLM borrows Codex OAuth.
-Groq STT is free, and OpenAI LLM correction uses [Codex CLI](https://github.com/openai/codex) auth tokens directly.
+STT uses Groq, LLM borrows Codex OAuth.  
+Groq STT is free, and OpenAI LLM correction uses [Codex CLI](https://github.com/openai/codex) auth tokens directly.  
 If you have an OpenAI account, you get high-quality STT + LLM correction with virtually no additional cost.
 
 ### Choose Your Providers
@@ -34,10 +34,12 @@ Wants to be [OpenCode](https://github.com/nicepkg/opencode). Still a long way to
 
 ### Supported Models
 
-| Type | Model |
-|------|-------|
-| **WhisperKit** | `openai_whisper-large-v3_turbo` (CoreML + ANE optimized) |
-| **MLX Audio** | `Qwen3-ASR-1.7B-8bit` (Python worker default, swappable with other mlx-audio models) |
+| Provider | Model |
+|----------|-------|
+| **Groq (Cloud STT)** | `whisper-large-v3-turbo` |
+| **OpenAI (Cloud LLM)** | `gpt-5.4` (default), `gpt-5.4-mini`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`, `gpt-5.2-codex` |
+| **WhisperKit (Local STT)** | `openai_whisper-large-v3_turbo` (CoreML + ANE optimized) |
+| **MLX Audio (Local STT)** | `Qwen3-ASR-1.7B-8bit` (Python worker default, swappable with other mlx-audio models) |
 | **Local LLM** | `Qwen3-4B-Instruct-2507-4bit` (mlx-swift-lm) |
 
 ### Code-Switching Optimization
