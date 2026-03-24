@@ -7,9 +7,9 @@
 	<key>CFBundleName</key>
 	<string>Whispree</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.0.6</string>
+	<string>0.0.7</string>
 	<key>CFBundleVersion</key>
-	<string>0.0.6</string>
+	<string>0.0.7</string>
 	<key>LSUIElement</key>
 	<false/>
 	<key>NSAppleEventsUsageDescription</key>
@@ -20,9 +20,9 @@
 	<true/>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
-	<key>SUPublicEDKey</key>
-	<string>s44fNNpNBumMWbemL71UC323Ke9lgOL90FIqX/ArQFY=</string>
 	<key>SUFeedURL</key>
 	<string>https://arsture.github.io/whispree/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>s44fNNpNBumMWbemL71UC323Ke9lgOL90FIqX/ArQFY=</string>
 </dict>
 </plist>
