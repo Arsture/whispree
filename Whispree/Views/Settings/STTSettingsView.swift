@@ -6,131 +6,116 @@ struct STTSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("STT Provider")
-                    .font(.headline)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+            VStack(spacing: DesignTokens.Spacing.md) {
+                // Provider Cards
+                SettingsCard(title: "STT Provider", description: "음성 인식 엔진") {
+                    VStack(spacing: DesignTokens.Spacing.xs) {
+                        ProviderCard(
+                            provider: .groq,
+                            title: "Groq Cloud API",
+                            accuracy: 95,
+                            latency: 95,
+                            networkType: .network,
+                            isSelected: appState.settings.sttProviderType == .groq,
+                            state: appState.whisperModelState,
+                            onSelect: {
+                                appState.settings.sttProviderType = .groq
+                                appState.settings.save()
+                                Task { await appState.switchSTTProvider(to: .groq) }
+                            }
+                        )
 
-                VStack(spacing: 8) {
-                    ProviderCard(
-                        provider: .groq,
-                        title: "Groq Cloud API",
-                        accuracy: 95,
-                        latency: 95,
-                        networkType: .network,
-                        isSelected: appState.settings.sttProviderType == .groq,
-                        state: appState.whisperModelState,
-                        onSelect: {
-                            appState.settings.sttProviderType = .groq
-                            appState.settings.save()
-                            Task { await appState.switchSTTProvider(to: .groq) }
-                        }
-                    )
+                        ProviderCard(
+                            provider: .mlxAudio,
+                            title: "MLX Audio",
+                            accuracy: 65,
+                            latency: 65,
+                            networkType: .offline,
+                            isSelected: appState.settings.sttProviderType == .mlxAudio,
+                            state: appState.whisperModelState,
+                            onSelect: {
+                                appState.settings.sttProviderType = .mlxAudio
+                                appState.settings.save()
+                                Task { await appState.switchSTTProvider(to: .mlxAudio) }
+                            }
+                        )
 
-                    ProviderCard(
-                        provider: .mlxAudio,
-                        title: "MLX Audio",
-                        accuracy: 65,
-                        latency: 65,
-                        networkType: .offline,
-                        isSelected: appState.settings.sttProviderType == .mlxAudio,
-                        state: appState.whisperModelState,
-                        onSelect: {
-                            appState.settings.sttProviderType = .mlxAudio
-                            appState.settings.save()
-                            Task { await appState.switchSTTProvider(to: .mlxAudio) }
-                        }
-                    )
-
-                    ProviderCard(
-                        provider: .whisperKit,
-                        title: "WhisperKit",
-                        accuracy: 75,
-                        latency: 55,
-                        networkType: .offline,
-                        isSelected: appState.settings.sttProviderType == .whisperKit,
-                        state: appState.whisperModelState,
-                        onSelect: {
-                            appState.settings.sttProviderType = .whisperKit
-                            appState.settings.save()
-                            Task { await appState.switchSTTProvider(to: .whisperKit) }
-                        }
-                    )
+                        ProviderCard(
+                            provider: .whisperKit,
+                            title: "WhisperKit",
+                            accuracy: 75,
+                            latency: 55,
+                            networkType: .offline,
+                            isSelected: appState.settings.sttProviderType == .whisperKit,
+                            state: appState.whisperModelState,
+                            onSelect: {
+                                appState.settings.sttProviderType = .whisperKit
+                                appState.settings.save()
+                                Task { await appState.switchSTTProvider(to: .whisperKit) }
+                            }
+                        )
+                    }
                 }
-                .padding(.horizontal)
 
                 // Groq API Key Section
                 if appState.settings.sttProviderType == .groq {
-                    Divider()
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
+                    SettingsCard(title: "Groq API Key") {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                            SecureField("API Key", text: Binding(
+                                get: { appState.settings.groqApiKey },
+                                set: {
+                                    appState.settings.groqApiKey = $0
+                                    appState.settings.save()
+                                }
+                            ))
+                            .textFieldStyle(.roundedBorder)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Groq API Key")
-                            .font(.headline)
-
-                        SecureField("API Key", text: Binding(
-                            get: { appState.settings.groqApiKey },
-                            set: {
-                                appState.settings.groqApiKey = $0
-                                appState.settings.save()
+                            if appState.settings.groqApiKey.isEmpty {
+                                StatusBadge("console.groq.com에서 무료 API Key를 발급받으세요", icon: "info.circle", style: .warning)
+                            } else {
+                                StatusBadge("API Key 설정됨", icon: "checkmark.circle.fill", style: .success)
                             }
-                        ))
-                        .textFieldStyle(.roundedBorder)
-
-                        if appState.settings.groqApiKey.isEmpty {
-                            Label("console.groq.com에서 무료 API Key를 발급받으세요", systemImage: "info.circle")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                        } else {
-                            Label("API Key 설정됨", systemImage: "checkmark.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.green)
                         }
                     }
-                    .padding(.horizontal)
                 }
 
                 // Cold Start Warning
                 if case .loading = appState.whisperModelState,
                    appState.settings.sttProviderType == .mlxAudio {
-                    HStack {
-                        Image(systemName: "info.circle")
-                            .foregroundStyle(.blue)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("콜드 스타트 중...")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                            Text("첫 실행 시 약 1분 소요됩니다. 이후엔 즉시 사용 가능합니다.")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                    SettingsCard {
+                        HStack(spacing: 8) {
+                            Image(systemName: "info.circle")
+                                .foregroundStyle(DesignTokens.statusInfo)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("콜드 스타트 중...")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(DesignTokens.textPrimary)
+                                Text("첫 실행 시 약 1분 소요됩니다. 이후엔 즉시 사용 가능합니다.")
+                                    .font(.caption2)
+                                    .foregroundStyle(DesignTokens.textSecondary)
+                            }
                         }
                     }
-                    .padding()
-                    .background(.blue.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal)
                 }
 
                 // Model Download Notice
                 if case .notDownloaded = appState.whisperModelState,
                    appState.settings.sttProviderType != .groq {
-                    HStack {
-                        Image(systemName: "arrow.down.circle")
-                            .foregroundStyle(.orange)
-                        Text("모델 탭에서 모델을 다운로드하세요.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    SettingsCard {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.down.circle")
+                                .foregroundStyle(DesignTokens.statusWarning)
+                            Text("모델 탭에서 모델을 다운로드하세요.")
+                                .font(.caption)
+                                .foregroundStyle(DesignTokens.textSecondary)
+                        }
                     }
-                    .padding()
-                    .background(Color(nsColor: .controlBackgroundColor))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(.horizontal)
                 }
             }
-            .padding(.vertical)
+            .padding(DesignTokens.Spacing.xl)
         }
+        .background(DesignTokens.surfaceBackground)
     }
 }
 
@@ -151,24 +136,24 @@ struct ProviderCard: View {
 
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: 16) {
+            HStack(spacing: DesignTokens.Spacing.md) {
                 // Radio button
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? DesignTokens.accentPrimary : DesignTokens.textSecondary)
                     .font(.title3)
 
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     // Title
                     Text(title)
                         .font(.system(.body, weight: .medium))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(DesignTokens.textPrimary)
 
                     // Metrics
-                    HStack(spacing: 20) {
+                    HStack(spacing: DesignTokens.Spacing.lg) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Accuracy")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignTokens.textSecondary)
                             MetricBar(value: accuracy)
                         }
                         .frame(width: 100)
@@ -176,7 +161,7 @@ struct ProviderCard: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Speed")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DesignTokens.textSecondary)
                             MetricBar(value: latency)
                         }
                         .frame(width: 100)
@@ -188,10 +173,10 @@ struct ProviderCard: View {
                             Text(networkType == .offline ? "Local" : "Cloud")
                                 .font(.caption2)
                         }
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignTokens.textSecondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Color.secondary.opacity(0.15))
+                        .background(DesignTokens.textSecondary.opacity(0.15))
                         .clipShape(Capsule())
                     }
 
@@ -200,36 +185,29 @@ struct ProviderCard: View {
                         HStack(spacing: 6) {
                             switch state {
                             case .ready:
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                Text("Ready")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                StatusBadge("Ready", icon: "checkmark.circle.fill", style: .success)
                             case .loading:
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text(provider == .mlxAudio ? "Cold start..." : "Loading...")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 4) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .tint(DesignTokens.accentPrimary)
+                                    Text(provider == .mlxAudio ? "Cold start..." : "Loading...")
+                                        .font(.caption)
+                                        .foregroundStyle(DesignTokens.textSecondary)
+                                }
                             case .downloading:
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Downloading...")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 4) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .tint(DesignTokens.accentPrimary)
+                                    Text("Downloading...")
+                                        .font(.caption)
+                                        .foregroundStyle(DesignTokens.textSecondary)
+                                }
                             case .notDownloaded:
-                                Image(systemName: "arrow.down.circle")
-                                    .foregroundStyle(.orange)
-                                Text("Download required")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                StatusBadge("Download required", icon: "arrow.down.circle", style: .warning)
                             case .error(let msg):
-                                Image(systemName: "xmark.circle")
-                                    .foregroundStyle(.red)
-                                Text(msg)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+                                StatusBadge(msg, icon: "xmark.circle", style: .error)
                             }
                         }
                     }
@@ -237,15 +215,16 @@ struct ProviderCard: View {
 
                 Spacer()
             }
-            .padding(12)
+            .padding(DesignTokens.Spacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                    .fill(DesignTokens.cardBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? Color.accentColor.opacity(0.5) : Color.clear, lineWidth: 1)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                    .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.5) : Color.clear, lineWidth: 1)
             )
+            .shadow(color: .black.opacity(0.03), radius: 1, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -258,10 +237,10 @@ struct MetricBar: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.secondary.opacity(0.15))
+                    .fill(DesignTokens.textSecondary.opacity(0.15))
 
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.accentColor)
+                    .fill(DesignTokens.accentPrimary)
                     .frame(width: geo.size.width * CGFloat(value) / 100)
             }
         }

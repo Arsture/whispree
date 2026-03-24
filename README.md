@@ -130,10 +130,6 @@ So: **Whispree**. Free whisper. My whisper. Your whisper.
 
 **The AirPods Gambit** — Wear AirPods and look mildly annoyed while speaking. Congratulations, you're now "on a call" and nobody will question you dictating your entire PR description out loud.
 
-**The Zoom Maneuver** — Mute yourself on Zoom. Whisper into Whispree. Paste perfectly structured meeting notes before anyone finishes saying "can everyone see my screen?"
-
-**The Subway Stare** — Public transport dictation requires commitment. Maintain the "important business call" face. The key is looking slightly stressed. Nobody bothers someone who looks stressed on a train.
-
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
