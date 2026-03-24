@@ -18,8 +18,8 @@
 
 ### 거의 무료
 
-STT는 Groq을 쓰고, LLM은 Codex OAuth를 빌려씁니다.
-Groq STT는 무료이고, OpenAI LLM 교정은 [Codex CLI](https://github.com/openai/codex) 인증 토큰을 그대로 가져다 씁니다.
+STT는 Groq을 쓰고, LLM은 Codex OAuth를 빌려씁니다.  
+Groq STT는 무료이고, OpenAI LLM 교정은 [Codex CLI](https://github.com/openai/codex) 인증 토큰을 그대로 가져다 씁니다.  
 OpenAI 계정만 있으면 사실상 추가 비용 없이 고품질 STT + LLM 교정을 쓸 수 있습니다.
 
 ### 프로바이더 선택

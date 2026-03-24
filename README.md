@@ -18,7 +18,8 @@
 
 ### Near-Zero Cost
 
-Groq offers free STT. OpenAI's GPT handles LLM correction for fractions of a cent per request. If you already use [Codex CLI](https://github.com/openai/codex), Whispree borrows your auth tokens — no extra setup, no extra billing.
+Groq offers free STT. OpenAI's GPT handles LLM correction for fractions of a cent per request.   
+If you already use [Codex CLI](https://github.com/openai/codex), Whispree borrows your auth tokens — no extra setup, no extra billing.
 
 That's it. That's the pricing model.
 
@@ -121,7 +122,7 @@ I originally called it **FreeWhisper** — just a personal tool I hacked togethe
 
 When I decided to open-source it, I needed a proper name. Something "Oh My ..." felt dated. **OpenWhisper** was already taken.
 
-Then I thought about how I was borrowing API keys like a cat borrowing someone's sunny spot — so **Not My Whisper** had a nice ring to it. But after using it every day, I got attached. *"Wait, this IS my whisper."*
+Then I thought about borrowing API keys — borrowed cat? Borrowed Whisper? **Not My Whisper**? *(I'm not cute anymore.)* But after using it every day, I got attached. *"Wait, this IS my whisper."*
 
 So: **Whispree**. Free whisper. My whisper. Your whisper.
 
