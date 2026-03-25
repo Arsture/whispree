@@ -162,3 +162,38 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./appcast
+
+      - name: Update Homebrew tap
+        run: |
+          SHA256=$(shasum -a 256 Whispree.zip | awk '{print $1}')
+          VERSION=${{ steps.version.outputs.version }}
+
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/Arsture/homebrew-whispree.git /tmp/homebrew-tap
+          cd /tmp/homebrew-tap
+
+          cat > Casks/whispree.rb << CASK
+          cask "whispree" do
+            version "${VERSION}"
+            sha256 "${SHA256}"
+
+            url "https://github.com/Arsture/whispree/releases/download/v#{version}/Whispree.zip"
+            name "Whispree"
+            desc "macOS menu bar STT app — record speech, transcribe with WhisperKit, correct with LLM, paste"
+            homepage "https://github.com/Arsture/whispree"
+
+            depends_on macos: ">= :sonoma"
+            depends_on arch: :arm64
+
+            app "Whispree.app"
+
+            zap trash: [
+              "~/Library/Preferences/com.whispree.app.plist",
+            ]
+          end
+          CASK
+
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add Casks/whispree.rb
+          git commit -m "chore: bump whispree to ${VERSION}" || exit 0
+          git push
