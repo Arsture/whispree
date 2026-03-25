@@ -62,6 +62,33 @@ jobs:
           git add Whispree/Resources/Info.plist
           git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
 
+      - name: Install signing certificate
+        env:
+          SIGNING_CERTIFICATE_P12: ${{ secrets.SIGNING_CERTIFICATE_P12 }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          echo "$SIGNING_CERTIFICATE_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -k "$KEYCHAIN_PATH" -P "$SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Add to search list
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          # Extract and trust the self-signed certificate
+          openssl pkcs12 -in $RUNNER_TEMP/cert.p12 -clcerts -nokeys -out $RUNNER_TEMP/cert.pem -passin pass:"$SIGNING_CERTIFICATE_PASSWORD" -legacy
+          security add-trusted-cert -d -r trustRoot -k "$KEYCHAIN_PATH" $RUNNER_TEMP/cert.pem || true
+
+          # Verify identity is available
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
       - name: Build app
         run: |
           xcodebuild -project Whispree.xcodeproj \
@@ -80,10 +107,12 @@ jobs:
           echo "App path: $APP_PATH"
           echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
 
-      - name: Ad-hoc code sign app bundle
+      - name: Code sign app bundle
         run: |
-          codesign --force --deep --sign - "${{ steps.find_app.outputs.app_path }}"
+          codesign --force --deep --sign "Whispree Signing" "${{ steps.find_app.outputs.app_path }}"
           codesign --verify --deep --strict "${{ steps.find_app.outputs.app_path }}"
+          echo "Signing identity:"
+          codesign -dvv "${{ steps.find_app.outputs.app_path }}" 2>&1 | grep -E "Authority|TeamIdentifier|Signature"
 
       - name: Create ZIP archive
         run: |
