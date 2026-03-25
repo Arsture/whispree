@@ -80,6 +80,11 @@ jobs:
           echo "App path: $APP_PATH"
           echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
 
+      - name: Ad-hoc code sign app bundle
+        run: |
+          codesign --force --deep --sign - "${{ steps.find_app.outputs.app_path }}"
+          codesign --verify --deep --strict "${{ steps.find_app.outputs.app_path }}"
+
       - name: Create ZIP archive
         run: |
           cd "$(dirname "${{ steps.find_app.outputs.app_path }}")"
