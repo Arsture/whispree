@@ -108,6 +108,8 @@ final class AppState: ObservableObject {
                 llmModelState = .error(error.localizedDescription)
             }
         case .openai:
+            settings.isScreenshotContextEnabled = true
+            settings.save()
             let provider = OpenAIProvider(
                 model: settings.openaiModel,
                 authService: authService,

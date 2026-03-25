@@ -14,6 +14,8 @@ final class RecordingCoordinator: ObservableObject {
     private var workspaceObserver: AnyCancellable?
     private var previousApp: NSRunningApplication?
     private var lastExternalApp: NSRunningApplication?
+    private var capturedScreenshot: Data?
+    private let screenCaptureService = ScreenCaptureService()
 
     init(
         appState: AppState,
@@ -76,6 +78,15 @@ final class RecordingCoordinator: ObservableObject {
             previousApp = frontmost
         }
 
+        // 스크린샷 캡처 (OpenAI + 토글 ON일 때만)
+        if appState.settings.isScreenshotContextEnabled,
+           appState.settings.llmProviderType == .openai,
+           let targetApp = previousApp {
+            capturedScreenshot = screenCaptureService.captureWindow(of: targetApp)
+        } else {
+            capturedScreenshot = nil
+        }
+
         do {
             try audioService.startRecording()
             appState.transcriptionState = .recording
@@ -130,6 +141,7 @@ final class RecordingCoordinator: ObservableObject {
 
         defer {
             appState.transcriptionState = .idle
+            capturedScreenshot = nil
         }
 
         do {
@@ -182,6 +194,11 @@ final class RecordingCoordinator: ObservableObject {
                         systemPrompt += "\n\n교정 매핑 (왼쪽 표현이 텍스트에 있으면 오른쪽으로 교정):\n" + mappingText
                     }
 
+                    // 스크린샷 맥락 프롬프트 주입
+                    if capturedScreenshot != nil {
+                        systemPrompt += CorrectionPrompts.screenshotContextPrompt
+                    }
+
                     // 활성화된 도메인 단어 세트에서 glossary 생성
                     let glossary = appState.settings.domainWordSets
                         .filter { $0.isEnabled }
@@ -190,7 +207,8 @@ final class RecordingCoordinator: ObservableObject {
                     let corrected = try await llmProvider.correct(
                         text: transcribedText,
                         systemPrompt: systemPrompt,
-                        glossary: glossary.isEmpty ? nil : glossary
+                        glossary: glossary.isEmpty ? nil : glossary,
+                        screenshot: capturedScreenshot
                     )
                     guard !Task.isCancelled else { return }
                     appState.correctedText = corrected

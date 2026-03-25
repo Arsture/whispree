@@ -24,6 +24,9 @@ struct AppSettings: Codable {
     // OpenAI 모델 선택
     var openaiModel: OpenAIModel = .gpt54
 
+    // Screenshot context
+    var isScreenshotContextEnabled: Bool = false
+
     // Groq API
     var groqApiKey: String = ""
 

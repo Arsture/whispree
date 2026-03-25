@@ -28,7 +28,7 @@ final class LocalLLMProvider: LLMProvider {
         modelContainer = nil
     }
 
-    func correct(text: String, systemPrompt: String, glossary: [String]?) async throws -> String {
+    func correct(text: String, systemPrompt: String, glossary: [String]?, screenshot: Data? = nil) async throws -> String {
         guard let modelContainer else { throw LLMError.modelNotLoaded }
 
         // glossary를 시스템 프롬프트에 주입

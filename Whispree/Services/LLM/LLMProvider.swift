@@ -12,7 +12,7 @@ protocol LLMProvider {
 
     /// 텍스트 교정. glossary는 도메인 단어 세트에서 가져옴
     func correct(text: String, systemPrompt: String,
-                 glossary: [String]?) async throws -> String
+                 glossary: [String]?, screenshot: Data?) async throws -> String
 }
 
 @MainActor

@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 import KeyboardShortcuts
+import CoreGraphics
 
 struct OnboardingView: View {
     @EnvironmentObject var appState: AppState
@@ -10,6 +11,7 @@ struct OnboardingView: View {
     @State private var currentStep = 0
     @State private var micGranted = false
     @State private var axGranted = false
+    @State private var screenRecordingGranted = false
     @State private var axCheckTimer: Timer?
     @State private var demoText = ""
     @State private var quickFixDemoText = "밸리데이션을 체크해서 컨트롤러의 로직을 리팩토링합니다"
@@ -126,6 +128,23 @@ struct OnboardingView: View {
 
                 Divider().padding(.horizontal, 16)
 
+                // Screen Recording
+                Button {
+                    CGRequestScreenCaptureAccess()
+                    screenRecordingGranted = CGPreflightScreenCaptureAccess()
+                } label: {
+                    permissionCard(
+                        icon: "camera.viewfinder",
+                        iconColor: .blue,
+                        title: "화면 녹화",
+                        description: "다른 앱 화면을 캡처하여 AI 교정의 맥락을 제공합니다",
+                        isGranted: screenRecordingGranted
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Divider().padding(.horizontal, 16)
+
                 // App Management
                 Button {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AppBundles") {
@@ -137,10 +156,18 @@ struct OnboardingView: View {
                         iconColor: .blue,
                         title: "앱 관리",
                         description: "자동 업데이트에 필요합니다 (선택)",
-                        isGranted: false
+                        isGranted: false,
+                        actionLabel: "설정 열기"
                     )
                 }
                 .buttonStyle(.plain)
+
+                Text("설정에서 Whispree를 허용한 후에도 여기에 체크 표시가 나타나지 않습니다")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                    .padding(.top, -4)
             }
             .background(.quaternary.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -153,6 +180,7 @@ struct OnboardingView: View {
         .onAppear {
             micGranted = AudioService().checkPermission()
             axGranted = TextInsertionService.isAccessibilityEnabled()
+            screenRecordingGranted = CGPreflightScreenCaptureAccess()
         }
         .onDisappear {
             axCheckTimer?.invalidate()
@@ -535,7 +563,7 @@ struct OnboardingView: View {
         .padding(.bottom, 40)
     }
 
-    private func permissionCard(icon: String, iconColor: Color, title: String, description: String, isGranted: Bool) -> some View {
+    private func permissionCard(icon: String, iconColor: Color, title: String, description: String, isGranted: Bool, actionLabel: String = "허용하기") -> some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
@@ -559,7 +587,7 @@ struct OnboardingView: View {
                     .font(.title3)
                     .foregroundStyle(.green)
             } else {
-                Text("허용하기")
+                Text(actionLabel)
                     .font(.caption.bold())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10)

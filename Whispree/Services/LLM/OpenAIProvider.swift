@@ -32,7 +32,7 @@ final class OpenAIProvider: LLMProvider {
         // 네트워크 Provider는 특별한 해제 불필요
     }
 
-    func correct(text: String, systemPrompt: String, glossary: [String]?) async throws -> String {
+    func correct(text: String, systemPrompt: String, glossary: [String]?, screenshot: Data? = nil) async throws -> String {
         // glossary를 시스템 프롬프트에 동적 주입
         var fullPrompt = systemPrompt
         if let glossary, !glossary.isEmpty {
@@ -51,12 +51,23 @@ final class OpenAIProvider: LLMProvider {
         request.setValue(Self.buildUserAgent(), forHTTPHeaderField: "User-Agent")
         request.setValue("codex_cli_rs", forHTTPHeaderField: "originator")
 
+        // 스크린샷이 있으면 Vision 멀티모달 content, 없으면 텍스트 전용
+        let userContent: [[String: Any]]
+        if let screenshot {
+            let base64Image = screenshot.base64EncodedString()
+            userContent = [
+                ["type": "input_image", "image_url": "data:image/jpeg;base64,\(base64Image)"],
+                ["type": "input_text", "text": text]
+            ]
+        } else {
+            userContent = [["type": "input_text", "text": text]]
+        }
+
         let body: [String: Any] = [
             "model": model.rawValue,
             "instructions": fullPrompt,
             "input": [
-                ["type": "message", "role": "user",
-                 "content": [["type": "input_text", "text": text]]]
+                ["type": "message", "role": "user", "content": userContent]
             ],
             "tools": [] as [[String: Any]],
             "tool_choice": "auto",

@@ -36,6 +36,40 @@ struct LLMSettingsView: View {
                         .fill(.quaternary.opacity(0.5))
                 )
 
+                // Screenshot Context Section (OpenAI only)
+                if appState.settings.llmProviderType == .openai {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("스크린샷 컨텍스트")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("활성화")
+                                Text("녹음 시 화면을 캡처하여 교정 정확도를 높입니다")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.isScreenshotContextEnabled },
+                                set: {
+                                    appState.settings.isScreenshotContextEnabled = $0
+                                    appState.settings.save()
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+                }
+
                 // OpenAI Model Section
                 if appState.settings.llmProviderType == .openai {
                     VStack(alignment: .leading, spacing: 8) {

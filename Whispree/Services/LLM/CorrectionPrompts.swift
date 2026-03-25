@@ -181,6 +181,19 @@ enum CorrectionPrompts {
     교정된 텍스트만 출력하세요. 설명은 하지 마세요.
     """
 
+    static let screenshotContextPrompt = """
+
+
+[시각 맥락]
+첨부된 스크린샷은 사용자가 현재 보고 있는 화면입니다.
+화면을 분석하여 사용 중인 도구, 보이는 기술 용어, 다루는 주제를 파악하세요.
+
+이 맥락을 활용하여:
+- 화면에서 확인된 정확한 표기를 우선하세요
+- 맥락상 확신이 높아지는 교정은 적극적으로 하세요
+- 위 교정 규칙의 허용 범위 안에서, 맥락을 이해한 더 자연스러운 결과를 만드세요
+"""
+
     static func prompt(for mode: CorrectionMode, language: SupportedLanguage) -> String {
         switch mode {
         case .standard:

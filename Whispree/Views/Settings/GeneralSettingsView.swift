@@ -1,11 +1,15 @@
 import SwiftUI
 import KeyboardShortcuts
+import CoreGraphics
 
 struct GeneralSettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var hotkeyManager: HotkeyManager
     @State private var micGranted = false
     @State private var axGranted = false
+    @State private var screenRecordingGranted = false
+    @State private var recordingConflict: ShortcutConflict?
+    @State private var quickFixConflict: ShortcutConflict?
 
     var body: some View {
         ScrollView {
@@ -16,13 +20,25 @@ struct GeneralSettingsView: View {
                         HStack {
                             Text("Recording shortcut:")
                             Spacer()
-                            KeyboardShortcuts.Recorder(for: .toggleRecording)
+                            ShortcutRecorderButton(
+                                name: .toggleRecording,
+                                conflict: $recordingConflict
+                            )
+                        }
+                        if let conflict = recordingConflict {
+                            shortcutConflictBanner(conflict)
                         }
 
                         HStack {
                             Text("Quick Fix shortcut:")
                             Spacer()
-                            KeyboardShortcuts.Recorder(for: .quickFix)
+                            ShortcutRecorderButton(
+                                name: .quickFix,
+                                conflict: $quickFixConflict
+                            )
+                        }
+                        if let conflict = quickFixConflict {
+                            shortcutConflictBanner(conflict)
                         }
 
                         Text("텍스트를 선택한 후 Quick Fix 단축키를 누르면 단어를 즉시 교정하고 사전에 저장합니다.")
@@ -158,6 +174,26 @@ struct GeneralSettingsView: View {
                         }
 
                         HStack {
+                            Text("화면 녹화:")
+                            Spacer()
+                            if screenRecordingGranted {
+                                Label("Granted", systemImage: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                    .font(.caption)
+                            } else {
+                                HStack(spacing: 8) {
+                                    Label("Not Granted", systemImage: "xmark.circle.fill")
+                                        .foregroundStyle(.red)
+                                        .font(.caption)
+                                    Button("권한 요청") {
+                                        CGRequestScreenCaptureAccess()
+                                    }
+                                    .font(.caption)
+                                }
+                            }
+                        }
+
+                        HStack {
                             Text("App Management:")
                             Spacer()
                             Button("Open Settings") {
@@ -185,8 +221,22 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private func shortcutConflictBanner(_ conflict: ShortcutConflict) -> some View {
+        HStack(alignment: .top, spacing: 4) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+                .font(.caption2)
+            Text("\(conflict.source)의 '\(conflict.featureName)' 기능을 override 중입니다. 다른 단축키로 변경하면 기존 기능이 자동 복구됩니다.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, 4)
+    }
+
     private func refreshPermissions() {
         micGranted = AudioService().checkPermission()
         axGranted = TextInsertionService.isAccessibilityEnabled()
+        screenRecordingGranted = CGPreflightScreenCaptureAccess()
     }
 }
