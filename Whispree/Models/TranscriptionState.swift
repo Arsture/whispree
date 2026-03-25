@@ -111,12 +111,24 @@ enum SupportedLanguage: String, CaseIterable, Codable {
     case auto = "auto"
     case korean = "ko"
     case english = "en"
+    case japanese = "ja"
+    case chinese = "zh"
+    case spanish = "es"
+    case french = "fr"
+    case german = "de"
+    case portuguese = "pt"
 
     var displayName: String {
         switch self {
         case .auto: return String(localized: "Auto-detect")
         case .korean: return "한국어"
         case .english: return "English"
+        case .japanese: return "日本語"
+        case .chinese: return "中文"
+        case .spanish: return "Español"
+        case .french: return "Français"
+        case .german: return "Deutsch"
+        case .portuguese: return "Português"
         }
     }
 }

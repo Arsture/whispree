@@ -26,7 +26,7 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
         guard !apiKey.isEmpty else { throw STTError.modelNotLoaded }
 
         let wavData = Self.createWAVData(from: audioBuffer)
-        let langCode = (language == nil || language == .auto) ? "ko" : language!.rawValue
+        let langCode: String? = (language == nil || language == .auto) ? nil : language!.rawValue
 
         let boundary = UUID().uuidString
         var request = URLRequest(url: URL(string: "https://api.groq.com/openai/v1/audio/transcriptions")!)
@@ -49,10 +49,12 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
         body.append("Content-Disposition: form-data; name=\"model\"\r\n\r\n")
         body.append("\(model)\r\n")
 
-        // language
-        body.append("--\(boundary)\r\n")
-        body.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n")
-        body.append("\(langCode)\r\n")
+        // language (omit for auto-detect)
+        if let langCode {
+            body.append("--\(boundary)\r\n")
+            body.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n")
+            body.append("\(langCode)\r\n")
+        }
 
         // response_format
         body.append("--\(boundary)\r\n")
@@ -82,7 +84,7 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
         return TranscriptionResult(
             text: result.text,
             segments: [],
-            language: langCode
+            language: langCode ?? "auto"
         )
     }
 

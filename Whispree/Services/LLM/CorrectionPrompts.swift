@@ -201,6 +201,7 @@ enum CorrectionPrompts {
             case .auto: return codeSwitchPrompt
             case .korean: return koreanOnlyPrompt
             case .english: return englishOnlyPrompt
+            default: return defaultSystemPrompt
             }
         case .fillerRemoval:
             return fillerRemovalPrompt
