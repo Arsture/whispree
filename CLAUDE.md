@@ -14,6 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 파일 추가/삭제 시 빌드 전 `xcodegen generate` 필수.
 
+**코드 서명 주의**: 로컬 빌드는 Xcode Automatic Signing(개발자 인증서)을 사용. CI(release.yml)는 `CODE_SIGN_IDENTITY=""` + ad-hoc(`codesign --force --deep --sign -`)으로 서명. Sparkle 자동 업데이트는 ad-hoc ↔ ad-hoc만 호환되므로, 로컬 빌드한 앱에서는 자동 업데이트가 동작하지 않음 (개발자는 git pull + 빌드로 업데이트).
+
 ## Build & Test Commands
 
 ```bash
