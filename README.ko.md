@@ -77,9 +77,7 @@ brew tap Arsture/whispree && brew install --cask whispree
 
 ### GitHub Releases
 
-[GitHub Releases](https://github.com/Arsture/whispree/releases)에서 최신 `.zip`을 다운로드하세요. 공증되지 않은 앱이므로 첫 실행 시 우클릭 > 열기로 Gatekeeper를 우회하세요.
-
-> **참고:** `.dmg`도 제공되지만 macOS Gatekeeper에 의해 차단될 수 있습니다. `.zip` 사용을 권장합니다.
+> **참고:** 앱이 공증되지 않았습니다 (Apple Developer ID 없음). [GitHub Releases](https://github.com/Arsture/whispree/releases)의 `.zip`/`.dmg` 다운로드는 macOS Gatekeeper에 의해 차단됩니다. 압축 해제 후 터미널에서 `xattr -cr Whispree.app`을 실행해야 합니다. **Homebrew 설치를 강력히 권장합니다** — Gatekeeper 우회를 자동으로 처리합니다.
 
 ### 소스에서 빌드
 

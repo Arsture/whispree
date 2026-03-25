@@ -77,9 +77,7 @@ brew tap Arsture/whispree && brew install --cask whispree
 
 ### GitHub Releases
 
-Download the latest `.zip` from [GitHub Releases](https://github.com/Arsture/whispree/releases). The app is not notarized, so on first launch: right-click > Open to bypass Gatekeeper.
-
-> **Note:** `.dmg` is also available but may be blocked by macOS Gatekeeper. Use the `.zip` instead.
+> **Note:** The app is not notarized (no Apple Developer ID). `.zip` and `.dmg` downloads from [GitHub Releases](https://github.com/Arsture/whispree/releases) will be blocked by macOS Gatekeeper. You'll need to run `xattr -cr Whispree.app` in Terminal after extracting. **Homebrew install is strongly recommended** as it handles this automatically.
 
 ### Build from Source
 
