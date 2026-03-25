@@ -168,7 +168,7 @@ jobs:
           SHA256=$(shasum -a 256 Whispree.zip | awk '{print $1}')
           VERSION=${{ steps.version.outputs.version }}
 
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/Arsture/homebrew-whispree.git /tmp/homebrew-tap
+          git clone https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/Arsture/homebrew-whispree.git /tmp/homebrew-tap
           cd /tmp/homebrew-tap
 
           cat > Casks/whispree.rb << CASK
