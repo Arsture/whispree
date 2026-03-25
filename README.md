@@ -1,6 +1,6 @@
 # Whispree
 
-> Get SuperWhisper-quality STT for practically free if you already have an OpenAI account.
+> Start voice-coding with just an OpenAI account. For free.
 
 [한국어](README.ko.md) | English
 
@@ -16,10 +16,46 @@
 
 ## Features
 
+### Voice-to-Prompt
+
+Whispree is an app that lets you **talk to AI instead of typing**. Place your cursor in any prompt input — Cursor, Claude, ChatGPT — hit a hotkey, and speak. The corrected text is automatically pasted right where your cursor was.
+
+3–5x faster than typing, and your train of thought stays intact. Even if you switch windows while recording, Whispree remembers the original focus position and inserts text exactly there.
+
+### Visual Context
+
+The moment you start recording, Whispree automatically captures a screenshot of the focused screen and attaches it alongside your prompt. Visual context that's hard to convey with words alone gets included automatically, so AI understands more accurately. No more manually screenshotting, finding the file, and dragging it in.
+
+### Code-Switching Optimization
+
+Built for Korean developers who mix English. LLM correction handles Korean + English tech terms:
+
+```
+"밸리데이션 해야 되거든"  →  "validation 해야 되거든"
+"리엑트 컴포넌트"        →  "React 컴포넌트"
+"깃허브에 PR 올려놨어"   →  "GitHub에 PR 올려놨어"
+```
+
+### Correction Modes
+
+| Mode | Description |
+|------|-------------|
+| Standard | Fix STT errors — spacing, spelling, misheard words |
+| Filler Removal | STT correction + remove fillers (um, uh, like, you know) |
+| Structured (for Prompt) | STT correction + filler removal + organize into bullet points. Even rambling speech becomes a clear instruction for AI |
+| Custom | Your own custom system prompt |
+
+### Smart Dictation
+
+- **Record** — `Ctrl+Shift+R` (default). Push to Talk (hold to record) or Toggle (press once to start, again to stop) modes
+- **Quick Fix** — `Ctrl+Shift+D` (default). Add misheard words to correction dictionary & Replace
+- **Cancel** — `ESC`. Cancel anytime during recording
+- All hotkeys are customizable in Settings.
+
 ### Nearly Free
 
-STT uses Groq, LLM borrows Codex OAuth.  
-Groq STT is free, and OpenAI LLM correction uses [Codex CLI](https://github.com/openai/codex) auth tokens directly.  
+STT uses Groq, LLM borrows Codex OAuth.
+Groq STT is free, and OpenAI LLM correction uses [Codex CLI](https://github.com/openai/codex) auth tokens directly.
 If you have an OpenAI account, you get high-quality STT + LLM correction with virtually no additional cost.
 
 ### Choose Your Providers
@@ -41,31 +77,6 @@ Wants to be [OpenCode](https://github.com/nicepkg/opencode). Still a long way to
 | **WhisperKit (Local STT)** | `openai_whisper-large-v3_turbo` (CoreML + ANE optimized) |
 | **MLX Audio (Local STT)** | `Qwen3-ASR-1.7B-8bit` (Python worker default, swappable with other mlx-audio models) |
 | **Local LLM** | `Qwen3-4B-Instruct-2507-4bit` (mlx-swift-lm) |
-
-### Code-Switching Optimization
-
-Built for Korean developers who mix English. LLM correction handles Korean + English tech terms:
-
-```
-"밸리데이션 해야 되거든"  →  "validation 해야 되거든"
-"리엑트 컴포넌트"        →  "React 컴포넌트"
-"깃허브에 PR 올려놨어"   →  "GitHub에 PR 올려놨어"
-```
-
-### Smart Dictation
-
-- **Record** — `Ctrl+Shift+R`. Push to Talk (hold to record) or Toggle (press once to start, again to stop) modes
-- **Quick Fix** — `Ctrl+Shift+D`. Add misheard words to correction dictionary & Replace
-- **Cancel** — `ESC`. Cancel anytime during recording
-
-### Correction Modes
-
-| Mode | Description |
-|------|-------------|
-| Standard | Fix STT errors — spacing, spelling, misheard words |
-| Filler Removal | STT correction + remove fillers (um, uh, like, you know) |
-| Structured (for Prompt) | STT correction + filler removal + organize into bullet points |
-| Custom | Your own custom system prompt |
 
 ## Installation
 
@@ -98,8 +109,8 @@ SPM dependencies are resolved automatically on first build.
 
 1. **First Launch** — Grant microphone and accessibility permissions.
 2. **Download Models** — Go to Settings > Models and download the STT/LLM models you want. (Not needed for cloud providers)
-3. **Record** — Press `Ctrl+Shift+R` to record. When done, transcription + correction happens automatically.
-4. **Insert** — Corrected text is automatically pasted at the cursor position in your previously active app.
+3. **Record** — Place your cursor in an AI prompt input and press `Ctrl+Shift+R`. A screenshot is automatically captured.
+4. **Insert** — Corrected text is automatically pasted where your cursor originally was. Even if you switched windows while recording, it returns to the exact position.
 
 ### Quick Fix
 
