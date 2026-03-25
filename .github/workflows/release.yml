@@ -167,6 +167,10 @@ jobs:
           </rss>
           EOF
 
+      - name: Push version commit
+        run: |
+          git push origin main
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -177,10 +181,6 @@ jobs:
             Whispree.dmg
           draft: false
           prerelease: false
-
-      - name: Push version commit
-        run: |
-          git push origin main
 
       - name: Deploy appcast to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

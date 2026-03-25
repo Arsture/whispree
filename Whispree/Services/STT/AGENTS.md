@@ -6,6 +6,8 @@
 ## Purpose
 Speech-to-Text 프로바이더. 프로토콜 추상화로 WhisperKit / Groq Cloud / MLX Audio 간 런타임 전환.
 
+> **Note**: 이전 문서에서 "Lightning"으로 표기된 프로바이더는 `MLXAudioProvider`의 구 명칭.
+
 ## Key Files
 
 | File | Description |

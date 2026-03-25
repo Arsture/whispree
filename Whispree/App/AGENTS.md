@@ -21,7 +21,7 @@
 - `AppState`는 **모든 View와 Service가 참조**하는 중앙 상태. 프로퍼티 변경 시 영향 범위를 반드시 확인
 - `AppState`는 `@MainActor` — UI 스레드에서만 접근
 - Provider 전환 로직(`switchSTTProvider`, `switchLLMProvider`)이 여기에 있음
-- `AppDelegate`는 메뉴바 앱으로서의 lifecycle 관리 (dock 아이콘 숨김, 상태 아이템 등)
+- `AppDelegate`는 lifecycle 관리 — NSStatusItem(메뉴바 아이콘) + NSWindow(메인 윈도우). Dock 아이콘 표시(`LSUIElement=false`)는 의도적 설계 (윈도우 기반 UI)
 
 ### Testing
 - `AppState` 변경 시 `WhispreeTests/Models/` 테스트 확인

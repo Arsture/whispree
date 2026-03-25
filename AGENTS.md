@@ -3,7 +3,7 @@
 # Whispree
 
 ## Purpose
-macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 이전 앱에 자동 붙여넣기. Apple Silicon(arm64) 전용, macOS 14+, 로컬 온디바이스 실행.
+macOS STT 앱 (메뉴바 아이콘 + 메인 윈도우). 음성 녹음 → WhisperKit 전사 → LLM 교정 → 이전 앱에 자동 붙여넣기. Quick Fix로 오인식 단어 즉시 교정 + 사전 등록. Apple Silicon(arm64) 전용, macOS 14+.
 
 ## Key Files
 
@@ -28,10 +28,10 @@ macOS 메뉴바 STT 앱. 음성 녹음 → WhisperKit 전사 → LLM 교정 → 
 ┌─────────────────────────────────────────────┐
 │  macOS Menu Bar App (SwiftUI)               │
 │                                             │
-│  Hotkey → AudioService (record + FFT)       │
-│         → STTProvider.transcribe()          │
-│         → LLMProvider.correct()             │
-│         → TextInsertionService.insertText() │
+│  Recording: Hotkey → AudioService → STT     │
+│    → LLM correct → TextInsertionService     │
+│  Quick Fix: Hotkey → capture selected text  │
+│    → correction panel → replace + dictionary│
 │                                             │
 │  Orchestrator: RecordingCoordinator         │
 │  Central State: AppState (@MainActor)       │
@@ -67,6 +67,6 @@ xcodebuild ... test                  # 테스트 (48개, E2E 포함)
 - Accessibility 권한 필수 (텍스트 삽입)
 
 ### SPM Dependencies
-- WhisperKit 0.9.0, mlx-swift-lm (main), KeyboardShortcuts 2.0.0+, LaunchAtLogin 1.0.0+
+- WhisperKit 0.9.0, mlx-swift-lm (main), KeyboardShortcuts 2.0.0+, LaunchAtLogin 1.0.0+, Sparkle 2.6.0+
 
 <!-- MANUAL: -->
