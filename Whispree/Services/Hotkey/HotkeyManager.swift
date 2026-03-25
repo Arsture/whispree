@@ -15,17 +15,21 @@ final class HotkeyManager: ObservableObject {
     var onQuickFix: (() -> Void)?
 
     private let appState: AppState
+    private let eventTap = EventTapHotkeyService.shared
     private var isKeyDown = false
     private var escMonitorLocal: Any?
     private var escMonitorGlobal: Any?
 
     init(appState: AppState) {
         self.appState = appState
+        eventTap.start()
         setupHotkeys()
         setupEscCancel()
     }
 
     private func setupHotkeys() {
+        eventTap.clearBindings()
+
         switch appState.settings.recordingMode {
         case .pushToTalk:
             setupPushToTalk()
@@ -36,63 +40,63 @@ final class HotkeyManager: ObservableObject {
     }
 
     func updateMode(_ mode: RecordingMode) {
-        KeyboardShortcuts.removeAllHandlers()
-
         appState.settings.recordingMode = mode
         appState.settings.save()
+        setupHotkeys()
+    }
 
-        switch mode {
-        case .pushToTalk:
-            setupPushToTalk()
-        case .toggle:
-            setupToggleMode()
-        }
-        setupQuickFixHotkey()
+    /// Re-register hotkeys after shortcut changes (called by ShortcutRecorderButton)
+    func reloadHotkeys() {
+        setupHotkeys()
     }
 
     private func setupPushToTalk() {
-        KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
-            guard let self, !self.isKeyDown else { return }
-            self.isKeyDown = true
-            self.onRecordingToggle?(true)
-        }
-
-        KeyboardShortcuts.onKeyUp(for: .toggleRecording) { [weak self] in
-            guard let self, self.isKeyDown else { return }
-            self.isKeyDown = false
-            self.onRecordingToggle?(false)
-        }
+        guard let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) else { return }
+        eventTap.register(shortcut: shortcut,
+            keyDown: { [weak self] in
+                guard let self, !self.isKeyDown else { return }
+                self.isKeyDown = true
+                self.onRecordingToggle?(true)
+            },
+            keyUp: { [weak self] in
+                guard let self, self.isKeyDown else { return }
+                self.isKeyDown = false
+                self.onRecordingToggle?(false)
+            }
+        )
     }
 
     private func setupToggleMode() {
-        KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
-            guard let self else { return }
-            let shouldRecord = self.appState.transcriptionState == .idle
-            self.onRecordingToggle?(shouldRecord)
-        }
+        guard let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) else { return }
+        eventTap.register(shortcut: shortcut,
+            keyDown: { [weak self] in
+                guard let self else { return }
+                let shouldRecord = self.appState.transcriptionState == .idle
+                self.onRecordingToggle?(shouldRecord)
+            }
+        )
     }
 
-    // MARK: - Quick Fix Hotkey
-
     private func setupQuickFixHotkey() {
-        KeyboardShortcuts.onKeyDown(for: .quickFix) { [weak self] in
-            self?.onQuickFix?()
-        }
+        guard let shortcut = KeyboardShortcuts.getShortcut(for: .quickFix) else { return }
+        eventTap.register(shortcut: shortcut,
+            keyDown: { [weak self] in
+                self?.onQuickFix?()
+            }
+        )
     }
 
     // MARK: - ESC to Cancel
 
     private func setupEscCancel() {
-        // Local monitor (when app is focused)
         escMonitorLocal = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == 53 { // ESC
+            if event.keyCode == 53 {
                 self?.handleEsc()
-                return nil // consume the event
+                return nil
             }
             return event
         }
 
-        // Global monitor (when app is not focused)
         escMonitorGlobal = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             if event.keyCode == 53 {
                 self?.handleEsc()
@@ -106,11 +110,7 @@ final class HotkeyManager: ObservableObject {
     }
 
     deinit {
-        if let monitor = escMonitorLocal {
-            NSEvent.removeMonitor(monitor)
-        }
-        if let monitor = escMonitorGlobal {
-            NSEvent.removeMonitor(monitor)
-        }
+        if let monitor = escMonitorLocal { NSEvent.removeMonitor(monitor) }
+        if let monitor = escMonitorGlobal { NSEvent.removeMonitor(monitor) }
     }
 }
