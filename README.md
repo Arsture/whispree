@@ -69,10 +69,10 @@ Built for Korean developers who mix English. LLM correction handles Korean + Eng
 
 ## Installation
 
-### Homebrew Cask (Recommended)
+### Homebrew (Recommended)
 
 ```bash
-brew install --cask whispree
+brew tap Arsture/whispree && brew install --cask whispree
 ```
 
 ### GitHub Releases
