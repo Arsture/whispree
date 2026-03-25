@@ -82,10 +82,6 @@ jobs:
           # Add to search list
           security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
 
-          # Extract and trust the self-signed certificate
-          openssl pkcs12 -in $RUNNER_TEMP/cert.p12 -clcerts -nokeys -out $RUNNER_TEMP/cert.pem -passin pass:"$SIGNING_CERTIFICATE_PASSWORD"
-          security add-trusted-cert -d -r trustRoot -k "$KEYCHAIN_PATH" $RUNNER_TEMP/cert.pem || true
-
           # Verify identity is available
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
