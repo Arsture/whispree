@@ -7,13 +7,16 @@ final class TextInsertionService {
         // 유효한 외부 앱이 있으면 활성화 + Cmd+V
         if let target = targetApp,
            target.bundleIdentifier != Bundle.main.bundleIdentifier {
-            target.activate()
-            // 앱 활성화 대기 (async — MainActor 블로킹 방지)
-            let deadline = Date().addingTimeInterval(0.5)
-            while NSWorkspace.shared.frontmostApplication?.processIdentifier != target.processIdentifier,
-                  Date() < deadline {
-                try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+            let activated = await activateApp(target)
+
+            if !activated {
+                // 활성화 실패 — 클립보드에만 복사, Cmd+V 안 쏨
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(text, forType: .string)
+                return false
             }
+
             return await insertViaClipboard(text)
         }
 
@@ -22,6 +25,42 @@ final class TextInsertionService {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
         return false
+    }
+
+    // MARK: - App Activation
+
+    /// 대상 앱을 강제 활성화. NSWorkspace.openApplication → activate() 폴백.
+    private func activateApp(_ target: NSRunningApplication) async -> Bool {
+        // 방법 1: NSWorkspace.openApplication (가장 신뢰성 높음)
+        if let bundleURL = target.bundleURL {
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            do {
+                _ = try await NSWorkspace.shared.openApplication(at: bundleURL, configuration: config)
+                // 활성화 대기
+                let deadline = Date().addingTimeInterval(1.0)
+                while NSWorkspace.shared.frontmostApplication?.processIdentifier != target.processIdentifier,
+                      Date() < deadline {
+                    try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+                }
+                if NSWorkspace.shared.frontmostApplication?.processIdentifier == target.processIdentifier {
+                    return true
+                }
+            } catch {
+                // openApplication 실패 시 activate() 폴백으로 진행
+            }
+        }
+
+        // 방법 2: activate() 폴백
+        let activated = target.activate()
+        if activated {
+            let deadline = Date().addingTimeInterval(0.5)
+            while NSWorkspace.shared.frontmostApplication?.processIdentifier != target.processIdentifier,
+                  Date() < deadline {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+        }
+        return NSWorkspace.shared.frontmostApplication?.processIdentifier == target.processIdentifier
     }
 
     // MARK: - Clipboard + Cmd+V
