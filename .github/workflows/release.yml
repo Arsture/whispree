@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -29,9 +32,6 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          # Fetch all tags for version detection
-          git fetch --tags
-
           # Check for "GO LIVE X.X.X" pattern in commit message
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "Commit message: $COMMIT_MSG"
