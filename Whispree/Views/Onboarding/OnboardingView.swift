@@ -123,6 +123,24 @@ struct OnboardingView: View {
                     )
                 }
                 .buttonStyle(.plain)
+
+                Divider().padding(.horizontal, 16)
+
+                // App Management
+                Button {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AppBundles") {
+                        NSWorkspace.shared.open(url)
+                    }
+                } label: {
+                    permissionCard(
+                        icon: "arrow.triangle.2.circlepath",
+                        iconColor: .blue,
+                        title: "앱 관리",
+                        description: "자동 업데이트에 필요합니다 (선택)",
+                        isGranted: false
+                    )
+                }
+                .buttonStyle(.plain)
             }
             .background(.quaternary.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: 12))

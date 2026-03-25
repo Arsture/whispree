@@ -158,6 +158,17 @@ struct GeneralSettingsView: View {
                         }
 
                         HStack {
+                            Text("App Management:")
+                            Spacer()
+                            Button("Open Settings") {
+                                if let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AppBundles") {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }
+                            .font(.caption)
+                        }
+
+                        HStack {
                             Spacer()
                             Button("Refresh Status") {
                                 refreshPermissions()
