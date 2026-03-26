@@ -20,8 +20,8 @@ enum Constants {
     }
 
     enum Audio {
-        static let sampleRate: Double = 16000
+        static let sampleRate: Double = 16_000
         static let channels: UInt32 = 1
-        static let bufferSize: UInt32 = 4096
+        static let bufferSize: UInt32 = 4_096
     }
 }

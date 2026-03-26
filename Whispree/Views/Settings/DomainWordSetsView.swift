@@ -145,9 +145,9 @@ struct DomainWordSetsView: View {
 
     private func categoryDescription(for category: DomainCategory) -> String {
         switch category {
-        case .itDev: return "API, React, Docker, LLM 등 개발 용어 30개"
-        case .statistics: return "T-distribution, p-value, ANOVA 등 통계 용어 24개"
-        case .custom: return "직접 단어를 추가할 수 있는 빈 세트"
+            case .itDev: "API, React, Docker, LLM 등 개발 용어 30개"
+            case .statistics: "T-distribution, p-value, ANOVA 등 통계 용어 24개"
+            case .custom: "직접 단어를 추가할 수 있는 빈 세트"
         }
     }
 }
@@ -170,7 +170,9 @@ private struct WordSetRow: View {
             HStack {
                 Toggle(isOn: Binding(
                     get: { wordSet.isEnabled },
-                    set: { wordSet.isEnabled = $0; onToggle() }
+                    set: { wordSet.isEnabled = $0
+                        onToggle()
+                    }
                 )) {
                     EmptyView()
                 }
@@ -204,6 +206,7 @@ private struct WordSetRow: View {
 
             if isExpanded {
                 // MARK: Words section
+
                 Divider()
                     .padding(.vertical, 6)
 
@@ -259,6 +262,7 @@ private struct WordSetRow: View {
                 .padding(.bottom, 8)
 
                 // MARK: Corrections section
+
                 Divider()
                     .padding(.vertical, 6)
 
@@ -318,7 +322,7 @@ private struct WordSetRow: View {
                     .buttonStyle(.plain)
                     .disabled(
                         newCorrectionFrom.trimmingCharacters(in: .whitespaces).isEmpty ||
-                        newCorrectionTo.trimmingCharacters(in: .whitespaces).isEmpty
+                            newCorrectionTo.trimmingCharacters(in: .whitespaces).isEmpty
                     )
                 }
                 .padding(.bottom, 4)

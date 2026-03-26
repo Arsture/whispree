@@ -9,29 +9,31 @@ enum SidebarSection: String, CaseIterable, Identifiable {
     case wordSets = "단어 사전"
     case history = "기록"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var icon: String {
         switch self {
-        case .home: return "house.fill"
-        case .general: return "gearshape"
-        case .stt: return "mic.fill"
-        case .llm: return "brain"
-        case .models: return "arrow.down.circle.fill"
-        case .wordSets: return "text.book.closed.fill"
-        case .history: return "clock.fill"
+            case .home: "house.fill"
+            case .general: "gearshape"
+            case .stt: "mic.fill"
+            case .llm: "brain"
+            case .models: "arrow.down.circle.fill"
+            case .wordSets: "text.book.closed.fill"
+            case .history: "clock.fill"
         }
     }
 
     var iconColor: Color {
         switch self {
-        case .home: return .orange
-        case .general: return .gray
-        case .stt: return .blue
-        case .llm: return .purple
-        case .models: return .green
-        case .wordSets: return .teal
-        case .history: return .indigo
+            case .home: .orange
+            case .general: .gray
+            case .stt: .blue
+            case .llm: .purple
+            case .models: .green
+            case .wordSets: .teal
+            case .history: .indigo
         }
     }
 }
@@ -117,20 +119,20 @@ struct UnifiedView: View {
     @ViewBuilder
     private var detailView: some View {
         switch selectedSection {
-        case .home:
-            MainDashboardView()
-        case .general:
-            GeneralSettingsView()
-        case .stt:
-            STTSettingsView()
-        case .llm:
-            LLMSettingsView()
-        case .models:
-            ModelSettingsView()
-        case .wordSets:
-            DomainWordSetsView()
-        case .history:
-            TranscriptionHistoryView()
+            case .home:
+                MainDashboardView()
+            case .general:
+                GeneralSettingsView()
+            case .stt:
+                STTSettingsView()
+            case .llm:
+                LLMSettingsView()
+            case .models:
+                ModelSettingsView()
+            case .wordSets:
+                DomainWordSetsView()
+            case .history:
+                TranscriptionHistoryView()
         }
     }
 }

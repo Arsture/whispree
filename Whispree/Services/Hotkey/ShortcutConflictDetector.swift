@@ -1,6 +1,6 @@
+import AppKit
 import Foundation
 import KeyboardShortcuts
-import AppKit
 
 struct ShortcutConflict: Equatable {
     let featureName: String
@@ -8,7 +8,6 @@ struct ShortcutConflict: Equatable {
 }
 
 enum ShortcutConflictDetector {
-
     private struct KnownShortcut {
         let key: KeyboardShortcuts.Key
         let modifiers: NSEvent.ModifierFlags
@@ -50,7 +49,7 @@ enum ShortcutConflictDetector {
         .init(key: .z, modifiers: [.command], featureName: "실행 취소 (⌘Z)", source: "macOS"),
 
         // Full Screen
-        .init(key: .f, modifiers: [.command, .control], featureName: "전체 화면 전환", source: "macOS"),
+        .init(key: .f, modifiers: [.command, .control], featureName: "전체 화면 전환", source: "macOS")
     ]
 
     private static let relevantFlags: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
@@ -62,7 +61,7 @@ enum ShortcutConflictDetector {
 
         for known in knownShortcuts {
             let knownMods = known.modifiers.intersection(relevantFlags)
-            if key == known.key && shortcutMods == knownMods {
+            if key == known.key, shortcutMods == knownMods {
                 return ShortcutConflict(
                     featureName: known.featureName,
                     source: known.source

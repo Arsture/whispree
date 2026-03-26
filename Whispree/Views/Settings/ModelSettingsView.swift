@@ -148,46 +148,46 @@ struct ModelRow: View {
             }
 
             switch state {
-            case .notDownloaded:
-                Button("다운로드") { onDownload() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-            case .downloading(let progress):
-                VStack(alignment: .leading, spacing: 4) {
-                    ProgressView(value: progress)
-                    Text("\(Int(progress * 100))% 다운로드 중...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            case .loading:
-                HStack(spacing: 6) {
-                    ProgressView()
+                case .notDownloaded:
+                    Button("다운로드") { onDownload() }
+                        .buttonStyle(.borderedProminent)
                         .controlSize(.small)
-                    Text("로딩 중...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            case .ready:
-                HStack {
-                    Label("준비됨", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.caption)
-                    Spacer()
-                    Button("삭제", role: .destructive) { onDelete() }
-                        .font(.caption)
-                        .controlSize(.small)
-                }
-            case .error(let msg):
-                HStack {
-                    Label(msg, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red)
-                        .font(.caption)
-                        .lineLimit(2)
-                    Spacer()
-                    Button("재시도") { onDownload() }
-                        .font(.caption)
-                        .controlSize(.small)
-                }
+                case let .downloading(progress):
+                    VStack(alignment: .leading, spacing: 4) {
+                        ProgressView(value: progress)
+                        Text("\(Int(progress * 100))% 다운로드 중...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                case .loading:
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("로딩 중...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                case .ready:
+                    HStack {
+                        Label("준비됨", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Spacer()
+                        Button("삭제", role: .destructive) { onDelete() }
+                            .font(.caption)
+                            .controlSize(.small)
+                    }
+                case let .error(msg):
+                    HStack {
+                        Label(msg, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                            .lineLimit(2)
+                        Spacer()
+                        Button("재시도") { onDownload() }
+                            .font(.caption)
+                            .controlSize(.small)
+                    }
             }
         }
     }

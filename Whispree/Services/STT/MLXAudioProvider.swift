@@ -23,7 +23,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
 
     init(modelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit") {
         self.modelId = modelId
-        self.workerPath = Self.resolveWorkerPath()
+        workerPath = Self.resolveWorkerPath()
     }
 
     private static func resolveWorkerPath() -> String {
@@ -40,7 +40,8 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
 
         // 2. 번들에서 Application Support로 복사
         if let bundlePath = Bundle.main.resourcePath.map({ $0 + "/mlx-worker" }),
-           fm.fileExists(atPath: bundlePath + "/mlx_worker.py") {
+           fm.fileExists(atPath: bundlePath + "/mlx_worker.py")
+        {
             try? fm.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
             for file in ["mlx_worker.py", "pyproject.toml"] {
                 let src = bundlePath + "/" + file
@@ -103,10 +104,10 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
 
         try proc.run()
 
-        self.process = proc
-        self.stdinPipe = stdin
-        self.stdoutPipe = stdout
-        self.readBuffer = Data()
+        process = proc
+        stdinPipe = stdin
+        stdoutPipe = stdout
+        readBuffer = Data()
 
         // ready 신호 대기
         let readyResponse = try await readResponse(timeout: 10)
@@ -131,7 +132,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
 
     func teardown() async {
         _isReady = false
-        if let _ = process, process?.isRunning == true {
+        if process != nil, process?.isRunning == true {
             try? sendCommand(["cmd": "quit"])
             // 짧은 대기 후 강제 종료
             try? await Task.sleep(nanoseconds: 500_000_000)
@@ -145,8 +146,11 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         readBuffer = Data()
     }
 
-    func transcribe(audioBuffer: [Float], language: SupportedLanguage?,
-                    promptTokens: [Int]?) async throws -> TranscriptionResult {
+    func transcribe(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) async throws -> TranscriptionResult {
         guard _isReady else { throw STTError.modelNotLoaded }
 
         // float32 배열을 temp WAV 파일로 저장
@@ -173,8 +177,11 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         )
     }
 
-    func transcribeStream(audioBuffer: [Float], language: SupportedLanguage?,
-                          promptTokens: [Int]?) -> AsyncStream<PartialTranscription> {
+    func transcribeStream(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) -> AsyncStream<PartialTranscription> {
         AsyncStream { continuation in
             Task {
                 do {
@@ -182,7 +189,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
                         audioBuffer: audioBuffer, language: language, promptTokens: promptTokens
                     )
                     continuation.yield(PartialTranscription(text: result.text, isFinal: true))
-                } catch { }
+                } catch {}
                 continuation.finish()
             }
         }
@@ -217,7 +224,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         while Date() < deadline {
             // 버퍼에서 줄바꿈 찾기
             if let newlineIndex = readBuffer.firstIndex(of: UInt8(ascii: "\n")) {
-                let lineData = readBuffer[readBuffer.startIndex..<newlineIndex]
+                let lineData = readBuffer[readBuffer.startIndex ..< newlineIndex]
                 readBuffer = Data(readBuffer[(newlineIndex + 1)...])
 
                 if let json = try? JSONSerialization.jsonObject(with: Data(lineData)) as? [String: Any] {
@@ -251,7 +258,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         let path = tempFile.path
 
         // WAV 헤더 + PCM int16 데이터
-        let sampleRate: UInt32 = 16000
+        let sampleRate: UInt32 = 16_000
         let numChannels: UInt16 = 1
         let bitsPerSample: UInt16 = 16
         let dataSize = UInt32(audioBuffer.count * 2)
@@ -274,7 +281,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         // float32 → int16 변환
         let int16Samples = audioBuffer.map { sample -> Int16 in
             let clamped = max(-1.0, min(1.0, sample))
-            return Int16(clamped * 32767.0)
+            return Int16(clamped * 32_767.0)
         }
 
         var pcmData = Data(capacity: int16Samples.count * 2)

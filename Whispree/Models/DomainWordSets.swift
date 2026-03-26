@@ -27,7 +27,7 @@ struct DomainWordSet: Codable, Identifiable, Hashable {
         self.isEnabled = isEnabled
     }
 
-    // Backward-compatible decoder: existing data without `corrections` decodes as []
+    /// Backward-compatible decoder: existing data without `corrections` decodes as []
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -39,28 +39,28 @@ struct DomainWordSet: Codable, Identifiable, Hashable {
 
     static func generateDefault(domain: DomainCategory) -> DomainWordSet {
         switch domain {
-        case .itDev:
-            return DomainWordSet(id: UUID(), name: "IT/개발", words: [
-                "API", "backend", "frontend", "React", "Swift", "Python",
-                "GitHub", "PR", "merge", "deploy", "CI/CD", "Docker",
-                "Kubernetes", "database", "query", "endpoint", "middleware",
-                "refactor", "debug", "commit", "branch", "pipeline",
-                "LLM", "GPT", "Claude", "Whisper", "CoreML", "MLX",
-                "framework", "library", "package", "dependency",
-                "authentication", "OAuth", "token", "JWT", "session",
-                "server", "client", "request", "response", "streaming"
-            ], isEnabled: true)
-        case .statistics:
-            return DomainWordSet(id: UUID(), name: "통계", words: [
-                "T-distribution", "p-value", "regression", "hypothesis",
-                "ANOVA", "chi-square", "correlation", "variance",
-                "standard deviation", "confidence interval", "sample",
-                "population", "mean", "median", "outlier", "bootstrap",
-                "Bayesian", "posterior", "prior", "likelihood",
-                "overfitting", "cross-validation", "feature", "gradient"
-            ], isEnabled: true)
-        case .custom:
-            return DomainWordSet(id: UUID(), name: "사용자 정의", words: [], isEnabled: true)
+            case .itDev:
+                DomainWordSet(id: UUID(), name: "IT/개발", words: [
+                    "API", "backend", "frontend", "React", "Swift", "Python",
+                    "GitHub", "PR", "merge", "deploy", "CI/CD", "Docker",
+                    "Kubernetes", "database", "query", "endpoint", "middleware",
+                    "refactor", "debug", "commit", "branch", "pipeline",
+                    "LLM", "GPT", "Claude", "Whisper", "CoreML", "MLX",
+                    "framework", "library", "package", "dependency",
+                    "authentication", "OAuth", "token", "JWT", "session",
+                    "server", "client", "request", "response", "streaming"
+                ], isEnabled: true)
+            case .statistics:
+                DomainWordSet(id: UUID(), name: "통계", words: [
+                    "T-distribution", "p-value", "regression", "hypothesis",
+                    "ANOVA", "chi-square", "correlation", "variance",
+                    "standard deviation", "confidence interval", "sample",
+                    "population", "mean", "median", "outlier", "bootstrap",
+                    "Bayesian", "posterior", "prior", "likelihood",
+                    "overfitting", "cross-validation", "feature", "gradient"
+                ], isEnabled: true)
+            case .custom:
+                DomainWordSet(id: UUID(), name: "사용자 정의", words: [], isEnabled: true)
         }
     }
 
@@ -82,7 +82,7 @@ enum DomainCategory: String, CaseIterable, Codable {
 extension Array {
     func chunked(into size: Int) -> [[Element]] {
         stride(from: 0, to: count, by: size).map {
-            Array(self[$0..<Swift.min($0 + size, count)])
+            Array(self[$0 ..< Swift.min($0 + size, count)])
         }
     }
 }

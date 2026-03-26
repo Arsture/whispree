@@ -1,6 +1,6 @@
+import Accelerate
 import AVFoundation
 import Combine
-import Accelerate
 
 @MainActor
 final class AudioService: ObservableObject {
@@ -11,7 +11,7 @@ final class AudioService: ObservableObject {
     private var audioEngine: AVAudioEngine?
     private var audioBuffer: [Float] = []
     private let bufferLock = NSLock()
-    private let targetSampleRate: Double = 16000
+    private let targetSampleRate: Double = 16_000
 
     func requestPermission() async -> Bool {
         await withCheckedContinuation { continuation in
@@ -45,7 +45,7 @@ final class AudioService: ObservableObject {
 
         let converter = AVAudioConverter(from: inputFormat, to: targetFormat)
 
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 4_096, format: inputFormat) { [weak self] buffer, _ in
             guard let self else { return }
 
             // Calculate audio level (RMS)
@@ -53,7 +53,7 @@ final class AudioService: ObservableObject {
             let frameLength = Int(buffer.frameLength)
             if let channelData, frameLength > 0 {
                 var rms: Float = 0
-                for i in 0..<frameLength {
+                for i in 0 ..< frameLength {
                     rms += channelData[i] * channelData[i]
                 }
                 rms = sqrtf(rms / Float(frameLength))
@@ -92,9 +92,9 @@ final class AudioService: ObservableObject {
 
                 if error == nil, let data = convertedBuffer.floatChannelData?[0] {
                     let samples = Array(UnsafeBufferPointer(start: data, count: Int(convertedBuffer.frameLength)))
-                    self.bufferLock.lock()
-                    self.audioBuffer.append(contentsOf: samples)
-                    self.bufferLock.unlock()
+                    bufferLock.lock()
+                    audioBuffer.append(contentsOf: samples)
+                    bufferLock.unlock()
                 }
             }
         }
@@ -107,9 +107,9 @@ final class AudioService: ObservableObject {
 
     // MARK: - FFT Frequency Analysis
 
-    nonisolated private static func computeFrequencyBands(from data: UnsafePointer<Float>, frameLength: Int) -> [Float] {
+    private nonisolated static func computeFrequencyBands(from data: UnsafePointer<Float>, frameLength: Int) -> [Float] {
         let bandCount = 64
-        let fftSize = 1024
+        let fftSize = 1_024
         guard frameLength >= fftSize else { return Array(repeating: 0, count: bandCount) }
 
         let log2n = vDSP_Length(log2(Float(fftSize)))
@@ -144,15 +144,15 @@ final class AudioService: ObservableObject {
 
         // Voice-focused mapping: 80Hz~3500Hz 범위를 64밴드에 균등 분배
         // (목소리 주파수를 전체 너비에 걸쳐 센터링)
-        let sampleRate: Float = 48000 // 입력 오디오 기본 샘플레이트
+        let sampleRate: Float = 48_000 // 입력 오디오 기본 샘플레이트
         let minFreq: Float = 80
-        let maxFreq: Float = 3500
+        let maxFreq: Float = 3_500
         let minBin = max(1, Int(minFreq / (sampleRate / Float(fftSize))))
         let maxBin = min(halfSize - 1, Int(maxFreq / (sampleRate / Float(fftSize))))
         let voiceBinRange = maxBin - minBin
 
         var bands = [Float](repeating: 0, count: bandCount)
-        for i in 0..<bandCount {
+        for i in 0 ..< bandCount {
             let t0 = Float(i) / Float(bandCount)
             let t1 = Float(i + 1) / Float(bandCount)
             // Mel-like scale within voice range
@@ -160,7 +160,7 @@ final class AudioService: ObservableObject {
             let endBin = min(maxBin, max(startBin, minBin + Int(pow(t1, 1.5) * Float(voiceBinRange))))
 
             var sum: Float = 0
-            for bin in startBin...endBin {
+            for bin in startBin ... endBin {
                 sum += sqrtf(magnitudes[bin])
             }
             let avg = sum / Float(max(1, endBin - startBin + 1))

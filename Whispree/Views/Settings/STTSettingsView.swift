@@ -81,7 +81,8 @@ struct STTSettingsView: View {
 
                 // Cold Start Warning
                 if case .loading = appState.whisperModelState,
-                   appState.settings.sttProviderType == .mlxAudio {
+                   appState.settings.sttProviderType == .mlxAudio
+                {
                     SettingsCard {
                         HStack(spacing: 8) {
                             Image(systemName: "info.circle")
@@ -101,7 +102,8 @@ struct STTSettingsView: View {
 
                 // Model Download Notice
                 if case .notDownloaded = appState.whisperModelState,
-                   appState.settings.sttProviderType != .groq {
+                   appState.settings.sttProviderType != .groq
+                {
                     SettingsCard {
                         HStack(spacing: 8) {
                             Image(systemName: "arrow.down.circle")
@@ -126,8 +128,8 @@ enum NetworkType {
 struct ProviderCard: View {
     let provider: STTProviderType
     let title: String
-    let accuracy: Int  // 0-100
-    let latency: Int   // 0-100
+    let accuracy: Int // 0-100
+    let latency: Int // 0-100
     let networkType: NetworkType
     let isSelected: Bool
     let state: ModelState
@@ -183,30 +185,30 @@ struct ProviderCard: View {
                     if isSelected {
                         HStack(spacing: 6) {
                             switch state {
-                            case .ready:
-                                StatusBadge("Ready", icon: "checkmark.circle.fill", style: .success)
-                            case .loading:
-                                HStack(spacing: 4) {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .tint(DesignTokens.accentPrimary)
-                                    Text(provider == .mlxAudio ? "Cold start..." : "Loading...")
-                                        .font(.caption)
-                                        .foregroundStyle(DesignTokens.textSecondary)
-                                }
-                            case .downloading:
-                                HStack(spacing: 4) {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .tint(DesignTokens.accentPrimary)
-                                    Text("Downloading...")
-                                        .font(.caption)
-                                        .foregroundStyle(DesignTokens.textSecondary)
-                                }
-                            case .notDownloaded:
-                                StatusBadge("Download required", icon: "arrow.down.circle", style: .warning)
-                            case .error(let msg):
-                                StatusBadge(msg, icon: "xmark.circle", style: .error)
+                                case .ready:
+                                    StatusBadge("Ready", icon: "checkmark.circle.fill", style: .success)
+                                case .loading:
+                                    HStack(spacing: 4) {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                            .tint(DesignTokens.accentPrimary)
+                                        Text(provider == .mlxAudio ? "Cold start..." : "Loading...")
+                                            .font(.caption)
+                                            .foregroundStyle(DesignTokens.textSecondary)
+                                    }
+                                case .downloading:
+                                    HStack(spacing: 4) {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                            .tint(DesignTokens.accentPrimary)
+                                        Text("Downloading...")
+                                            .font(.caption)
+                                            .foregroundStyle(DesignTokens.textSecondary)
+                                    }
+                                case .notDownloaded:
+                                    StatusBadge("Download required", icon: "arrow.down.circle", style: .warning)
+                                case let .error(msg):
+                                    StatusBadge(msg, icon: "xmark.circle", style: .error)
                             }
                         }
                     }
@@ -229,7 +231,7 @@ struct ProviderCard: View {
 }
 
 struct MetricBar: View {
-    let value: Int  // 0-100
+    let value: Int // 0-100
 
     var body: some View {
         GeometryReader { geo in

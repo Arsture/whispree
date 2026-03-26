@@ -10,15 +10,23 @@ protocol STTProvider: AnyObject, Sendable {
     func setup() async throws
     func teardown() async
 
-    func transcribe(audioBuffer: [Float], language: SupportedLanguage?,
-                    promptTokens: [Int]?) async throws -> TranscriptionResult
+    func transcribe(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) async throws -> TranscriptionResult
 
-    func transcribeStream(audioBuffer: [Float], language: SupportedLanguage?,
-                          promptTokens: [Int]?) -> AsyncStream<PartialTranscription>
+    func transcribeStream(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) -> AsyncStream<PartialTranscription>
 }
 
 extension STTProvider {
-    var isReady: Bool { validate().isValid }
+    var isReady: Bool {
+        validate().isValid
+    }
 }
 
 struct TranscriptionResult {

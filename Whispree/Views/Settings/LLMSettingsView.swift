@@ -192,7 +192,8 @@ struct LLMSettingsView: View {
 
                 // Model Download Notice
                 if appState.settings.llmProviderType == .local,
-                   !appState.llmModelState.isReady {
+                   !appState.llmModelState.isReady
+                {
                     HStack(spacing: 8) {
                         Image(systemName: "info.circle")
                             .foregroundStyle(.blue)

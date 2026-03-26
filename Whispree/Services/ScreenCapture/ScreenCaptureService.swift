@@ -2,7 +2,6 @@ import AppKit
 import CoreGraphics
 
 final class ScreenCaptureService {
-
     /// Screen Recording 권한 확인
     static func hasScreenRecordingPermission() -> Bool {
         CGPreflightScreenCaptureAccess()
@@ -37,7 +36,8 @@ final class ScreenCaptureService {
             let areaB = (boundsB["Width"] ?? 0) * (boundsB["Height"] ?? 0)
             return areaA < areaB
         }),
-        let windowID = mainWindow[kCGWindowNumber as String] as? CGWindowID else {
+            let windowID = mainWindow[kCGWindowNumber as String] as? CGWindowID
+        else {
             return nil
         }
 

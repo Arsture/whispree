@@ -1,7 +1,7 @@
+import AppKit
+import CryptoKit
 import Foundation
 import Network
-import CryptoKit
-import AppKit
 
 /// OpenAI OAuth PKCE 인증 서비스.
 /// Codex CLI가 없는 유저를 위한 fallback 인증.
@@ -15,7 +15,7 @@ final class OAuthService: ObservableObject {
     private let clientId = "app_EMoamEEZ73f0CkXaXp7hrann"
     private let authURL = "https://auth.openai.com/oauth/authorize"
     private let tokenURL = "https://auth.openai.com/oauth/token"
-    private let callbackPort: UInt16 = 1455
+    private let callbackPort: UInt16 = 1_455
     private let callbackRedirectURI = "http://localhost:1455/auth/callback"
     private let scope = "openid profile email offline_access"
 
@@ -39,7 +39,8 @@ final class OAuthService: ObservableObject {
     func loadTokens() -> OAuthTokens? {
         guard FileManager.default.fileExists(atPath: tokenPath.path),
               let data = try? Data(contentsOf: tokenPath),
-              let tokens = try? JSONDecoder().decode(OAuthTokens.self, from: data) else {
+              let tokens = try? JSONDecoder().decode(OAuthTokens.self, from: data)
+        else {
             isLoggedIn = false
             return nil
         }
@@ -64,7 +65,8 @@ final class OAuthService: ObservableObject {
         guard let payloadData = Data(base64Encoded: base64, options: .ignoreUnknownCharacters),
               let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
               let authClaim = payload["https://api.openai.com/auth"] as? [String: Any],
-              let accountId = authClaim["chatgpt_account_id"] as? String else {
+              let accountId = authClaim["chatgpt_account_id"] as? String
+        else {
             return nil
         }
 
@@ -97,7 +99,7 @@ final class OAuthService: ObservableObject {
                 URLQueryItem(name: "code_challenge_method", value: "S256"),
                 URLQueryItem(name: "state", value: stateParam),
                 URLQueryItem(name: "codex_cli_simplified_flow", value: "true"),
-                URLQueryItem(name: "originator", value: "codex_cli_rs"),
+                URLQueryItem(name: "originator", value: "codex_cli_rs")
             ]
 
             // 브라우저 열기
@@ -140,11 +142,14 @@ final class OAuthService: ObservableObject {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
+              httpResponse.statusCode == 200
+        else {
             throw OAuthError.tokenExchangeFailed
         }
 
-        var tokenData = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        guard var tokenData = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw OAuthError.tokenExchangeFailed
+        }
 
         // 만료 시간 계산
         if let expiresIn = tokenData["expires_in"] as? Int {
@@ -178,12 +183,16 @@ final class OAuthService: ObservableObject {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
+              httpResponse.statusCode == 200
+        else {
             logout()
             throw OAuthError.refreshFailed
         }
 
-        var tokenData = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        guard var tokenData = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            logout()
+            throw OAuthError.refreshFailed
+        }
 
         if let expiresIn = tokenData["expires_in"] as? Int {
             tokenData["expires_at"] = Int(Date().timeIntervalSince1970) + expiresIn
@@ -270,7 +279,7 @@ enum OAuthCallbackServer {
 
             listener.newConnectionHandler = { connection in
                 connection.start(queue: .global())
-                connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, _, _ in
+                connection.receive(minimumIncompleteLength: 1, maximumLength: 8_192) { data, _, _, _ in
                     guard let data, let request = String(data: data, encoding: .utf8) else {
                         safeResume(with: .failure(OAuthError.invalidCallback))
                         return
@@ -282,20 +291,27 @@ enum OAuthCallbackServer {
                           let urlPart = firstLine.split(separator: " ").dropFirst().first,
                           let components = URLComponents(string: String(urlPart)),
                           let code = components.queryItems?.first(where: { $0.name == "code" })?.value,
-                          let state = components.queryItems?.first(where: { $0.name == "state" })?.value else {
+                          let state = components.queryItems?.first(where: { $0.name == "state" })?.value
+                    else {
                         let errorResp = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<h1>Error</h1>"
-                        connection.send(content: errorResp.data(using: .utf8), completion: .contentProcessed({ _ in
+                        connection.send(content: errorResp.data(using: .utf8), completion: .contentProcessed { _ in
                             connection.cancel()
-                        }))
+                        })
                         safeResume(with: .failure(OAuthError.invalidCallback))
                         return
                     }
 
                     // 성공 응답
-                    let html = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n<!DOCTYPE html><html><body style=\"font-family:system-ui;text-align:center;padding:60px\"><h1>로그인 성공</h1><p>Whispree 앱으로 돌아가세요.</p><script>setTimeout(()=>window.close(),2000)</script></body></html>"
-                    connection.send(content: html.data(using: .utf8), completion: .contentProcessed({ _ in
+                    let html = "HTTP/1.1 200 OK\r\n"
+                        + "Content-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n"
+                        + "<!DOCTYPE html><html><body style=\"font-family:system-ui;"
+                        + "text-align:center;padding:60px\">"
+                        + "<h1>로그인 성공</h1><p>Whispree 앱으로 돌아가세요.</p>"
+                        + "<script>setTimeout(()=>window.close(),2000)</script>"
+                        + "</body></html>"
+                    connection.send(content: html.data(using: .utf8), completion: .contentProcessed { _ in
                         connection.cancel()
-                    }))
+                    })
 
                     safeResume(with: .success((code, state)))
                 }
@@ -325,13 +341,13 @@ enum OAuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .stateMismatch: return "OAuth state 불일치 (CSRF 방지)"
-        case .serverStartFailed: return "콜백 서버 시작 실패 (포트 1455)"
-        case .invalidCallback: return "잘못된 OAuth 콜백"
-        case .tokenExchangeFailed: return "토큰 교환 실패"
-        case .noRefreshToken: return "리프레시 토큰 없음"
-        case .refreshFailed: return "토큰 리프레시 실패"
-        case .timeout: return "로그인 시간 초과 (120초)"
+            case .stateMismatch: "OAuth state 불일치 (CSRF 방지)"
+            case .serverStartFailed: "콜백 서버 시작 실패 (포트 1455)"
+            case .invalidCallback: "잘못된 OAuth 콜백"
+            case .tokenExchangeFailed: "토큰 교환 실패"
+            case .noRefreshToken: "리프레시 토큰 없음"
+            case .refreshFailed: "토큰 리프레시 실패"
+            case .timeout: "로그인 시간 초과 (120초)"
         }
     }
 }

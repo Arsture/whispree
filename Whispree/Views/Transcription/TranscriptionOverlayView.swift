@@ -1,5 +1,5 @@
-import SwiftUI
 import KeyboardShortcuts
+import SwiftUI
 
 struct TranscriptionOverlayView: View {
     @EnvironmentObject var appState: AppState
@@ -71,22 +71,22 @@ struct TranscriptionOverlayView: View {
     private var statusIcon: some View {
         Group {
             switch appState.transcriptionState {
-            case .recording:
-                Image(systemName: "mic.fill")
-                    .foregroundStyle(.red)
-                    .symbolEffect(.pulse)
-            case .transcribing:
-                Image(systemName: "text.bubble")
-                    .foregroundStyle(.orange)
-            case .correcting:
-                Image(systemName: "text.badge.checkmark")
-                    .foregroundStyle(.blue)
-            case .inserting:
-                Image(systemName: "checkmark.circle")
-                    .foregroundStyle(.green)
-            case .idle:
-                Image(systemName: "mic")
-                    .foregroundStyle(.secondary)
+                case .recording:
+                    Image(systemName: "mic.fill")
+                        .foregroundStyle(.red)
+                        .symbolEffect(.pulse)
+                case .transcribing:
+                    Image(systemName: "text.bubble")
+                        .foregroundStyle(.orange)
+                case .correcting:
+                    Image(systemName: "text.badge.checkmark")
+                        .foregroundStyle(.blue)
+                case .inserting:
+                    Image(systemName: "checkmark.circle")
+                        .foregroundStyle(.green)
+                case .idle:
+                    Image(systemName: "mic")
+                        .foregroundStyle(.secondary)
             }
         }
         .font(.caption)
@@ -110,7 +110,7 @@ struct NeonWaveformView: View {
             let barSpacing = totalWidth / CGFloat(bandCount)
             let barWidth: CGFloat = max(2, barSpacing * 0.55)
 
-            for i in 0..<bandCount {
+            for i in 0 ..< bandCount {
                 let level = CGFloat(smoothed[i])
                 let minH: CGFloat = 1.5
                 let h = max(minH, level * size.height * 0.42)
@@ -144,15 +144,15 @@ struct NeonWaveformView: View {
             let count = min(bandCount, bands.count)
 
             // Resample 64 FFT bands → 48 display bars
-            for i in 0..<bandCount {
+            for i in 0 ..< bandCount {
                 let srcIdx = Int(Float(i) / Float(bandCount) * Float(bands.count))
                 let target = srcIdx < bands.count ? bands[srcIdx] : 0
                 let current = smoothed[i]
 
                 if target > current {
-                    smoothed[i] = current * 0.25 + target * 0.75  // Fast attack
+                    smoothed[i] = current * 0.25 + target * 0.75 // Fast attack
                 } else {
-                    smoothed[i] = current * 0.88 + target * 0.12  // Slow decay
+                    smoothed[i] = current * 0.88 + target * 0.12 // Slow decay
                 }
             }
         }
@@ -167,5 +167,5 @@ struct NeonWaveformView: View {
     }
 }
 
-// Alias for dashboard usage
+/// Alias for dashboard usage
 typealias ScrollingWaveformView = NeonWaveformView

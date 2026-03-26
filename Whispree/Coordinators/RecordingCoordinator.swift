@@ -1,6 +1,6 @@
-import Foundation
 import AppKit
 import Combine
+import Foundation
 
 @MainActor
 final class RecordingCoordinator: ObservableObject {
@@ -53,7 +53,7 @@ final class RecordingCoordinator: ObservableObject {
 
     func startRecording() {
         // 이전 파이프라인이 stuck 상태면 강제 리셋 (transcribing/correcting/inserting에서 멈춘 경우)
-        if appState.transcriptionState != .idle && appState.transcriptionState != .recording {
+        if appState.transcriptionState != .idle, appState.transcriptionState != .recording {
             currentTask?.cancel()
             currentTask = nil
             appState.transcriptionState = .idle
@@ -81,7 +81,8 @@ final class RecordingCoordinator: ObservableObject {
         // 스크린샷 캡처 (OpenAI + 토글 ON일 때만)
         if appState.settings.isScreenshotContextEnabled,
            appState.settings.llmProviderType == .openai,
-           let targetApp = previousApp {
+           let targetApp = previousApp
+        {
             capturedScreenshot = screenCaptureService.captureWindow(of: targetApp)
         } else {
             capturedScreenshot = nil
@@ -170,25 +171,25 @@ final class RecordingCoordinator: ObservableObject {
             var textToInsert = transcribedText
 
             if let llmProvider = appState.llmProvider, llmProvider.isReady,
-               !(llmProvider is NoneProvider) {
+               !(llmProvider is NoneProvider)
+            {
                 appState.transcriptionState = .correcting
 
                 do {
-                    var systemPrompt: String
-                    switch appState.settings.correctionMode {
-                    case .custom:
-                        systemPrompt = appState.settings.customLLMPrompt ?? CorrectionPrompts.codeSwitchPrompt
-                    case .standard, .fillerRemoval, .structured:
-                        systemPrompt = CorrectionPrompts.prompt(
-                            for: appState.settings.correctionMode,
-                            language: appState.settings.language
-                        )
+                    var systemPrompt: String = switch appState.settings.correctionMode {
+                        case .custom:
+                            appState.settings.customLLMPrompt ?? CorrectionPrompts.codeSwitchPrompt
+                        case .standard, .fillerRemoval, .structured:
+                            CorrectionPrompts.prompt(
+                                for: appState.settings.correctionMode,
+                                language: appState.settings.language
+                            )
                     }
 
                     // 교정 매핑 주입 (항상, correction mode와 무관)
                     let corrections = appState.settings.domainWordSets
-                        .filter { $0.isEnabled }
-                        .flatMap { $0.corrections }
+                        .filter(\.isEnabled)
+                        .flatMap(\.corrections)
                     if !corrections.isEmpty {
                         let mappingText = corrections.map { "\($0.from) → \($0.to)" }.joined(separator: "\n")
                         systemPrompt += "\n\n교정 매핑 (왼쪽 표현이 텍스트에 있으면 오른쪽으로 교정):\n" + mappingText
@@ -201,8 +202,8 @@ final class RecordingCoordinator: ObservableObject {
 
                     // 활성화된 도메인 단어 세트에서 glossary 생성
                     let glossary = appState.settings.domainWordSets
-                        .filter { $0.isEnabled }
-                        .flatMap { $0.words }
+                        .filter(\.isEnabled)
+                        .flatMap(\.words)
 
                     let corrected = try await llmProvider.correct(
                         text: transcribedText,

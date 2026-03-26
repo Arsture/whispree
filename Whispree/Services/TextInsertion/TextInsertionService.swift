@@ -2,11 +2,11 @@ import AppKit
 import ApplicationServices
 
 final class TextInsertionService {
-
     func insertText(_ text: String, targetApp: NSRunningApplication? = nil) async -> Bool {
         // 유효한 외부 앱이 있으면 활성화 + Cmd+V
         if let target = targetApp,
-           target.bundleIdentifier != Bundle.main.bundleIdentifier {
+           target.bundleIdentifier != Bundle.main.bundleIdentifier
+        {
             let activated = await activateApp(target)
 
             if !activated {
@@ -40,7 +40,8 @@ final class TextInsertionService {
                 // 활성화 대기
                 let deadline = Date().addingTimeInterval(1.0)
                 while NSWorkspace.shared.frontmostApplication?.processIdentifier != target.processIdentifier,
-                      Date() < deadline {
+                      Date() < deadline
+                {
                     try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
                 }
                 if NSWorkspace.shared.frontmostApplication?.processIdentifier == target.processIdentifier {
@@ -56,7 +57,8 @@ final class TextInsertionService {
         if activated {
             let deadline = Date().addingTimeInterval(0.5)
             while NSWorkspace.shared.frontmostApplication?.processIdentifier != target.processIdentifier,
-                  Date() < deadline {
+                  Date() < deadline
+            {
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }
         }
@@ -82,7 +84,8 @@ final class TextInsertionService {
         let source = CGEventSource(stateID: .combinedSessionState)
 
         guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) else {
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+        else {
             return false
         }
 

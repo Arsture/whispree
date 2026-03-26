@@ -5,11 +5,11 @@ enum StatusBadgeStyle {
 
     var color: Color {
         switch self {
-        case .success: return DesignTokens.statusSuccess
-        case .warning: return DesignTokens.statusWarning
-        case .error: return DesignTokens.statusError
-        case .info: return DesignTokens.statusInfo
-        case .neutral: return DesignTokens.textSecondary
+            case .success: DesignTokens.statusSuccess
+            case .warning: DesignTokens.statusWarning
+            case .error: DesignTokens.statusError
+            case .info: DesignTokens.statusInfo
+            case .neutral: DesignTokens.textSecondary
         }
     }
 }
@@ -27,7 +27,7 @@ struct StatusBadge: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            if let icon = icon {
+            if let icon {
                 Image(systemName: icon)
                     .font(.system(size: 10, weight: .semibold))
             }

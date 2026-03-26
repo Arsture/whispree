@@ -85,7 +85,7 @@ final class OpenAIProvider: LLMProvider {
         if result == text { return result }
         let inputWords = text.components(separatedBy: .whitespaces).filter { !$0.isEmpty }.count
         let outputWords = result.components(separatedBy: .whitespaces).filter { !$0.isEmpty }.count
-        if inputWords > 0 && Double(outputWords) / Double(inputWords) > 2.5 { return text }
+        if inputWords > 0, Double(outputWords) / Double(inputWords) > 2.5 { return text }
 
         return result
     }
@@ -136,7 +136,8 @@ final class OpenAIProvider: LLMProvider {
             let jsonStr = String(line.dropFirst(6))
 
             guard let data = jsonStr.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else {
                 continue
             }
 

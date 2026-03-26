@@ -238,7 +238,7 @@ struct MainDashboardView: View {
             }
 
             // Groq API key warning
-            if appState.settings.sttProviderType == .groq && appState.settings.groqApiKey.isEmpty {
+            if appState.settings.sttProviderType == .groq, appState.settings.groqApiKey.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundStyle(.yellow)
@@ -310,44 +310,44 @@ struct MainDashboardView: View {
 
     private var llmProviderIcon: String {
         switch appState.settings.llmProviderType {
-        case .none: return "xmark.circle"
-        case .local: return "text.badge.checkmark"
-        case .openai: return "globe"
+            case .none: "xmark.circle"
+            case .local: "text.badge.checkmark"
+            case .openai: "globe"
         }
     }
 
     @ViewBuilder
     private func providerStateBadge(_ state: ModelState) -> some View {
         switch state {
-        case .ready:
-            Label("Ready", systemImage: "checkmark.circle.fill")
-                .font(.caption)
-                .foregroundStyle(.green)
-        case .notDownloaded, .error:
-            Label("Not Ready", systemImage: "xmark.circle")
-                .font(.caption)
-                .foregroundStyle(.red)
-        case .downloading(let progress):
-            if progress > 0 {
-                HStack(spacing: 4) {
-                    ProgressView(value: progress)
-                        .frame(width: 50)
-                    Text("\(Int(progress * 100))%")
-                        .font(.caption2)
+            case .ready:
+                Label("Ready", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            case .notDownloaded, .error:
+                Label("Not Ready", systemImage: "xmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            case let .downloading(progress):
+                if progress > 0 {
+                    HStack(spacing: 4) {
+                        ProgressView(value: progress)
+                            .frame(width: 50)
+                        Text("\(Int(progress * 100))%")
+                            .font(.caption2)
+                    }
+                } else {
+                    HStack(spacing: 4) {
+                        ProgressView().scaleEffect(0.5)
+                        Text("Downloading...")
+                            .font(.caption2)
+                    }
                 }
-            } else {
+            case .loading:
                 HStack(spacing: 4) {
                     ProgressView().scaleEffect(0.5)
-                    Text("Downloading...")
+                    Text("Loading...")
                         .font(.caption2)
                 }
-            }
-        case .loading:
-            HStack(spacing: 4) {
-                ProgressView().scaleEffect(0.5)
-                Text("Loading...")
-                    .font(.caption2)
-            }
         }
     }
 }

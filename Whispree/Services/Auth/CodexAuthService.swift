@@ -26,7 +26,8 @@ final class CodexAuthService: ObservableObject {
         guard FileManager.default.fileExists(atPath: codexAuthPath.path),
               let data = try? Data(contentsOf: codexAuthPath),
               let auth = try? JSONDecoder().decode(CodexAuth.self, from: data),
-              let tokens = auth.tokens else {
+              let tokens = auth.tokens
+        else {
             isLoggedIn = false
             currentAccountId = nil
             return nil
@@ -52,7 +53,8 @@ final class CodexAuthService: ObservableObject {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
+              httpResponse.statusCode == 200
+        else {
             throw AuthError.refreshFailed
         }
 
@@ -104,9 +106,9 @@ enum AuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .refreshFailed: return "Token refresh failed"
-        case .notAuthenticated: return "Not authenticated with OpenAI"
-        case .tokenExpired: return "Token has expired"
+            case .refreshFailed: "Token refresh failed"
+            case .notAuthenticated: "Not authenticated with OpenAI"
+            case .tokenExpired: "Token has expired"
         }
     }
 }

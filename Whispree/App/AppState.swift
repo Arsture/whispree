@@ -1,9 +1,10 @@
-import Foundation
 import Combine
+import Foundation
 
 @MainActor
 final class AppState: ObservableObject {
     // MARK: - Transcription State
+
     @Published var transcriptionState: TranscriptionState = .idle
     @Published var partialText: String = ""
     @Published var finalText: String = ""
@@ -11,30 +12,36 @@ final class AppState: ObservableObject {
     @Published var currentError: AppError?
 
     // MARK: - Audio
+
     @Published var currentAudioLevel: Float = 0.0
     @Published var frequencyBands: [Float] = Array(repeating: 0, count: 64)
     @Published var isRecording: Bool = false
 
     // MARK: - Model State
+
     @Published var whisperModelState: ModelState = .notDownloaded
     @Published var llmModelState: ModelState = .notDownloaded
     @Published var whisperDownloadProgress: Double = 0.0
     @Published var llmDownloadProgress: Double = 0.0
 
     // MARK: - Provider State
+
     @Published var sttProvider: (any STTProvider)?
     @Published var llmProvider: (any LLMProvider)?
     var prewarmedMLXProvider: MLXAudioProvider?
 
     // MARK: - Auth
+
     let authService = CodexAuthService()
     let oauthService = OAuthService()
     private var authCancellables = Set<AnyCancellable>()
 
     // MARK: - Settings
+
     @Published var settings = AppSettings()
 
     // MARK: - History
+
     @Published var transcriptionHistory: [TranscriptionRecord] = [] {
         didSet { saveHistory() }
     }
@@ -69,17 +76,17 @@ final class AppState: ObservableObject {
         await sttProvider?.teardown()
 
         switch type {
-        case .whisperKit:
-            sttProvider = WhisperKitProvider()
-        case .groq:
-            sttProvider = GroqSTTProvider(apiKey: settings.groqApiKey)
-        case .mlxAudio:
-            if let prewarmed = prewarmedMLXProvider {
-                sttProvider = prewarmed
-                prewarmedMLXProvider = nil
-            } else {
-                sttProvider = MLXAudioProvider(modelId: settings.mlxAudioModelId)
-            }
+            case .whisperKit:
+                sttProvider = WhisperKitProvider()
+            case .groq:
+                sttProvider = GroqSTTProvider(apiKey: settings.groqApiKey)
+            case .mlxAudio:
+                if let prewarmed = prewarmedMLXProvider {
+                    sttProvider = prewarmed
+                    prewarmedMLXProvider = nil
+                } else {
+                    sttProvider = MLXAudioProvider(modelId: settings.mlxAudioModelId)
+                }
         }
         do {
             try await sttProvider?.setup()
@@ -94,35 +101,35 @@ final class AppState: ObservableObject {
         await llmProvider?.teardown()
         llmModelState = .loading
         switch type {
-        case .none:
-            llmProvider = NoneProvider()
-            llmModelState = .ready
-        case .local:
-            let provider = LocalLLMProvider(modelId: settings.llmModelId)
-            llmProvider = provider
-            do {
-                try await provider.setup()
-                let validation = provider.validate()
-                llmModelState = validation.isValid ? .ready : .error(validation.message)
-            } catch {
-                llmModelState = .error(error.localizedDescription)
-            }
-        case .openai:
-            settings.isScreenshotContextEnabled = true
-            settings.save()
-            let provider = OpenAIProvider(
-                model: settings.openaiModel,
-                authService: authService,
-                oauthService: oauthService
-            )
-            llmProvider = provider
-            do {
-                try await provider.setup()
-                let validation = provider.validate()
-                llmModelState = validation.isValid ? .ready : .error(validation.message)
-            } catch {
-                llmModelState = .error(error.localizedDescription)
-            }
+            case .none:
+                llmProvider = NoneProvider()
+                llmModelState = .ready
+            case .local:
+                let provider = LocalLLMProvider(modelId: settings.llmModelId)
+                llmProvider = provider
+                do {
+                    try await provider.setup()
+                    let validation = provider.validate()
+                    llmModelState = validation.isValid ? .ready : .error(validation.message)
+                } catch {
+                    llmModelState = .error(error.localizedDescription)
+                }
+            case .openai:
+                settings.isScreenshotContextEnabled = true
+                settings.save()
+                let provider = OpenAIProvider(
+                    model: settings.openaiModel,
+                    authService: authService,
+                    oauthService: oauthService
+                )
+                llmProvider = provider
+                do {
+                    try await provider.setup()
+                    let validation = provider.validate()
+                    llmModelState = validation.isValid ? .ready : .error(validation.message)
+                } catch {
+                    llmModelState = .error(error.localizedDescription)
+                }
         }
     }
 
@@ -155,7 +162,8 @@ final class AppState: ObservableObject {
 
     private func loadHistory() {
         if let data = UserDefaults.standard.data(forKey: Self.historyKey),
-           let history = try? JSONDecoder().decode([TranscriptionRecord].self, from: data) {
+           let history = try? JSONDecoder().decode([TranscriptionRecord].self, from: data)
+        {
             transcriptionHistory = history
         }
     }
