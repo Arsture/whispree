@@ -79,7 +79,15 @@ final class OpenAIProvider: LLMProvider {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         // SSE 스트리밍 파싱
-        return try await parseSSEStream(request: request, originalText: text)
+        let result = try await parseSSEStream(request: request, originalText: text)
+
+        // 안전장치: 출력이 입력보다 2.5배 이상 길면 답변 생성으로 판단
+        if result == text { return result }
+        let inputWords = text.components(separatedBy: .whitespaces).filter { !$0.isEmpty }.count
+        let outputWords = result.components(separatedBy: .whitespaces).filter { !$0.isEmpty }.count
+        if inputWords > 0 && Double(outputWords) / Double(inputWords) > 2.5 { return text }
+
+        return result
     }
 
     // MARK: - Auth Resolution
