@@ -2,6 +2,15 @@
 
 Thanks for your interest in contributing!
 
+## AI-Assisted Development
+
+This project is developed with [Claude Code](https://claude.ai/code), powered by [oh-my-claudecode (OMC)](https://github.com/Yeachan-Heo/oh-my-claudecode) as its multi-agent orchestration layer.
+
+- **`CLAUDE.md`** — Defines project-wide build commands, architecture, design conventions, and concurrency rules. Automatically loaded by Claude Code at session start.
+- **`AGENTS.md`** — Hierarchical per-directory documentation placed throughout the codebase, enabling AI agents to quickly understand each module's purpose, constraints, and dependencies.
+
+These files are automatically injected into the agent's context, so Claude Code understands the project structure and design intent without any additional explanation.
+
 ## Quick Start
 
 1. Fork & clone the repo
