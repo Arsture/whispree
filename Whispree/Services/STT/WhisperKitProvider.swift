@@ -3,7 +3,9 @@ import WhisperKit
 
 final class WhisperKitProvider: STTProvider, @unchecked Sendable {
     let name = "WhisperKit"
-    var isAvailable: Bool { true }
+    var isAvailable: Bool {
+        true
+    }
 
     private var whisperKit: WhisperKit?
 
@@ -29,8 +31,11 @@ final class WhisperKitProvider: STTProvider, @unchecked Sendable {
     /// 도메인 단어 세트 저장 (transcribe 시 promptTokens로 변환)
     var domainWordSets: [DomainWordSet] = []
 
-    func transcribe(audioBuffer: [Float], language: SupportedLanguage?,
-                    promptTokens: [Int]?) async throws -> TranscriptionResult {
+    func transcribe(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) async throws -> TranscriptionResult {
         guard let whisperKit else { throw STTError.modelNotLoaded }
 
         // 세팅값 따라감: auto면 자동 감지, ko/en이면 해당 언어 고정
@@ -57,7 +62,7 @@ final class WhisperKitProvider: STTProvider, @unchecked Sendable {
         // auto-detect 시 오감지 방어 (힌디어 등 → 한국어로 재시도)
         if langCode == nil {
             let detectedLang = results.first?.language
-            let expectedLanguages: Set<String> = ["ko", "en", "ja", "zh"]
+            let expectedLanguages: Set = ["ko", "en", "ja", "zh"]
             if let lang = detectedLang, !expectedLanguages.contains(lang) {
                 var retryOptions = options
                 retryOptions.language = "ko"
@@ -77,14 +82,17 @@ final class WhisperKitProvider: STTProvider, @unchecked Sendable {
         }
 
         return TranscriptionResult(
-            text: results.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines),
+            text: results.map(\.text).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines),
             segments: segments,
             language: results.first?.language
         )
     }
 
-    func transcribeStream(audioBuffer: [Float], language: SupportedLanguage?,
-                          promptTokens: [Int]?) -> AsyncStream<PartialTranscription> {
+    func transcribeStream(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) -> AsyncStream<PartialTranscription> {
         AsyncStream { continuation in
             Task {
                 do {
@@ -104,13 +112,13 @@ final class WhisperKitProvider: STTProvider, @unchecked Sendable {
 
     /// 도메인 단어 세트에서 promptTokens 빌드
     func buildPromptTokens(from wordSets: [DomainWordSet]) -> [Int]? {
-        let enabledSets = wordSets.filter { $0.isEnabled }
+        let enabledSets = wordSets.filter(\.isEnabled)
         guard !enabledSets.isEmpty else { return nil }
 
         let promptText = enabledSets.map { $0.buildPromptText() }.joined(separator: " ")
         guard let tokenizer = whisperKit?.tokenizer else { return nil }
 
         let tokens = tokenizer.encode(text: promptText)
-        return Array(tokens.prefix(224))  // 224 토큰 제한
+        return Array(tokens.prefix(224)) // 224 토큰 제한
     }
 }

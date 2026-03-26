@@ -92,11 +92,11 @@ final class LocalLLMProvider: LLMProvider {
         let wordsB = b.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         guard !wordsA.isEmpty else { return wordsB.isEmpty ? 0 : 1 }
         guard !wordsB.isEmpty else { return 1 }
-        var dp = Array(0...wordsB.count)
-        for i in 1...wordsA.count {
+        var dp = Array(0 ... wordsB.count)
+        for i in 1 ... wordsA.count {
             var prev = dp[0]
             dp[0] = i
-            for j in 1...wordsB.count {
+            for j in 1 ... wordsB.count {
                 let temp = dp[j]
                 if wordsA[i - 1] == wordsB[j - 1] {
                     dp[j] = prev

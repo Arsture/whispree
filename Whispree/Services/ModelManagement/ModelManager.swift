@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 @MainActor
 final class ModelManager: ObservableObject {
@@ -8,9 +8,12 @@ final class ModelManager: ObservableObject {
     @Published var isWhisperKitDownloading = false
     @Published var isMLXAudioDownloading = false
     @Published var isLocalLLMDownloading = false
-    var isDownloading: Bool { isWhisperKitDownloading || isMLXAudioDownloading || isLocalLLMDownloading }
+    var isDownloading: Bool {
+        isWhisperKitDownloading || isMLXAudioDownloading || isLocalLLMDownloading
+    }
 
     // MARK: - 독립 모델 다운로드 상태 (Downloads 탭용, provider와 무관)
+
     @Published var whisperKitDownloaded: Bool = false
     @Published var mlxAudioDownloaded: Bool = false
     @Published var localLLMDownloaded: Bool = false
@@ -67,7 +70,7 @@ final class ModelManager: ObservableObject {
         mlxAudioDownloaded = mlxAudioDownloaded || isModelCached(repoId: "mlx-community/Qwen3-ASR-1.7B-8bit")
         localLLMDownloaded = localLLMDownloaded || isModelCached(repoId: "mlx-community/Qwen3-4B-Instruct-2507-4bit")
 
-        if mlxAudioDownloaded && mlxAudioDownloadState == .notDownloaded {
+        if mlxAudioDownloaded, mlxAudioDownloadState == .notDownloaded {
             mlxAudioDownloadState = .ready
         }
     }
@@ -89,7 +92,7 @@ final class ModelManager: ObservableObject {
         refreshCachedModelStates()
 
         // MLX Audio가 다운로드되어 있고 현재 활성 프로바이더가 아니면 백그라운드 warmup
-        if mlxAudioDownloaded && appState.settings.sttProviderType != .mlxAudio {
+        if mlxAudioDownloaded, appState.settings.sttProviderType != .mlxAudio {
             Task { await warmupMLXAudioInBackground() }
         }
     }
@@ -131,7 +134,7 @@ final class ModelManager: ObservableObject {
         if appState.whisperModelState.isReady {
             mlxAudioDownloaded = true
             mlxAudioDownloadState = .ready
-        } else if case .error(let msg) = appState.whisperModelState {
+        } else if case let .error(msg) = appState.whisperModelState {
             mlxAudioDownloadState = .error(msg)
         }
 
@@ -165,7 +168,7 @@ final class ModelManager: ObservableObject {
         whisperModelInfo.state = .downloading(progress: 0)
         do {
             await appState.switchSTTProvider(to: appState.settings.sttProviderType)
-            if case .error(let msg) = appState.whisperModelState {
+            if case let .error(msg) = appState.whisperModelState {
                 throw NSError(domain: "ModelManager", code: 1, userInfo: [NSLocalizedDescriptionKey: msg])
             }
             whisperModelInfo.state = .ready
@@ -182,7 +185,7 @@ final class ModelManager: ObservableObject {
         llmModelInfo.state = .downloading(progress: 0)
         do {
             await appState.switchLLMProvider(to: .local)
-            if case .error(let msg) = appState.llmModelState {
+            if case let .error(msg) = appState.llmModelState {
                 throw NSError(domain: "ModelManager", code: 2, userInfo: [NSLocalizedDescriptionKey: msg])
             }
             llmModelInfo.state = .ready

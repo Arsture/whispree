@@ -1,8 +1,9 @@
 import AppKit
 import AVFoundation
-import SwiftUI
-import KeyboardShortcuts
 import Combine
+import KeyboardShortcuts
+import SwiftUI
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let appState = AppState()
@@ -22,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var hotkeyManager: HotkeyManager!
     private(set) var quickFixService: QuickFixService!
 
-    // Coordinators
+    /// Coordinators
     private(set) var recordingCoordinator: RecordingCoordinator!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -83,7 +84,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         showMainWindow()
     }
 
-
     // MARK: - Edit Keyboard Shortcuts (Copy/Paste Fix)
 
     /// SwiftUI의 NSHostingView에서 Edit 메뉴 키보드 단축키가 동작하지 않는 문제를 해결.
@@ -96,12 +96,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let isShift = event.modifierFlags.contains(.shift)
 
             switch event.charactersIgnoringModifiers {
-            case "v": action = #selector(NSText.paste(_:))
-            case "c": action = #selector(NSText.copy(_:))
-            case "x": action = #selector(NSText.cut(_:))
-            case "a": action = #selector(NSText.selectAll(_:))
-            case "z": action = isShift ? NSSelectorFromString("redo:") : NSSelectorFromString("undo:")
-            default: action = nil
+                case "v": action = #selector(NSText.paste(_:))
+                case "c": action = #selector(NSText.copy(_:))
+                case "x": action = #selector(NSText.cut(_:))
+                case "a": action = #selector(NSText.selectAll(_:))
+                case "z": action = isShift ? NSSelectorFromString("redo:") : NSSelectorFromString("undo:")
+                default: action = nil
             }
 
             if let action, NSApp.sendAction(action, to: nil, from: nil) {
@@ -131,9 +131,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.onRecordingToggle = { [weak self] shouldRecord in
             guard let self else { return }
             if shouldRecord {
-                self.recordingCoordinator.startRecording()
+                recordingCoordinator.startRecording()
             } else {
-                self.recordingCoordinator.stopRecording()
+                recordingCoordinator.stopRecording()
             }
         }
 
@@ -196,7 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        self.mainWindow = window
+        mainWindow = window
     }
 
     // MARK: - Onboarding
@@ -223,10 +223,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.center()
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(
-            rootView: OnboardingView() { [weak self] in
+            rootView: OnboardingView { [weak self] in
                 guard let self else { return }
-                self.appState.settings.hasCompletedOnboarding = true
-                self.appState.settings.save()
+                appState.settings.hasCompletedOnboarding = true
+                appState.settings.save()
                 DispatchQueue.main.async {
                     self.onboardingWindow?.orderOut(nil)
                     self.onboardingWindow = nil
@@ -237,12 +237,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             }
-            .environmentObject(self.appState)
-            .environmentObject(self.hotkeyManager)
+            .environmentObject(appState)
+            .environmentObject(hotkeyManager)
         )
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        self.onboardingWindow = window
+        onboardingWindow = window
     }
 
     // MARK: - Quick Fix
@@ -253,8 +253,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let targetApp = frontmost else { return }
 
         // Allow self-targeting during onboarding for Quick Fix demo
-        if targetApp.bundleIdentifier == Bundle.main.bundleIdentifier
-            && appState.settings.hasCompletedOnboarding {
+        if targetApp.bundleIdentifier == Bundle.main.bundleIdentifier,
+           appState.settings.hasCompletedOnboarding
+        {
             return
         }
 
@@ -286,8 +287,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 originalText: originalText,
                 onConfirmWord: { [weak self] correctedText in
                     guard let self else { return }
-                    self.quickFixPanel?.orderOut(nil)
-                    self.quickFixPanel = nil
+                    quickFixPanel?.orderOut(nil)
+                    quickFixPanel = nil
 
                     Task {
                         _ = await self.quickFixService.replaceText(with: correctedText, in: targetApp)
@@ -296,8 +297,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 onConfirmMapping: { [weak self] fromText, toText in
                     guard let self else { return }
-                    self.quickFixPanel?.orderOut(nil)
-                    self.quickFixPanel = nil
+                    quickFixPanel?.orderOut(nil)
+                    quickFixPanel = nil
 
                     Task {
                         _ = await self.quickFixService.replaceText(with: toText, in: targetApp)
@@ -313,7 +314,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        self.quickFixPanel = panel
+        quickFixPanel = panel
     }
 
     // MARK: - Recording Overlay
@@ -324,17 +325,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] state in
                 guard let self else { return }
                 switch state {
-                case .recording, .transcribing, .correcting:
-                    self.showOverlay()
-                case .idle, .inserting:
-                    // Brief delay before hiding after inserting
-                    if state == .idle {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            if self.appState.transcriptionState == .idle {
-                                self.hideOverlay()
+                    case .recording, .transcribing, .correcting:
+                        showOverlay()
+                    case .idle, .inserting:
+                        // Brief delay before hiding after inserting
+                        if state == .idle {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                if self.appState.transcriptionState == .idle {
+                                    self.hideOverlay()
+                                }
                             }
                         }
-                    }
                 }
             }
             .store(in: &cancellables)
@@ -373,7 +374,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .environmentObject(appState)
         )
         panel.orderFront(nil)
-        self.overlayPanel = panel
+        overlayPanel = panel
     }
 
     private func hideOverlay() {

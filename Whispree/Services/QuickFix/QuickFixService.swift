@@ -3,7 +3,6 @@ import ApplicationServices
 
 @MainActor
 final class QuickFixService {
-
     /// Captures the currently selected text from the frontmost app by simulating Cmd+C.
     /// Returns the selected text, or nil if nothing was selected.
     func captureSelectedText() async -> String? {
@@ -16,7 +15,8 @@ final class QuickFixService {
         // Simulate Cmd+C
         let source = CGEventSource(stateID: .combinedSessionState)
         guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: false) else {
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: false)
+        else {
             // Restore clipboard on failure
             if let prev = previousContents {
                 pasteboard.clearContents()
@@ -51,7 +51,8 @@ final class QuickFixService {
         // Wait for app to become frontmost
         let deadline = Date().addingTimeInterval(0.5)
         while NSWorkspace.shared.frontmostApplication?.processIdentifier != targetApp.processIdentifier,
-              Date() < deadline {
+              Date() < deadline
+        {
             try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
         }
 
@@ -67,7 +68,8 @@ final class QuickFixService {
         // Simulate Cmd+V to paste (replaces selection)
         let source = CGEventSource(stateID: .combinedSessionState)
         guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) else {
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+        else {
             return false
         }
         keyDown.flags = .maskCommand

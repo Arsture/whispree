@@ -11,11 +11,17 @@ protocol LLMProvider {
     func teardown() async
 
     /// 텍스트 교정. glossary는 도메인 단어 세트에서 가져옴
-    func correct(text: String, systemPrompt: String,
-                 glossary: [String]?, screenshot: Data?) async throws -> String
+    func correct(
+        text: String,
+        systemPrompt: String,
+        glossary: [String]?,
+        screenshot: Data?
+    ) async throws -> String
 }
 
 @MainActor
 extension LLMProvider {
-    var isReady: Bool { validate().isValid }
+    var isReady: Bool {
+        validate().isValid
+    }
 }

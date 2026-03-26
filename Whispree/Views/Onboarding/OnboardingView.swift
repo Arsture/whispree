@@ -1,7 +1,7 @@
-import SwiftUI
 import AVFoundation
-import KeyboardShortcuts
 import CoreGraphics
+import KeyboardShortcuts
+import SwiftUI
 
 struct OnboardingView: View {
     @EnvironmentObject var appState: AppState
@@ -22,7 +22,7 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             // Progress indicator
             HStack(spacing: 8) {
-                ForEach(0..<totalSteps, id: \.self) { step in
+                ForEach(0 ..< totalSteps, id: \.self) { step in
                     Capsule()
                         .fill(step <= currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
                         .frame(height: 4)
@@ -33,12 +33,12 @@ struct OnboardingView: View {
 
             Group {
                 switch currentStep {
-                case 0: welcomeStep
-                case 1: permissionStep
-                case 2: providerSetupStep
-                case 3: recordingGuideStep
-                case 4: quickFixReadyStep
-                default: welcomeStep
+                    case 0: welcomeStep
+                    case 1: permissionStep
+                    case 2: providerSetupStep
+                    case 3: recordingGuideStep
+                    case 4: quickFixReadyStep
+                    default: welcomeStep
                 }
             }
 
@@ -373,14 +373,13 @@ struct OnboardingView: View {
         .padding(24)
         .onAppear { initializeProviders() }
         .onChange(of: appState.transcriptionState) {
-            if appState.transcriptionState == .idle && !appState.finalText.isEmpty {
+            if appState.transcriptionState == .idle, !appState.finalText.isEmpty {
                 let result = appState.correctedText.isEmpty ? appState.finalText : appState.correctedText
                 withAnimation { demoText = result }
             }
         }
     }
 
-    @ViewBuilder
     private var recordingTestSection: some View {
         VStack(spacing: 6) {
             if case .ready = appState.whisperModelState {
@@ -398,7 +397,7 @@ struct OnboardingView: View {
                     .background(Color.secondary.opacity(0.08))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(alignment: .topLeading) {
-                        if demoText.isEmpty && appState.transcriptionState == .idle {
+                        if demoText.isEmpty, appState.transcriptionState == .idle {
                             Text("여기에 전사 결과가 나타납니다")
                                 .font(.body)
                                 .foregroundStyle(.tertiary)
@@ -446,36 +445,36 @@ struct OnboardingView: View {
     @ViewBuilder
     private var recordingStatusIndicator: some View {
         switch appState.transcriptionState {
-        case .recording:
-            HStack(spacing: 4) {
-                Circle().fill(.red).frame(width: 6, height: 6)
-                Text("녹음 중...")
-                    .font(.caption).foregroundStyle(.red)
-            }
-        case .transcribing:
-            HStack(spacing: 4) {
-                ProgressView().controlSize(.mini)
-                Text("전사 중...")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-        case .correcting:
-            HStack(spacing: 4) {
-                ProgressView().controlSize(.mini)
-                Text("교정 중...")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-        default:
-            if demoText.isEmpty {
-                Text("단축키를 눌러 테스트해보세요")
-                    .font(.caption).foregroundStyle(.secondary)
-            } else {
+            case .recording:
                 HStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Text("전사 완료!")
-                        .font(.caption).foregroundStyle(.green)
+                    Circle().fill(.red).frame(width: 6, height: 6)
+                    Text("녹음 중...")
+                        .font(.caption).foregroundStyle(.red)
                 }
-            }
+            case .transcribing:
+                HStack(spacing: 4) {
+                    ProgressView().controlSize(.mini)
+                    Text("전사 중...")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            case .correcting:
+                HStack(spacing: 4) {
+                    ProgressView().controlSize(.mini)
+                    Text("교정 중...")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            default:
+                if demoText.isEmpty {
+                    Text("단축키를 눌러 테스트해보세요")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text("전사 완료!")
+                            .font(.caption).foregroundStyle(.green)
+                    }
+                }
         }
     }
 
@@ -563,7 +562,14 @@ struct OnboardingView: View {
         .padding(.bottom, 40)
     }
 
-    private func permissionCard(icon: String, iconColor: Color, title: String, description: String, isGranted: Bool, actionLabel: String = "허용하기") -> some View {
+    private func permissionCard(
+        icon: String,
+        iconColor: Color,
+        title: String,
+        description: String,
+        isGranted: Bool,
+        actionLabel: String = "허용하기"
+    ) -> some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)

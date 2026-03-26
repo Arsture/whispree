@@ -11,8 +11,8 @@ enum ProviderValidation {
 
     var message: String {
         switch self {
-        case .valid: return ""
-        case .invalid(let reason): return reason
+            case .valid: ""
+            case let .invalid(reason): reason
         }
     }
 }
@@ -26,11 +26,11 @@ enum TranscriptionState: Equatable {
 
     var displayText: String {
         switch self {
-        case .idle: return String(localized: "Ready")
-        case .recording: return String(localized: "Recording...")
-        case .transcribing: return String(localized: "Transcribing...")
-        case .correcting: return String(localized: "Correcting...")
-        case .inserting: return String(localized: "Inserting text...")
+            case .idle: String(localized: "Ready")
+            case .recording: String(localized: "Recording...")
+            case .transcribing: String(localized: "Transcribing...")
+            case .correcting: String(localized: "Correcting...")
+            case .inserting: String(localized: "Inserting text...")
         }
     }
 
@@ -53,45 +53,45 @@ enum ModelState: Equatable {
 }
 
 enum RecordingMode: String, CaseIterable, Codable {
-    case pushToTalk = "pushToTalk"
-    case toggle = "toggle"
+    case pushToTalk
+    case toggle
 
     var displayName: String {
         switch self {
-        case .pushToTalk: return String(localized: "Push to Talk")
-        case .toggle: return String(localized: "Toggle")
+            case .pushToTalk: String(localized: "Push to Talk")
+            case .toggle: String(localized: "Toggle")
         }
     }
 
     var description: String {
         switch self {
-        case .pushToTalk: return String(localized: "Hold key to record, release to transcribe")
-        case .toggle: return String(localized: "Press to start, press again to stop")
+            case .pushToTalk: String(localized: "Hold key to record, release to transcribe")
+            case .toggle: String(localized: "Press to start, press again to stop")
         }
     }
 }
 
 enum CorrectionMode: String, CaseIterable, Codable {
-    case standard = "standard"
-    case fillerRemoval = "fillerRemoval"
-    case structured = "structured"
-    case custom = "custom"
+    case standard
+    case fillerRemoval
+    case structured
+    case custom
 
     var displayName: String {
         switch self {
-        case .standard: return "Standard (STT Correction)"
-        case .fillerRemoval: return "Filler Removal"
-        case .structured: return "Structured"
-        case .custom: return "Custom"
+            case .standard: "Standard (STT Correction)"
+            case .fillerRemoval: "Filler Removal"
+            case .structured: "Structured"
+            case .custom: "Custom"
         }
     }
 
     var description: String {
         switch self {
-        case .standard: return "Fix STT errors: spacing, punctuation, misheard words"
-        case .fillerRemoval: return "STT correction + remove fillers (음, 어, 그러니까)"
-        case .structured: return "STT correction + filler removal + organize with bullet points"
-        case .custom: return "Use your own custom system prompt"
+            case .standard: "Fix STT errors: spacing, punctuation, misheard words"
+            case .fillerRemoval: "STT correction + remove fillers (음, 어, 그러니까)"
+            case .structured: "STT correction + filler removal + organize with bullet points"
+            case .custom: "Use your own custom system prompt"
         }
     }
 
@@ -108,7 +108,7 @@ enum CorrectionMode: String, CaseIterable, Codable {
 }
 
 enum SupportedLanguage: String, CaseIterable, Codable {
-    case auto = "auto"
+    case auto
     case korean = "ko"
     case english = "en"
     case japanese = "ja"
@@ -120,15 +120,15 @@ enum SupportedLanguage: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .auto: return String(localized: "Auto-detect")
-        case .korean: return "한국어"
-        case .english: return "English"
-        case .japanese: return "日本語"
-        case .chinese: return "中文"
-        case .spanish: return "Español"
-        case .french: return "Français"
-        case .german: return "Deutsch"
-        case .portuguese: return "Português"
+            case .auto: String(localized: "Auto-detect")
+            case .korean: "한국어"
+            case .english: "English"
+            case .japanese: "日本語"
+            case .chinese: "中文"
+            case .spanish: "Español"
+            case .french: "Français"
+            case .german: "Deutsch"
+            case .portuguese: "Português"
         }
     }
 }

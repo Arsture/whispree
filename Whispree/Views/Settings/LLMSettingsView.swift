@@ -192,7 +192,8 @@ struct LLMSettingsView: View {
 
                 // Model Download Notice
                 if appState.settings.llmProviderType == .local,
-                   !appState.llmModelState.isReady {
+                   !appState.llmModelState.isReady
+                {
                     HStack(spacing: 8) {
                         Image(systemName: "info.circle")
                             .foregroundStyle(.blue)
@@ -262,13 +263,17 @@ struct LLMSettingsView: View {
                                 .buttonStyle(.borderedProminent)
                             }
                         } else {
-                            Text(currentPromptPreview)
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .frame(minHeight: 80, alignment: .topLeading)
-                                .padding(4)
-                                .background(.quaternary.opacity(0.3))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                            ScrollView {
+                                Text(currentPromptPreview)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                                    .padding(4)
+                                    .textSelection(.enabled)
+                            }
+                            .frame(height: 200)
+                            .background(.quaternary.opacity(0.3))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
 
                             Text("Switch to \"Custom\" mode to edit the prompt.")
                                 .font(.caption)

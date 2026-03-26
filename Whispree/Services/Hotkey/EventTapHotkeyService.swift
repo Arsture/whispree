@@ -1,5 +1,5 @@
-import Foundation
 import AppKit
+import Foundation
 import KeyboardShortcuts
 
 /// CGEventTap-based hotkey service that intercepts key events at HID level,
@@ -35,7 +35,9 @@ final class EventTapHotkeyService {
 
     // MARK: - Lifecycle
 
-    var isRunning: Bool { eventTap != nil }
+    var isRunning: Bool {
+        eventTap != nil
+    }
 
     func start() {
         guard eventTap == nil else { return }
@@ -76,8 +78,12 @@ final class EventTapHotkeyService {
 
     // MARK: - Binding Management
 
-    func register(keyCode: Int, modifiers: NSEvent.ModifierFlags,
-                  keyDown: @escaping () -> Void, keyUp: (() -> Void)? = nil) {
+    func register(
+        keyCode: Int,
+        modifiers: NSEvent.ModifierFlags,
+        keyDown: @escaping () -> Void,
+        keyUp: (() -> Void)? = nil
+    ) {
         bindings.append(Binding(
             keyCode: keyCode,
             modifiers: modifiers.intersection(relevantModifiers),
@@ -87,8 +93,11 @@ final class EventTapHotkeyService {
     }
 
     /// Register from a KeyboardShortcuts.Shortcut
-    func register(shortcut: KeyboardShortcuts.Shortcut,
-                  keyDown: @escaping () -> Void, keyUp: (() -> Void)? = nil) {
+    func register(
+        shortcut: KeyboardShortcuts.Shortcut,
+        keyDown: @escaping () -> Void,
+        keyUp: (() -> Void)? = nil
+    ) {
         register(
             keyCode: shortcut.key?.rawValue ?? -1,
             modifiers: shortcut.modifiers,
@@ -183,7 +192,7 @@ final class EventTapHotkeyService {
         }
 
         for binding in bindings {
-            if keyCode == binding.keyCode && eventMods == binding.modifiers {
+            if keyCode == binding.keyCode, eventMods == binding.modifiers {
                 if type == .keyDown {
                     DispatchQueue.main.async { binding.onKeyDown() }
                 } else if type == .keyUp {

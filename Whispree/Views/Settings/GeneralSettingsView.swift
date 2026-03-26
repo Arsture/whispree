@@ -1,6 +1,6 @@
-import SwiftUI
-import KeyboardShortcuts
 import CoreGraphics
+import KeyboardShortcuts
+import SwiftUI
 
 struct GeneralSettingsView: View {
     @EnvironmentObject var appState: AppState
@@ -197,7 +197,9 @@ struct GeneralSettingsView: View {
                             Text("App Management:")
                             Spacer()
                             Button("Open Settings") {
-                                if let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AppBundles") {
+                                if let url =
+                                    URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AppBundles")
+                                {
                                     NSWorkspace.shared.open(url)
                                 }
                             }

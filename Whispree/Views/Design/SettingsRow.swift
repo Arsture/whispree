@@ -20,7 +20,7 @@ struct SettingsRow<Trailing: View>: View {
 
     var body: some View {
         HStack(spacing: DesignTokens.Spacing.sm) {
-            if let icon = icon {
+            if let icon {
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(DesignTokens.textSecondary)
@@ -32,7 +32,7 @@ struct SettingsRow<Trailing: View>: View {
                     .font(.system(.body, design: .default))
                     .foregroundStyle(DesignTokens.textPrimary)
 
-                if let description = description {
+                if let description {
                     Text(description)
                         .font(.caption)
                         .foregroundStyle(DesignTokens.textTertiary)

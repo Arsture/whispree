@@ -1,6 +1,6 @@
-import SwiftUI
-import KeyboardShortcuts
 import AppKit
+import KeyboardShortcuts
+import SwiftUI
 
 struct ShortcutRecorderButton: View {
     let name: KeyboardShortcuts.Name

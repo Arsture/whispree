@@ -5,7 +5,9 @@ final class NoneProvider: LLMProvider {
     let name = "없음 (원문 사용)"
     let requiresNetwork = false
 
-    func validate() -> ProviderValidation { .valid }
+    func validate() -> ProviderValidation {
+        .valid
+    }
 
     func setup() async throws {
         // 설정 불필요
@@ -16,6 +18,6 @@ final class NoneProvider: LLMProvider {
     }
 
     func correct(text: String, systemPrompt: String, glossary: [String]?, screenshot: Data? = nil) async throws -> String {
-        return text  // 원문 그대로 반환
+        text // 원문 그대로 반환
     }
 }

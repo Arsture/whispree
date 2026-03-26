@@ -6,8 +6,8 @@ enum QuickFixMode: String, CaseIterable {
 
     var description: String {
         switch self {
-        case .wordOnly: return "STT + LLM 사전에 단어 추가"
-        case .mapping: return "LLM 교정 매핑 추가 (STT 미적용)"
+            case .wordOnly: "STT + LLM 사전에 단어 추가"
+            case .mapping: "LLM 교정 매핑 추가 (STT 미적용)"
         }
     }
 }
@@ -116,10 +116,10 @@ struct QuickFixPanelView: View {
         let trimmed = correctedText.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         switch mode {
-        case .wordOnly:
-            onConfirmWord(trimmed)
-        case .mapping:
-            onConfirmMapping(originalText, trimmed)
+            case .wordOnly:
+                onConfirmWord(trimmed)
+            case .mapping:
+                onConfirmMapping(originalText, trimmed)
         }
     }
 }

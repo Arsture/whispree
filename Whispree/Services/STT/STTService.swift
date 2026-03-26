@@ -1,6 +1,6 @@
+import Combine
 import Foundation
 import WhisperKit
-import Combine
 
 @MainActor
 final class STTService: ObservableObject {
@@ -41,8 +41,7 @@ final class STTService: ObservableObject {
 
         let results = try await whisperKit.transcribe(audioArray: audioBuffer, decodeOptions: options)
 
-        let fullText = results.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
-        return fullText
+        return results.map(\.text).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     func transcribeStreaming(audioBuffer: [Float], language: SupportedLanguage = .auto) -> AsyncStream<String> {
@@ -93,9 +92,9 @@ enum STTError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .modelNotLoaded: return "STT model is not loaded"
-        case .transcriptionFailed(let msg): return "Transcription failed: \(msg)"
-        case .emptyAudio: return "No audio was recorded"
+            case .modelNotLoaded: "STT model is not loaded"
+            case let .transcriptionFailed(msg): "Transcription failed: \(msg)"
+            case .emptyAudio: "No audio was recorded"
         }
     }
 }

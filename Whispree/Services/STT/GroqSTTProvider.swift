@@ -2,7 +2,10 @@ import Foundation
 
 final class GroqSTTProvider: STTProvider, @unchecked Sendable {
     let name = "Groq Cloud"
-    var isAvailable: Bool { true }
+    var isAvailable: Bool {
+        true
+    }
+
     private let apiKey: String
     private let model = "whisper-large-v3-turbo"
 
@@ -21,8 +24,11 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
 
     func teardown() async {}
 
-    func transcribe(audioBuffer: [Float], language: SupportedLanguage?,
-                    promptTokens: [Int]?) async throws -> TranscriptionResult {
+    func transcribe(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) async throws -> TranscriptionResult {
         guard !apiKey.isEmpty else { throw STTError.modelNotLoaded }
 
         let wavData = Self.createWAVData(from: audioBuffer)
@@ -88,8 +94,11 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
         )
     }
 
-    func transcribeStream(audioBuffer: [Float], language: SupportedLanguage?,
-                          promptTokens: [Int]?) -> AsyncStream<PartialTranscription> {
+    func transcribeStream(
+        audioBuffer: [Float],
+        language: SupportedLanguage?,
+        promptTokens: [Int]?
+    ) -> AsyncStream<PartialTranscription> {
         AsyncStream { continuation in
             Task {
                 do {
@@ -97,7 +106,7 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
                         audioBuffer: audioBuffer, language: language, promptTokens: promptTokens
                     )
                     continuation.yield(PartialTranscription(text: result.text, isFinal: true))
-                } catch { }
+                } catch {}
                 continuation.finish()
             }
         }
@@ -105,7 +114,7 @@ final class GroqSTTProvider: STTProvider, @unchecked Sendable {
 
     // MARK: - WAV Encoding
 
-    static func createWAVData(from samples: [Float], sampleRate: Int = 16000) -> Data {
+    static func createWAVData(from samples: [Float], sampleRate: Int = 16_000) -> Data {
         let numChannels: Int16 = 1
         let bitsPerSample: Int16 = 16
         let byteRate = Int32(sampleRate) * Int32(numChannels) * Int32(bitsPerSample / 8)

@@ -1,5 +1,5 @@
-import SwiftUI
 import Sparkle
+import SwiftUI
 
 @main
 struct WhispreeApp: App {
@@ -35,7 +35,7 @@ struct CheckForUpdatesView: View {
     @ObservedObject private var viewModel: CheckForUpdatesViewModel
 
     init(updater: SPUUpdater) {
-        self.viewModel = CheckForUpdatesViewModel(updater: updater)
+        viewModel = CheckForUpdatesViewModel(updater: updater)
     }
 
     var body: some View {

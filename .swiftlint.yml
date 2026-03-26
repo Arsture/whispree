@@ -1,0 +1,61 @@
+included:
+  - Whispree
+
+excluded:
+  - Whispree/Resources
+  - .build
+  - DerivedData
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - discouraged_optional_boolean
+  - redundant_nil_coalescing
+  - yoda_condition
+  - fatal_error_message
+
+disabled_rules:
+  - trailing_comma
+  - todo
+  - opening_brace
+  - statement_position
+  - switch_case_alignment
+  - type_body_length
+  - multiple_closures_with_trailing_closure
+  - cyclomatic_complexity
+
+line_length:
+  warning: 200
+  error: 400
+  ignores_comments: true
+  ignores_urls: true
+
+file_length:
+  warning: 800
+  error: 1500
+
+function_body_length:
+  warning: 80
+  error: 150
+
+identifier_name:
+  min_length:
+    warning: 1
+  excluded:
+    - id
+    - i
+    - j
+    - x
+    - y
+    - z
+    - n
+    - dp
+  allowed_symbols:
+    - _
+
+nesting:
+  type_level: 3
+  function_level: 5
+
+force_cast: warning
+force_try: warning

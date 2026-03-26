@@ -1,7 +1,7 @@
-import Foundation
 import AppKit
-import KeyboardShortcuts
 import Combine
+import Foundation
+import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
     static let toggleRecording = Self("toggleRecording", default: .init(.r, modifiers: [.control, .shift]))
@@ -31,10 +31,10 @@ final class HotkeyManager: ObservableObject {
         eventTap.clearBindings()
 
         switch appState.settings.recordingMode {
-        case .pushToTalk:
-            setupPushToTalk()
-        case .toggle:
-            setupToggleMode()
+            case .pushToTalk:
+                setupPushToTalk()
+            case .toggle:
+                setupToggleMode()
         }
         setupQuickFixHotkey()
     }
@@ -52,34 +52,37 @@ final class HotkeyManager: ObservableObject {
 
     private func setupPushToTalk() {
         guard let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) else { return }
-        eventTap.register(shortcut: shortcut,
+        eventTap.register(
+            shortcut: shortcut,
             keyDown: { [weak self] in
                 guard let self, !self.isKeyDown else { return }
-                self.isKeyDown = true
-                self.onRecordingToggle?(true)
+                isKeyDown = true
+                onRecordingToggle?(true)
             },
             keyUp: { [weak self] in
-                guard let self, self.isKeyDown else { return }
-                self.isKeyDown = false
-                self.onRecordingToggle?(false)
+                guard let self, isKeyDown else { return }
+                isKeyDown = false
+                onRecordingToggle?(false)
             }
         )
     }
 
     private func setupToggleMode() {
         guard let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) else { return }
-        eventTap.register(shortcut: shortcut,
+        eventTap.register(
+            shortcut: shortcut,
             keyDown: { [weak self] in
                 guard let self else { return }
-                let shouldRecord = self.appState.transcriptionState == .idle
-                self.onRecordingToggle?(shouldRecord)
+                let shouldRecord = appState.transcriptionState == .idle
+                onRecordingToggle?(shouldRecord)
             }
         )
     }
 
     private func setupQuickFixHotkey() {
         guard let shortcut = KeyboardShortcuts.getShortcut(for: .quickFix) else { return }
-        eventTap.register(shortcut: shortcut,
+        eventTap.register(
+            shortcut: shortcut,
             keyDown: { [weak self] in
                 self?.onQuickFix?()
             }

@@ -9,21 +9,21 @@ enum OpenAIModel: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .gpt54: return "GPT-5.4 (Best)"
-        case .gpt54mini: return "GPT-5.4 Mini (Fast)"
-        case .gpt53codex: return "GPT-5.3 Codex"
-        case .gpt53codexSpark: return "GPT-5.3 Codex Spark (Pro)"
-        case .gpt52codex: return "GPT-5.2 Codex"
+            case .gpt54: "GPT-5.4 (Best)"
+            case .gpt54mini: "GPT-5.4 Mini (Fast)"
+            case .gpt53codex: "GPT-5.3 Codex"
+            case .gpt53codexSpark: "GPT-5.3 Codex Spark (Pro)"
+            case .gpt52codex: "GPT-5.2 Codex"
         }
     }
 
     var description: String {
         switch self {
-        case .gpt54: return "최고 품질. 코딩 + 추론 통합 모델"
-        case .gpt54mini: return "빠른 응답. 짧은 교정에 적합"
-        case .gpt53codex: return "코딩 특화. 기술 용어 교정에 강함"
-        case .gpt53codexSpark: return "초저지연. ChatGPT Pro 전용"
-        case .gpt52codex: return "이전 버전. 안정성 우선"
+            case .gpt54: "최고 품질. 코딩 + 추론 통합 모델"
+            case .gpt54mini: "빠른 응답. 짧은 교정에 적합"
+            case .gpt53codex: "코딩 특화. 기술 용어 교정에 강함"
+            case .gpt53codexSpark: "초저지연. ChatGPT Pro 전용"
+            case .gpt52codex: "이전 버전. 안정성 우선"
         }
     }
 }

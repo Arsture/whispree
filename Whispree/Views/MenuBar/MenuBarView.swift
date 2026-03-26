@@ -119,10 +119,10 @@ struct MenuBarView: View {
 
     private var statusColor: Color {
         switch appState.transcriptionState {
-        case .idle: return .green
-        case .recording: return .red
-        case .transcribing, .correcting: return .orange
-        case .inserting: return .blue
+            case .idle: .green
+            case .recording: .red
+            case .transcribing, .correcting: .orange
+            case .inserting: .blue
         }
     }
 }
