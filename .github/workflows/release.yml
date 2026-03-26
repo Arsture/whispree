@@ -40,8 +40,9 @@ jobs:
             NEW_VERSION="${BASH_REMATCH[1]}"
             echo "✨ Manual version from commit message: $NEW_VERSION"
           else
-            # Read current version from latest git tag
-            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            # Find highest semantic version tag (not ancestor-based)
+            LATEST_TAG=$(git tag -l 'v*' | sort -V | tail -1)
+            LATEST_TAG="${LATEST_TAG:-v0.0.0}"
             CURRENT_VERSION="${LATEST_TAG#v}"
             echo "Current version (from tag $LATEST_TAG): $CURRENT_VERSION"
 
