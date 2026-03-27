@@ -14,8 +14,7 @@ final class RecordingCoordinator: ObservableObject {
     private var workspaceObserver: AnyCancellable?
     private var previousApp: NSRunningApplication?
     private var lastExternalApp: NSRunningApplication?
-    private var capturedScreenshot: Data?
-    private let screenCaptureService = ScreenCaptureService()
+    private let continuousCapture = ContinuousScreenCaptureService()
 
     init(
         appState: AppState,
@@ -78,14 +77,15 @@ final class RecordingCoordinator: ObservableObject {
             previousApp = frontmost
         }
 
-        // 스크린샷 캡처 (OpenAI + 토글 ON일 때만)
+        // 연속 스크린샷 캡처 시작 (OpenAI + 토글 ON일 때만)
         if appState.settings.isScreenshotContextEnabled,
-           appState.settings.llmProviderType == .openai,
-           let targetApp = previousApp
+           appState.settings.llmProviderType == .openai
         {
-            capturedScreenshot = screenCaptureService.captureWindow(of: targetApp)
-        } else {
-            capturedScreenshot = nil
+            appState.capturedScreenshots = []
+            continuousCapture.onCapture = { [weak appState] screenshot in
+                appState?.capturedScreenshots.append(screenshot)
+            }
+            continuousCapture.startMonitoring()
         }
 
         do {
@@ -102,6 +102,9 @@ final class RecordingCoordinator: ObservableObject {
 
     func stopRecording() {
         guard appState.transcriptionState == .recording else { return }
+
+        // 연속 캡처 중지 — 마지막 pending debounce flush
+        let screenshots = continuousCapture.stopMonitoring()
 
         let audioBuffer = audioService.stopRecording()
         appState.isRecording = false
@@ -127,6 +130,7 @@ final class RecordingCoordinator: ObservableObject {
     func cancel() {
         currentTask?.cancel()
         currentTask = nil
+        continuousCapture.reset()
         if audioService.isRecording {
             _ = audioService.stopRecording()
         }
@@ -142,7 +146,6 @@ final class RecordingCoordinator: ObservableObject {
 
         defer {
             appState.transcriptionState = .idle
-            capturedScreenshot = nil
         }
 
         do {
@@ -196,7 +199,8 @@ final class RecordingCoordinator: ObservableObject {
                     }
 
                     // 스크린샷 맥락 프롬프트 주입
-                    if capturedScreenshot != nil {
+                    let screenshotData = appState.capturedScreenshots.map(\.imageData)
+                    if !screenshotData.isEmpty {
                         systemPrompt += CorrectionPrompts.screenshotContextPrompt
                     }
 
@@ -209,7 +213,7 @@ final class RecordingCoordinator: ObservableObject {
                         text: transcribedText,
                         systemPrompt: systemPrompt,
                         glossary: glossary.isEmpty ? nil : glossary,
-                        screenshot: capturedScreenshot
+                        screenshots: screenshotData
                     )
                     guard !Task.isCancelled else { return }
                     appState.correctedText = corrected

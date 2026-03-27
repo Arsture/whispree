@@ -15,7 +15,7 @@ protocol LLMProvider {
         text: String,
         systemPrompt: String,
         glossary: [String]?,
-        screenshot: Data?
+        screenshots: [Data]
     ) async throws -> String
 }
 

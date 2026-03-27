@@ -17,6 +17,10 @@ final class AppState: ObservableObject {
     @Published var frequencyBands: [Float] = Array(repeating: 0, count: 64)
     @Published var isRecording: Bool = false
 
+    // MARK: - Screenshots
+
+    @Published var capturedScreenshots: [CapturedScreenshot] = []
+
     // MARK: - Model State
 
     @Published var whisperModelState: ModelState = .notDownloaded

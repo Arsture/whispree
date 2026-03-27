@@ -4,6 +4,7 @@ struct MainDashboardView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var modelManager: ModelManager
     @State private var modelDownloadError: String?
+    @State private var selectedScreenshot: CapturedScreenshot?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,6 +19,11 @@ struct MainDashboardView: View {
                     // Recording status + waveform
                     recordingSection
 
+                    // Screenshot context strip
+                    if !appState.capturedScreenshots.isEmpty {
+                        screenshotStripSection
+                    }
+
                     // Accessibility warning
                     if !TextInsertionService.isAccessibilityEnabled() {
                         accessibilityWarningSection
@@ -30,6 +36,54 @@ struct MainDashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay {
+            if let screenshot = selectedScreenshot, let image = screenshot.image {
+                screenshotOverlay(screenshot: screenshot, image: image)
+            }
+        }
+    }
+
+    // MARK: - Screenshot Overlay
+
+    private func screenshotOverlay(screenshot: CapturedScreenshot, image: NSImage) -> some View {
+        ZStack {
+            Color.black.opacity(0.75)
+                .ignoresSafeArea()
+                .onTapGesture { selectedScreenshot = nil }
+
+            VStack(spacing: 12) {
+                HStack {
+                    Image(systemName: "app.fill")
+                        .foregroundStyle(.purple)
+                    Text(screenshot.appName)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Text(screenshot.timestamp.formatted(date: .omitted, time: .standard))
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                    Button {
+                        selectedScreenshot = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .shadow(color: .black.opacity(0.5), radius: 20)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+            }
+        }
+        .transition(.opacity)
+        .animation(.easeInOut(duration: 0.2), value: selectedScreenshot?.id)
     }
 
     // MARK: - Header
@@ -211,6 +265,63 @@ struct MainDashboardView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(.quaternary.opacity(0.5))
         )
+    }
+
+    // MARK: - Screenshot Strip
+
+    private var screenshotStripSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "camera.viewfinder")
+                    .foregroundStyle(.purple)
+                Text("스크린 컨텍스트")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(appState.capturedScreenshots.count)장")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(appState.capturedScreenshots) { screenshot in
+                        screenshotThumbnail(screenshot)
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.purple.opacity(0.05))
+        )
+    }
+
+    private func screenshotThumbnail(_ screenshot: CapturedScreenshot) -> some View {
+        Button {
+            selectedScreenshot = screenshot
+        } label: {
+            VStack(spacing: 4) {
+                if let image = screenshot.image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 120, height: 75)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(.secondary.opacity(0.2), lineWidth: 1)
+                        )
+                }
+                Text(screenshot.appName)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(width: 120)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Provider Status

@@ -17,7 +17,7 @@ final class NoneProvider: LLMProvider {
         // 해제 불필요
     }
 
-    func correct(text: String, systemPrompt: String, glossary: [String]?, screenshot: Data? = nil) async throws -> String {
+    func correct(text: String, systemPrompt: String, glossary: [String]?, screenshots: [Data] = []) async throws -> String {
         text // 원문 그대로 반환
     }
 }

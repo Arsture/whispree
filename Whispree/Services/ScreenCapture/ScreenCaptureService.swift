@@ -12,7 +12,9 @@ final class ScreenCaptureService {
         CGRequestScreenCaptureAccess()
     }
 
-    /// previousApp의 메인 윈도우를 캡처하여 JPEG Data로 반환
+    /// 앱의 최상위(frontmost) 윈도우를 캡처하여 JPEG Data로 반환
+    /// CGWindowListCopyWindowInfo는 front-to-back 순서로 반환하므로
+    /// 첫 번째 매칭 윈도우가 가장 앞에 있는 윈도우 (활성 채팅방 등)
     /// 권한 없거나 캡처 실패 시 nil 반환
     func captureWindow(of app: NSRunningApplication) -> Data? {
         guard ScreenCaptureService.hasScreenRecordingPermission() else { return nil }
@@ -22,21 +24,20 @@ final class ScreenCaptureService {
             return nil
         }
 
-        // 해당 PID의 가장 큰 윈도우 (메인 윈도우) 찾기
-        let appWindows = windowList.filter { dict in
-            guard let ownerPID = dict[kCGWindowOwnerPID as String] as? Int32 else { return false }
-            return ownerPID == pid
-        }
-
-        // 가장 큰 윈도우 선택 (면적 기준)
-        guard let mainWindow = appWindows.max(by: { a, b in
-            let boundsA = a[kCGWindowBounds as String] as? [String: CGFloat] ?? [:]
-            let boundsB = b[kCGWindowBounds as String] as? [String: CGFloat] ?? [:]
-            let areaA = (boundsA["Width"] ?? 0) * (boundsA["Height"] ?? 0)
-            let areaB = (boundsB["Width"] ?? 0) * (boundsB["Height"] ?? 0)
-            return areaA < areaB
+        // 해당 PID의 윈도우 중 일반 레이어(0)이고 최소 크기 이상인 것만 필터
+        // CGWindowListCopyWindowInfo는 front-to-back 순서로 반환 → first = 최상위 윈도우
+        let minArea: CGFloat = 100 * 100  // 너무 작은 팝오버/메뉴 제외
+        guard let frontWindow = windowList.first(where: { dict in
+            guard let ownerPID = dict[kCGWindowOwnerPID as String] as? Int32,
+                  ownerPID == pid,
+                  let layer = dict[kCGWindowLayer as String] as? Int,
+                  layer == 0  // 일반 윈도우 레이어만 (상태바/메뉴 제외)
+            else { return false }
+            let bounds = dict[kCGWindowBounds as String] as? [String: CGFloat] ?? [:]
+            let area = (bounds["Width"] ?? 0) * (bounds["Height"] ?? 0)
+            return area >= minArea
         }),
-            let windowID = mainWindow[kCGWindowNumber as String] as? CGWindowID
+            let windowID = frontWindow[kCGWindowNumber as String] as? CGWindowID
         else {
             return nil
         }
