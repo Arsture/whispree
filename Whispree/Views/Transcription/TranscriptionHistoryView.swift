@@ -46,6 +46,15 @@ struct TranscriptionHistoryView: View {
 
 struct TranscriptionRow: View {
     let record: TranscriptionRecord
+    @State private var isDisplayTextExpanded = false
+    @State private var isOriginalExpanded = false
+
+    private var hasCorrectedText: Bool {
+        if let corrected = record.correctedText, corrected != record.originalText {
+            return true
+        }
+        return false
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -54,25 +63,58 @@ struct TranscriptionRow: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Spacer()
+                if hasCorrectedText {
+                    Button {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(record.originalText, forType: .string)
+                    } label: {
+                        HStack(spacing: 2) {
+                            Image(systemName: "doc.on.doc")
+                            Text("원본")
+                        }
+                        .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("원본 텍스트 복사")
+                }
                 Button {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(record.displayText, forType: .string)
                 } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.caption)
+                    HStack(spacing: 2) {
+                        Image(systemName: "doc.on.doc")
+                        if hasCorrectedText {
+                            Text("교정")
+                        }
+                    }
+                    .font(.caption)
                 }
                 .buttonStyle(.plain)
+                .help(hasCorrectedText ? "교정된 텍스트 복사" : "텍스트 복사")
             }
 
             Text(record.displayText)
                 .font(.body)
-                .lineLimit(3)
+                .lineLimit(isDisplayTextExpanded ? nil : 3)
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isDisplayTextExpanded.toggle()
+                    }
+                }
+                .contentShape(Rectangle())
 
-            if let corrected = record.correctedText, corrected != record.originalText {
+            if hasCorrectedText {
                 Text("Original: \(record.originalText)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(isOriginalExpanded ? nil : 1)
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isOriginalExpanded.toggle()
+                        }
+                    }
+                    .contentShape(Rectangle())
             }
         }
         .padding(.vertical, 4)
