@@ -61,6 +61,29 @@ struct LLMSettingsView: View {
                             .toggleStyle(.switch)
                             .labelsHidden()
                         }
+
+                        if appState.settings.isScreenshotContextEnabled {
+                            Divider()
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("에이전트에 전달")
+                                    Text("텍스트 삽입 후 캡처된 스크린샷을 대상 앱에 이미지로 붙여넣습니다")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Toggle("", isOn: Binding(
+                                    get: { appState.settings.isScreenshotPasteEnabled },
+                                    set: {
+                                        appState.settings.isScreenshotPasteEnabled = $0
+                                        appState.settings.save()
+                                    }
+                                ))
+                                .toggleStyle(.switch)
+                                .labelsHidden()
+                            }
+                        }
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)

@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import Carbon.HIToolbox
 
 final class TextInsertionService {
     func insertText(_ text: String, targetApp: NSRunningApplication? = nil) async -> Bool {
@@ -105,6 +106,83 @@ final class TextInsertionService {
         }
 
         return true
+    }
+
+    // MARK: - Image Paste
+
+    /// 캡처된 스크린샷들을 대상 앱에 이미지로 순서대로 붙여넣기
+    /// 각 이미지마다: 클립보드에 이미지 복사 → Cmd+V → 영어 입력소스 전환 → Ctrl+V → 입력소스 복원
+    func insertImages(_ images: [Data], targetApp: NSRunningApplication? = nil) async {
+        guard !images.isEmpty else { return }
+
+        // 대상 앱이 이미 활성화되어 있어야 함 (텍스트 삽입 후 호출되므로 보통 이미 활성 상태)
+        if let target = targetApp,
+           target.bundleIdentifier != Bundle.main.bundleIdentifier
+        {
+            let isFront = NSWorkspace.shared.frontmostApplication?.processIdentifier == target.processIdentifier
+            if !isFront {
+                _ = await activateApp(target)
+            }
+        }
+
+        for imageData in images {
+            // 클립보드에 이미지 복사
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            guard let image = NSImage(data: imageData) else { continue }
+            pasteboard.writeObjects([image])
+
+            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms — 클립보드 안정화
+
+            // Cmd+V (브라우저 등에서 작동)
+            sendPasteKey(flags: .maskCommand)
+
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1초
+
+            // 영어 입력소스로 전환 → Ctrl+V → 원래 입력소스 복원
+            let originalSource = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
+            switchToASCIIInputSource()
+
+            try? await Task.sleep(nanoseconds: 30_000_000) // 30ms — 입력소스 전환 안정화
+
+            sendPasteKey(flags: .maskControl)
+
+            // 원래 입력소스 복원
+            TISSelectInputSource(originalSource)
+
+            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2초 — 다음 이미지 전 대기
+        }
+    }
+
+    /// CGEvent로 V키 + 지정 modifier 전송
+    private func sendPasteKey(flags: CGEventFlags) {
+        let source = CGEventSource(stateID: .combinedSessionState)
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+        else { return }
+
+        keyDown.flags = flags
+        keyUp.flags = flags
+
+        keyDown.post(tap: .cgAnnotatedSessionEventTap)
+        keyUp.post(tap: .cgAnnotatedSessionEventTap)
+    }
+
+    /// ASCII 입력 가능한 입력 소스(영어)로 전환
+    private func switchToASCIIInputSource() {
+        guard let sources = TISCreateInputSourceList(nil, false)?.takeRetainedValue() as? [TISInputSource] else { return }
+        for source in sources {
+            guard let categoryRef = TISGetInputSourceProperty(source, kTISPropertyInputSourceCategory) else { continue }
+            let category = Unmanaged<CFString>.fromOpaque(categoryRef).takeUnretainedValue() as String
+            guard category == kTISCategoryKeyboardInputSource as String else { continue }
+
+            guard let asciiRef = TISGetInputSourceProperty(source, kTISPropertyInputSourceIsASCIICapable) else { continue }
+            let isASCII = Unmanaged<CFBoolean>.fromOpaque(asciiRef).takeUnretainedValue()
+            if CFBooleanGetValue(isASCII) {
+                TISSelectInputSource(source)
+                return
+            }
+        }
     }
 
     // MARK: - Permission Check

@@ -27,6 +27,9 @@ struct AppSettings: Codable {
     /// Screenshot context
     var isScreenshotContextEnabled: Bool = false
 
+    /// 스크린샷을 대상 앱에 이미지로 자동 붙여넣기
+    var isScreenshotPasteEnabled: Bool = false
+
     /// Groq API
     var groqApiKey: String = ""
 

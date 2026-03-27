@@ -236,6 +236,15 @@ final class RecordingCoordinator: ObservableObject {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(textToInsert, forType: .string)
                 }
+
+                // Step 3.5: 스크린샷 이미지 붙여넣기 (토글 ON + 캡처된 스크린샷이 있을 때)
+                if appState.settings.isScreenshotPasteEnabled,
+                   !appState.capturedScreenshots.isEmpty,
+                   !Task.isCancelled
+                {
+                    let imageData = appState.capturedScreenshots.map(\.imageData)
+                    await textInsertionService.insertImages(imageData, targetApp: previousApp)
+                }
             }
 
             // Record in history
