@@ -18,7 +18,6 @@ final class HotkeyManager: ObservableObject {
     private let eventTap = EventTapHotkeyService.shared
     private var isKeyDown = false
     private var escMonitorLocal: Any?
-    private var escMonitorGlobal: Any?
 
     init(appState: AppState) {
         self.appState = appState
@@ -92,28 +91,32 @@ final class HotkeyManager: ObservableObject {
     // MARK: - ESC to Cancel
 
     private func setupEscCancel() {
+        // 로컬 모니터 — Whispree가 포커스일 때 ESC 소비
         escMonitorLocal = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == 53 {
-                self?.handleEsc()
+            if event.keyCode == 53, self?.appState.transcriptionState != .idle {
+                self?.onCancel?()
                 return nil
             }
             return event
         }
 
-        escMonitorGlobal = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == 53 {
-                self?.handleEsc()
-            }
+        // CGEventTap — 다른 앱이 포커스일 때도 ESC 소비
+        eventTap.onEscPressed = { [weak self] in
+            self?.onCancel?()
         }
+
+        // 파이프라인 상태 동기화 — EventTap이 메인 스레드 외에서도 읽을 수 있도록
+        appState.$transcriptionState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.eventTap.isPipelineActive = (state != .idle)
+            }
+            .store(in: &stateCancellable)
     }
 
-    private func handleEsc() {
-        guard appState.transcriptionState != .idle else { return }
-        onCancel?()
-    }
+    private var stateCancellable = Set<AnyCancellable>()
 
     deinit {
         if let monitor = escMonitorLocal { NSEvent.removeMonitor(monitor) }
-        if let monitor = escMonitorGlobal { NSEvent.removeMonitor(monitor) }
     }
 }

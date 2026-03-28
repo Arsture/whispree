@@ -29,6 +29,11 @@ final class EventTapHotkeyService {
     private var onRecordingCancel: (() -> Void)?
     private var onModifiersChanged: ((NSEvent.ModifierFlags) -> Void)?
 
+    /// 녹음 모드가 아닐 때 ESC 처리 콜백
+    var onEscPressed: (() -> Void)?
+    /// 파이프라인 활성 여부 — 메인 스레드 외에서도 안전하게 읽기 위한 플래그
+    var isPipelineActive: Bool = false
+
     private let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
 
     private init() {}
@@ -162,7 +167,7 @@ final class EventTapHotkeyService {
                 return Unmanaged.passUnretained(event)
             }
 
-            // Escape cancels recording
+            // Escape cancels shortcut recording
             if keyCode == 53 {
                 DispatchQueue.main.async { [weak self] in
                     self?.onRecordingCancel?()
@@ -189,6 +194,14 @@ final class EventTapHotkeyService {
         // -- Normal mode: match hotkeys --
         guard type == .keyDown || type == .keyUp else {
             return Unmanaged.passUnretained(event)
+        }
+
+        // ESC — 파이프라인 취소 (녹음/전사/교정 중 ESC 소비)
+        if type == .keyDown, keyCode == 53, isPipelineActive {
+            DispatchQueue.main.async { [weak self] in
+                self?.onEscPressed?()
+            }
+            return nil // 이벤트 소비
         }
 
         for binding in bindings {
