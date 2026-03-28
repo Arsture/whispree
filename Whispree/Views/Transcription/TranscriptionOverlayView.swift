@@ -84,6 +84,9 @@ struct TranscriptionOverlayView: View {
                 case .inserting:
                     Image(systemName: "checkmark.circle")
                         .foregroundStyle(.green)
+                case .selectingScreenshots:
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .foregroundStyle(.purple)
                 case .idle:
                     Image(systemName: "mic")
                         .foregroundStyle(.secondary)
@@ -143,10 +146,12 @@ struct NeonWaveformView: View {
             let bands = appState.frequencyBands
             let count = min(bandCount, bands.count)
 
-            // Resample 64 FFT bands → 48 display bars
+            // Resample 64 FFT bands → 48 display bars (로그 스케일 — 저주파를 넓게 펼침)
             for i in 0 ..< bandCount {
-                let srcIdx = Int(Float(i) / Float(bandCount) * Float(bands.count))
-                let target = srcIdx < bands.count ? bands[srcIdx] : 0
+                let t = Float(i) / Float(bandCount)
+                let logT = log2(1 + t * 7) / log2(8) // 로그 스케일: 저주파 영역에 더 많은 바 할당
+                let srcIdx = min(Int(logT * Float(bands.count)), bands.count - 1)
+                let target = bands[srcIdx]
                 let current = smoothed[i]
 
                 if target > current {

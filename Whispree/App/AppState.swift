@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -20,6 +21,12 @@ final class AppState: ObservableObject {
     // MARK: - Screenshots
 
     @Published var capturedScreenshots: [CapturedScreenshot] = []
+    /// 스크린샷 선택 완료 시 호출되는 콜백 (선택된 이미지 Data 배열 전달)
+    var screenshotSelectionCallback: (([Data]) -> Void)?
+    /// 글로벌 키 이벤트 → ScreenshotSelectionView로 전달
+    @Published var selectionKeyEvent: NSEvent?
+    /// 미리보기 요청 콜백 → AppDelegate가 Quick Look 스타일 패널 표시
+    var previewRequestCallback: ((CapturedScreenshot) -> Void)?
 
     // MARK: - Model State
 

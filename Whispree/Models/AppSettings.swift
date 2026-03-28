@@ -28,7 +28,7 @@ struct AppSettings: Codable {
     var isScreenshotContextEnabled: Bool = false
 
     /// 스크린샷을 대상 앱에 이미지로 자동 붙여넣기
-    var isScreenshotPasteEnabled: Bool = false
+    var isScreenshotPasteEnabled: Bool = true
 
     /// Groq API
     var groqApiKey: String = ""
@@ -47,6 +47,11 @@ struct AppSettings: Codable {
         // Migrate old model ID to new default
         if llmModelId.contains("Qwen2.5") {
             llmModelId = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+            save()
+        }
+        // Migrate: 스크린샷 에이전트 전달 기본값 ON
+        if isScreenshotContextEnabled, !isScreenshotPasteEnabled {
+            isScreenshotPasteEnabled = true
             save()
         }
     }

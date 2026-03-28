@@ -225,25 +225,37 @@ final class RecordingCoordinator: ObservableObject {
                 }
             }
 
-            // Step 3: Insert text into the original app (skip during onboarding demo)
+            // Step 3: 스크린샷 선택 (텍스트 삽입 전에 — 포커스 이동 문제 방지)
+            guard !Task.isCancelled else { return }
+            var selectedImages: [Data] = []
+            if appState.settings.hasCompletedOnboarding,
+               appState.settings.isScreenshotPasteEnabled,
+               !appState.capturedScreenshots.isEmpty
+            {
+                appState.transcriptionState = .selectingScreenshots
+
+                selectedImages = await withCheckedContinuation { continuation in
+                    appState.screenshotSelectionCallback = { selected in
+                        continuation.resume(returning: selected)
+                    }
+                }
+                appState.screenshotSelectionCallback = nil
+            }
+
+            // Step 4: 텍스트 삽입 → 대상 앱으로 포커스 이동 (선택 결과와 무관하게 항상 실행)
             guard !Task.isCancelled else { return }
             if appState.settings.hasCompletedOnboarding {
                 appState.transcriptionState = .inserting
 
                 let success = await textInsertionService.insertText(textToInsert, targetApp: previousApp)
                 if !success {
-                    // Copy to clipboard as last resort
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(textToInsert, forType: .string)
                 }
 
-                // Step 3.5: 스크린샷 이미지 붙여넣기 (토글 ON + 캡처된 스크린샷이 있을 때)
-                if appState.settings.isScreenshotPasteEnabled,
-                   !appState.capturedScreenshots.isEmpty,
-                   !Task.isCancelled
-                {
-                    let imageData = appState.capturedScreenshots.map(\.imageData)
-                    await textInsertionService.insertImages(imageData, targetApp: previousApp)
+                // Step 5: 선택된 이미지 붙여넣기
+                if !selectedImages.isEmpty, !Task.isCancelled {
+                    await textInsertionService.insertImages(selectedImages, targetApp: previousApp)
                 }
             }
 

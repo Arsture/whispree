@@ -3,6 +3,8 @@ import ApplicationServices
 import Carbon.HIToolbox
 
 final class TextInsertionService {
+    /// 클립보드 복원 Task — 이미지 붙여넣기 시작 시 취소해야 함
+    private var clipboardRestoreTask: Task<Void, Never>?
     func insertText(_ text: String, targetApp: NSRunningApplication? = nil) async -> Bool {
         // 유효한 외부 앱이 있으면 활성화 + Cmd+V
         if let target = targetApp,
@@ -97,8 +99,10 @@ final class TextInsertionService {
         keyUp.post(tap: .cgAnnotatedSessionEventTap)
 
         // Restore clipboard after delay (async, non-blocking)
-        Task {
+        // 이미지 붙여넣기가 뒤따르면 이 Task는 취소됨
+        clipboardRestoreTask = Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000) // 2s
+            guard !Task.isCancelled else { return }
             pasteboard.clearContents()
             if let previous = previousContents {
                 pasteboard.setString(previous, forType: .string)
@@ -111,11 +115,16 @@ final class TextInsertionService {
     // MARK: - Image Paste
 
     /// 캡처된 스크린샷들을 대상 앱에 이미지로 순서대로 붙여넣기
-    /// 각 이미지마다: 클립보드에 이미지 복사 → Cmd+V → 영어 입력소스 전환 → Ctrl+V → 입력소스 복원
+    /// 흐름: 영어 입력소스 전환 → 각 이미지(클립보드 복사 → Ctrl+V → Cmd+V) → 입력소스 복원
+    @MainActor
     func insertImages(_ images: [Data], targetApp: NSRunningApplication? = nil) async {
         guard !images.isEmpty else { return }
 
-        // 대상 앱이 이미 활성화되어 있어야 함 (텍스트 삽입 후 호출되므로 보통 이미 활성 상태)
+        // 텍스트 삽입의 클립보드 복원 Task 취소 — 이미지 붙여넣기 도중에 prev 복원 방지
+        clipboardRestoreTask?.cancel()
+        clipboardRestoreTask = nil
+
+        // 대상 앱이 이미 활성화되어 있어야 함
         if let target = targetApp,
            target.bundleIdentifier != Bundle.main.bundleIdentifier
         {
@@ -125,33 +134,39 @@ final class TextInsertionService {
             }
         }
 
+        // 영어 입력소스로 전환 (한글 모드에서 Ctrl+V 미작동 방지)
+        let originalSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue()
+        switchToASCIIInputSource()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let pasteboard = NSPasteboard.general
+
         for imageData in images {
-            // 클립보드에 이미지 복사
-            let pasteboard = NSPasteboard.general
+            guard let bitmapRep = NSBitmapImageRep(data: imageData),
+                  let pngData = bitmapRep.representation(using: .png, properties: [:])
+            else { continue }
+
             pasteboard.clearContents()
-            guard let image = NSImage(data: imageData) else { continue }
-            pasteboard.writeObjects([image])
+            pasteboard.setData(pngData, forType: .png)
 
-            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms — 클립보드 안정화
+            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2초 — 클립보드 안정화
 
-            // Cmd+V (브라우저 등에서 작동)
-            sendPasteKey(flags: .maskCommand)
-
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1초
-
-            // 영어 입력소스로 전환 → Ctrl+V → 원래 입력소스 복원
-            let originalSource = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
-            switchToASCIIInputSource()
-
-            try? await Task.sleep(nanoseconds: 30_000_000) // 30ms — 입력소스 전환 안정화
-
+            // Ctrl+V (터미널 Claude CLI)
             sendPasteKey(flags: .maskControl)
+            try? await Task.sleep(nanoseconds: 200_000_000)
 
-            // 원래 입력소스 복원
-            TISSelectInputSource(originalSource)
-
-            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2초 — 다음 이미지 전 대기
+            // Cmd+V (브라우저)
+            sendPasteKey(flags: .maskCommand)
+            try? await Task.sleep(nanoseconds: 600_000_000) // 0.6초 — 웹 업로드 대기
         }
+
+        // 원래 입력소스 복원
+        if let original = originalSource {
+            TISSelectInputSource(original)
+        }
+
+        // 클립보드 정리 — 마지막 이미지 데이터 남지 않도록
+        pasteboard.clearContents()
     }
 
     /// CGEvent로 V키 + 지정 modifier 전송

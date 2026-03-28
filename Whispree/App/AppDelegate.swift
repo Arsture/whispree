@@ -11,6 +11,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var mainWindow: NSWindow?
     private var onboardingWindow: NSWindow?
     private var overlayPanel: NSPanel?
+    private var selectionPanel: NSPanel?
+    private var selectionKeyMonitor: Any?
+    private var previewPanel: NSPanel?
+    /// 녹음 시작 시의 활성 화면 — 모든 패널이 이 화면에 표시
+    private var activeScreen: NSScreen?
     private var quickFixPanel: NSPanel?
     private var cancellables = Set<AnyCancellable>()
 
@@ -327,7 +332,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 switch state {
                     case .recording, .transcribing, .correcting:
                         showOverlay()
+                        self.hideSelectionPanel()
+                    case .selectingScreenshots:
+                        self.hideOverlay()
+                        self.showSelectionPanel()
                     case .idle, .inserting:
+                        self.hideSelectionPanel()
                         // Brief delay before hiding after inserting
                         if state == .idle {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -362,12 +372,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true
 
-        // Position at top center of screen
-        if let screen = NSScreen.main {
-            let x = (screen.frame.width - 320) / 2
-            let y = screen.visibleFrame.maxY - 100
-            panel.setFrameOrigin(NSPoint(x: x, y: y))
-        }
+        // 활성 화면 캡처 — 이후 선택/미리보기 패널도 이 화면에 표시
+        let screen = NSScreen.main ?? NSScreen.screens[0]
+        activeScreen = screen
+        // midX/midY로 글로벌 좌표 기준 중앙 배치 (멀티 디스플레이 대응)
+        let x = screen.frame.midX - 160
+        let y = screen.visibleFrame.maxY - 100
+        panel.setFrameOrigin(NSPoint(x: x, y: y))
 
         panel.contentView = NSHostingView(
             rootView: TranscriptionOverlayView()
@@ -380,5 +391,138 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func hideOverlay() {
         overlayPanel?.orderOut(nil)
         overlayPanel = nil
+    }
+
+    // MARK: - Screenshot Selection Panel
+
+    /// Esc로 자동 닫히지 않는 패널 — cancelOperation을 무시하여 로컬 키 모니터가 Esc를 전담 처리
+    private class ManagedPanel: NSPanel {
+        override func cancelOperation(_ sender: Any?) {
+            // 무시 — Esc 처리는 로컬 키 모니터에서 담당
+        }
+    }
+
+    private func showSelectionPanel() {
+        if selectionPanel != nil {
+            selectionPanel?.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        // 메인 윈도우 숨기기 — 선택 패널만 표시
+        for window in NSApp.windows where !(window is NSPanel) {
+            window.orderOut(nil)
+        }
+
+        let panel = ManagedPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 340, height: 420),
+            styleMask: [.titled, .utilityWindow, .hudWindow],
+            backing: .buffered,
+            defer: false
+        )
+        panel.level = .floating
+        panel.title = "스크린샷 선택"
+        panel.isMovableByWindowBackground = true
+        panel.hidesOnDeactivate = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+
+        // 오버레이와 같은 화면에 표시
+        let screen = activeScreen ?? NSScreen.main ?? NSScreen.screens[0]
+        let x = screen.frame.midX - 170
+        let y = screen.frame.midY - 210
+        panel.setFrameOrigin(NSPoint(x: x, y: y))
+
+        panel.contentView = NSHostingView(
+            rootView: ScreenshotSelectionView()
+                .environmentObject(appState)
+        )
+
+        // 앱 활성화 → 패널 포커스 (첫 실행 시 백그라운드에서 올라오므로 재시도)
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
+        selectionPanel = panel
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            NSApp.activate(ignoringOtherApps: true)
+            panel.makeKeyAndOrderFront(nil)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            panel.makeKeyAndOrderFront(nil)
+        }
+
+        // 로컬 키보드 모니터 — 이벤트를 소비(consume)하여 다른 앱에 전달 안 됨
+        selectionKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.appState.transcriptionState == .selectingScreenshots else { return event }
+
+            // 미리보기 패널이 열려 있으면 Esc로 닫기
+            if self.previewPanel != nil {
+                if event.keyCode == 53 { // Esc
+                    self.hidePreviewPanel()
+                }
+                return nil // 이벤트 소비
+            }
+
+            Task { @MainActor in
+                self.appState.selectionKeyEvent = event
+            }
+            return nil // 이벤트 소비 — 다른 앱에 전달 안 됨
+        }
+
+        // 미리보기 요청 감시
+        appState.previewRequestCallback = { [weak self] screenshot in
+            self?.showPreviewPanel(screenshot)
+        }
+    }
+
+    private func hideSelectionPanel() {
+        if let monitor = selectionKeyMonitor {
+            NSEvent.removeMonitor(monitor)
+            selectionKeyMonitor = nil
+        }
+        hidePreviewPanel()
+        selectionPanel?.orderOut(nil)
+        selectionPanel = nil
+        appState.previewRequestCallback = nil
+    }
+
+    // MARK: - Preview Panel (Quick Look 스타일)
+
+    private func showPreviewPanel(_ screenshot: CapturedScreenshot) {
+        hidePreviewPanel()
+
+        guard let image = screenshot.image else { return }
+        let imageSize = image.size
+        // 오버레이/선택 패널과 같은 화면에 표시
+        let screen = activeScreen ?? NSScreen.main ?? NSScreen.screens[0]
+        let maxW = screen.frame.width * 0.7
+        let maxH = screen.frame.height * 0.7
+        let scale = min(maxW / imageSize.width, maxH / imageSize.height, 1.0)
+        let panelW = imageSize.width * scale
+        let panelH = imageSize.height * scale + 30 // 타이틀바
+
+        let panel = ManagedPanel(
+            contentRect: NSRect(x: 0, y: 0, width: panelW, height: panelH),
+            styleMask: [.titled, .utilityWindow, .hudWindow],
+            backing: .buffered,
+            defer: false
+        )
+        panel.level = .popUpMenu
+        panel.title = screenshot.appName
+        panel.hidesOnDeactivate = false
+
+        let x = screen.frame.midX - panelW / 2
+        let y = screen.frame.midY - panelH / 2
+        panel.setFrameOrigin(NSPoint(x: x, y: y))
+
+        let imageView = NSImageView(frame: NSRect(x: 0, y: 0, width: panelW, height: panelH - 30))
+        imageView.image = image
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        panel.contentView = imageView
+        panel.makeKeyAndOrderFront(nil)
+        previewPanel = panel
+    }
+
+    private func hidePreviewPanel() {
+        previewPanel?.orderOut(nil)
+        previewPanel = nil
     }
 }

@@ -123,6 +123,7 @@ struct MenuBarView: View {
             case .recording: .red
             case .transcribing, .correcting: .orange
             case .inserting: .blue
+            case .selectingScreenshots: .purple
         }
     }
 }
