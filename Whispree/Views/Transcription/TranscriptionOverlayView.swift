@@ -96,14 +96,28 @@ struct TranscriptionOverlayView: View {
     }
 }
 
-// MARK: - Waveform (FFT 직접 매핑 — 실제 주파수 스펙트럼 반영)
+// MARK: - Waveform (스펙트럼 중앙 접기 — 저주파→중앙, 고주파→가장자리)
 
 struct NeonWaveformView: View {
     @EnvironmentObject var appState: AppState
     private let bandCount = 48
+    private let halfCount = 24
     @State private var smoothed: [Float] = Array(repeating: 0, count: 48)
 
     private let timer = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
+
+    // 바 인덱스 → FFT 밴드 인덱스 매핑 (중앙 접기)
+    // 중앙(23,24) → fft[0,1], 가장자리(0,47) → fft[46,47]
+    private let barToFFT: [Int] = {
+        var map = [Int](repeating: 0, count: 48)
+        for i in 0 ..< 24 {
+            let fftIdx = (23 - i) * 2      // 왼쪽: 짝수 밴드
+            let fftIdx2 = (23 - i) * 2 + 1 // 오른쪽: 홀수 밴드
+            map[i] = fftIdx
+            map[47 - i] = fftIdx2
+        }
+        return map
+    }()
 
     var body: some View {
         Canvas { context, size in
@@ -146,20 +160,12 @@ struct NeonWaveformView: View {
             let rms = appState.currentAudioLevel
 
             for i in 0 ..< bandCount {
-                // FFT 64밴드 → 48바 선형 보간 매핑
-                let fftPos = Float(i) / Float(bandCount - 1) * Float(max(bands.count - 1, 0))
-                let lo = Int(fftPos)
-                let hi = min(lo + 1, max(bands.count - 1, 0))
-                let frac = fftPos - Float(lo)
-                let fftVal: Float = bands.isEmpty ? 0 : bands[lo] * (1 - frac) + bands[hi] * frac
-
-                // 약한 중앙 강조 (center=1.0, edges=0.7) — 종모양 아님
-                let center = Float(bandCount - 1) / 2.0
-                let dist = abs(Float(i) - center) / center
-                let centerWeight: Float = 1.0 - dist * 0.3
+                // 중앙 접기: 저주파→중앙, 고주파→가장자리 (좌우 다른 밴드)
+                let fftIdx = min(barToFFT[i], max(bands.count - 1, 0))
+                let fftVal: Float = bands.isEmpty ? 0 : bands[fftIdx]
 
                 // FFT가 형태를 결정, RMS가 전체 에너지 스케일링
-                let target = fftVal * centerWeight * (0.6 + rms * 1.4)
+                let target = fftVal * (0.6 + rms * 1.4)
 
                 let current = smoothed[i]
                 if target > current {
