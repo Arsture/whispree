@@ -26,6 +26,10 @@ Package.pins
 Package.resolved
 *.workspace/xcshareddata/swiftpm/Package.resolved
 
+# Profiling
+*.profraw
+*.profdata
+
 # macOS
 .DS_Store
 .AppleDouble
