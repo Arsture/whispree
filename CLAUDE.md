@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **작업은 항상 `dev` 브랜치에서 수행.** 급한 hotfix를 제외하면 `main`에 직접 커밋하지 말 것.
 - 커밋 후 별도 지시가 없으면 **`dev`에 커밋 + push까지만** 수행.
-- 유저가 "배포해줘"라고 하면: `dev` → `main` merge 후 push.
+- **절대 `main`에 자의적으로 merge/push하지 말 것.** `main`은 배포 브랜치이므로 유저가 명시적으로 "배포해줘", "main에 merge해", "push해" 등 지시할 때만 `dev` → `main` merge 후 push. "커밋해"는 `dev` push만을 의미함.
 - 커밋 전 현재 브랜치가 `dev`인지 확인. `main`이면 `dev`로 체크아웃 후 작업.
 
 파일 추가/삭제 시 빌드 전 `xcodegen generate` 필수.
