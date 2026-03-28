@@ -15,7 +15,8 @@ final class HotkeyManager: ObservableObject {
     var onQuickFix: (() -> Void)?
 
     private let appState: AppState
-    private let eventTap = EventTapHotkeyService.shared
+    let eventTapService = EventTapHotkeyService.shared
+    private var eventTap: EventTapHotkeyService { eventTapService }
     private var isKeyDown = false
     private var escMonitorLocal: Any?
 
@@ -91,28 +92,53 @@ final class HotkeyManager: ObservableObject {
     // MARK: - ESC to Cancel
 
     private func setupEscCancel() {
-        // 로컬 모니터 — Whispree가 포커스일 때 ESC 소비
+        // 로컬 모니터 — Whispree가 포커스일 때 ESC 소비 (선택 패널 등)
         escMonitorLocal = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == 53, self?.appState.transcriptionState != .idle {
-                self?.onCancel?()
+            guard event.keyCode == 53, let self else { return event }
+            if self.appState.transcriptionState != .idle {
+                // EventTap의 onEscPressed와 같은 통합 핸들러 호출
+                self.handleUnifiedEsc()
                 return nil
             }
             return event
         }
 
-        // CGEventTap — 다른 앱이 포커스일 때도 ESC 소비
+        // CGEventTap — 통합 ESC 핸들러 (우선순위: 미리보기 → 선택 → 취소)
         eventTap.onEscPressed = { [weak self] in
-            self?.onCancel?()
+            self?.handleUnifiedEsc()
         }
 
-        // 파이프라인 상태 동기화 — EventTap이 메인 스레드 외에서도 읽을 수 있도록
+        // 파이프라인 상태 동기화
         appState.$transcriptionState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                self?.eventTap.isPipelineActive = (state != .idle)
+                guard let self else { return }
+                self.eventTap.isPipelineActive = (state != .idle)
+                self.eventTap.isSelectionActive = (state == .selectingScreenshots)
             }
             .store(in: &stateCancellable)
     }
+
+    /// 통합 ESC 핸들러 — 우선순위대로 분기
+    private func handleUnifiedEsc() {
+        // 1. 미리보기 열려있으면 → 미리보기만 닫기
+        if eventTap.isPreviewOpen {
+            onEscPreview?()
+            return
+        }
+        // 2. 선택 패널 활성이면 → 건너뛰기
+        if appState.transcriptionState == .selectingScreenshots {
+            appState.screenshotSelectionCallback?([])
+            return
+        }
+        // 3. 녹음/전사/교정 중이면 → 파이프라인 취소
+        if appState.transcriptionState != .idle {
+            onCancel?()
+        }
+    }
+
+    /// 미리보기 닫기 콜백 — AppDelegate에서 설정
+    var onEscPreview: (() -> Void)?
 
     private var stateCancellable = Set<AnyCancellable>()
 

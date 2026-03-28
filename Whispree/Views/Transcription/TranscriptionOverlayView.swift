@@ -96,7 +96,7 @@ struct TranscriptionOverlayView: View {
     }
 }
 
-// MARK: - Waveform (slim rounded bars, real FFT data)
+// MARK: - Waveform (FFT 직접 매핑 — 실제 주파수 스펙트럼 반영)
 
 struct NeonWaveformView: View {
     @EnvironmentObject var appState: AppState
@@ -123,15 +123,14 @@ struct NeonWaveformView: View {
                 let topRect = CGRect(x: x, y: midY - h, width: barWidth, height: h)
                 let botRect = CGRect(x: x, y: midY + 0.5, width: barWidth, height: h)
 
-                // Color: subtle white-blue gradient based on position
-                let t = CGFloat(i) / CGFloat(bandCount - 1)
-                let color = barColor(t: t, intensity: Float(level))
+                let center = Float(bandCount - 1) / 2.0
+                let distFromCenter = CGFloat(abs(Float(i) - center) / center)
+                let color = barColor(dist: distFromCenter, intensity: Float(level))
 
                 context.fill(Path(roundedRect: topRect, cornerRadius: cornerR), with: .color(color))
                 context.fill(Path(roundedRect: botRect, cornerRadius: cornerR), with: .color(color))
             }
 
-            // Subtle center line
             var centerLine = Path()
             centerLine.move(to: CGPoint(x: offsetX, y: midY))
             centerLine.addLine(to: CGPoint(x: offsetX + totalWidth, y: midY))
@@ -144,31 +143,40 @@ struct NeonWaveformView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .onReceive(timer) { _ in
             let bands = appState.frequencyBands
-            let count = min(bandCount, bands.count)
+            let rms = appState.currentAudioLevel
 
-            // Resample 64 FFT bands → 48 display bars (로그 스케일 — 저주파를 넓게 펼침)
             for i in 0 ..< bandCount {
-                let t = Float(i) / Float(bandCount)
-                let logT = log2(1 + t * 7) / log2(8) // 로그 스케일: 저주파 영역에 더 많은 바 할당
-                let srcIdx = min(Int(logT * Float(bands.count)), bands.count - 1)
-                let target = bands[srcIdx]
-                let current = smoothed[i]
+                // FFT 64밴드 → 48바 선형 보간 매핑
+                let fftPos = Float(i) / Float(bandCount - 1) * Float(max(bands.count - 1, 0))
+                let lo = Int(fftPos)
+                let hi = min(lo + 1, max(bands.count - 1, 0))
+                let frac = fftPos - Float(lo)
+                let fftVal: Float = bands.isEmpty ? 0 : bands[lo] * (1 - frac) + bands[hi] * frac
 
+                // 약한 중앙 강조 (center=1.0, edges=0.7) — 종모양 아님
+                let center = Float(bandCount - 1) / 2.0
+                let dist = abs(Float(i) - center) / center
+                let centerWeight: Float = 1.0 - dist * 0.3
+
+                // FFT가 형태를 결정, RMS가 전체 에너지 스케일링
+                let target = fftVal * centerWeight * (0.6 + rms * 1.4)
+
+                let current = smoothed[i]
                 if target > current {
-                    smoothed[i] = current * 0.25 + target * 0.75 // Fast attack
+                    smoothed[i] = current * 0.2 + target * 0.8
                 } else {
-                    smoothed[i] = current * 0.88 + target * 0.12 // Slow decay
+                    smoothed[i] = current * 0.85 + target * 0.15
                 }
             }
         }
     }
 
-    private func barColor(t: CGFloat, intensity: Float) -> Color {
+    private func barColor(dist: CGFloat, intensity: Float) -> Color {
         let alpha = 0.5 + Double(min(intensity, 1.0)) * 0.5
-        // Clean white → light blue gradient
-        let blue = 0.7 + t * 0.3
-        let green = 0.8 + t * 0.15
-        return Color(red: 0.75 - t * 0.2, green: green, blue: blue).opacity(alpha)
+        let r = 0.55 + dist * 0.25
+        let g = 0.82 - dist * 0.15
+        let b = 0.95
+        return Color(red: r, green: g, blue: b).opacity(alpha)
     }
 }
 

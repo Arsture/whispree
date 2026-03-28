@@ -29,9 +29,11 @@ final class EventTapHotkeyService {
     private var onRecordingCancel: (() -> Void)?
     private var onModifiersChanged: ((NSEvent.ModifierFlags) -> Void)?
 
-    /// 녹음 모드가 아닐 때 ESC 처리 콜백
+    /// 통합 ESC 핸들러 — 우선순위: 미리보기 → 선택 패널 → 파이프라인 취소
     var onEscPressed: (() -> Void)?
-    /// 파이프라인 활성 여부 — 메인 스레드 외에서도 안전하게 읽기 위한 플래그
+    /// 상태 플래그 — CGEventTap 콜백에서 동기적으로 읽음
+    var isPreviewOpen: Bool = false
+    var isSelectionActive: Bool = false
     var isPipelineActive: Bool = false
 
     private let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
@@ -196,8 +198,10 @@ final class EventTapHotkeyService {
             return Unmanaged.passUnretained(event)
         }
 
-        // ESC — 파이프라인 취소 (녹음/전사/교정 중 ESC 소비)
-        if type == .keyDown, keyCode == 53, isPipelineActive {
+        // ESC — 컨텍스트별 분기 (미리보기 → 선택 → 파이프라인 취소)
+        if type == .keyDown, keyCode == 53,
+           isPreviewOpen || isSelectionActive || isPipelineActive
+        {
             DispatchQueue.main.async { [weak self] in
                 self?.onEscPressed?()
             }

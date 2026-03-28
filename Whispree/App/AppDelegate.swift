@@ -146,6 +146,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.recordingCoordinator.cancel()
         }
 
+        hotkeyManager.onEscPreview = { [weak self] in
+            self?.hidePreviewPanel()
+        }
+
         hotkeyManager.onQuickFix = { [weak self] in
             self?.handleQuickFix()
         }
@@ -449,22 +453,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             panel.makeKeyAndOrderFront(nil)
         }
 
-        // 로컬 키보드 모니터 — 이벤트를 소비(consume)하여 다른 앱에 전달 안 됨
+        // 로컬 키보드 모니터 — ESC 제외 키 이벤트 소비 (ESC는 EventTap이 전담)
         selectionKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, self.appState.transcriptionState == .selectingScreenshots else { return event }
-
-            // 미리보기 패널이 열려 있으면 Esc로 닫기
-            if self.previewPanel != nil {
-                if event.keyCode == 53 { // Esc
-                    self.hidePreviewPanel()
-                }
-                return nil // 이벤트 소비
-            }
-
+            // ESC는 EventTap → HotkeyManager.handleUnifiedEsc()가 처리
+            if event.keyCode == 53 { return nil }
+            // 미리보기 열려있으면 다른 키 무시
+            if self.previewPanel != nil { return nil }
             Task { @MainActor in
                 self.appState.selectionKeyEvent = event
             }
-            return nil // 이벤트 소비 — 다른 앱에 전달 안 됨
+            return nil
         }
 
         // 미리보기 요청 감시
@@ -519,10 +518,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.contentView = imageView
         panel.makeKeyAndOrderFront(nil)
         previewPanel = panel
+        hotkeyManager.eventTapService.isPreviewOpen = true
     }
 
     private func hidePreviewPanel() {
         previewPanel?.orderOut(nil)
         previewPanel = nil
+        hotkeyManager.eventTapService.isPreviewOpen = false
     }
 }
