@@ -22,7 +22,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Services
     private(set) var audioService: AudioService!
     private(set) var sttService: STTService!
-    private(set) var llmService: LLMService!
     private(set) var textInsertionService: TextInsertionService!
     private(set) var modelManager: ModelManager!
     private(set) var hotkeyManager: HotkeyManager!
@@ -128,9 +127,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupServices() {
         audioService = AudioService()
         sttService = STTService()
-        llmService = LLMService()
         textInsertionService = TextInsertionService()
-        modelManager = ModelManager(appState: appState, sttService: sttService, llmService: llmService)
+        modelManager = ModelManager(appState: appState, sttService: sttService)
         hotkeyManager = HotkeyManager(appState: appState)
         quickFixService = QuickFixService()
 
@@ -400,8 +398,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func hideOverlay() {
+        guard overlayPanel != nil else { return }
+        // 오버레이 패널 orderOut 시 macOS가 메인 윈도우로 포커스 이동하는 것 방지
+        let frontApp = NSWorkspace.shared.frontmostApplication
+        let shouldRestore = frontApp?.bundleIdentifier != Bundle.main.bundleIdentifier
         overlayPanel?.orderOut(nil)
         overlayPanel = nil
+        if shouldRestore {
+            frontApp?.activate()
+        }
     }
 
     // MARK: - Screenshot Selection Panel
