@@ -40,6 +40,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         checkFirstLaunch()
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            showMainWindow()
+        }
+        return true
+    }
+
     // MARK: - Main Menu
 
     private func setupMainMenu() {
@@ -481,6 +488,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         selectionPanel?.orderOut(nil)
         selectionPanel = nil
         appState.previewRequestCallback = nil
+
+        // showSelectionPanel()에서 숨긴 메인 윈도우 복원
+        if let mainWindow, !mainWindow.isVisible {
+            mainWindow.makeKeyAndOrderFront(nil)
+        }
     }
 
     // MARK: - Preview Panel (Quick Look 스타일)
