@@ -317,16 +317,42 @@ struct LLMSettingsView: View {
                     )
                 }
 
-                // Model Download Notice
+                // Model Status Notice
                 if appState.settings.llmProviderType == .local,
                    !appState.llmModelState.isReady
                 {
+                    let isCached = modelManager.modelCacheStates[appState.settings.llmModelId] ?? false
                     HStack(spacing: 8) {
-                        Image(systemName: "info.circle")
-                            .foregroundStyle(.blue)
-                        Text("모델 탭에서 LLM 모델을 다운로드하세요.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        if isCached {
+                            // 다운로드됨 + 로딩 중
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("모델 로딩 중...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if case .loading = appState.llmModelState {
+                            // 다운로드 중
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("모델 다운로드 중...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if case let .error(msg) = appState.llmModelState {
+                            // 에러
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.red)
+                            Text(msg)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .lineLimit(2)
+                        } else {
+                            // 다운로드 필요
+                            Image(systemName: "arrow.down.circle")
+                                .foregroundStyle(.blue)
+                            Text("다운로드 탭에서 '\(LocalModelSpec.find(appState.settings.llmModelId)?.displayName ?? "모델")' 을 다운로드하세요.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)

@@ -52,30 +52,32 @@ struct ModelSettingsView: View {
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
 
-                    if let spec = LocalModelSpec.find(appState.settings.llmModelId) {
-                        ModelRow(
-                            name: spec.displayName,
-                            description: spec.description,
-                            size: spec.sizeDescription,
-                            state: modelManager.localLLMDownloaded ? .ready : activeLLMState,
-                            downloadProgress: appState.llmDownloadProgress,
-                            onDownload: {
-                                Task { await modelManager.downloadLocalLLMModel() }
-                            },
-                            onDelete: { modelManager.deleteLLMModel() }
-                        )
-                    } else {
-                        ModelRow(
-                            name: appState.settings.llmModelId,
-                            description: "커스텀 모델",
-                            size: "—",
-                            state: modelManager.localLLMDownloaded ? .ready : activeLLMState,
-                            downloadProgress: appState.llmDownloadProgress,
-                            onDownload: {
-                                Task { await modelManager.downloadLocalLLMModel() }
-                            },
-                            onDelete: { modelManager.deleteLLMModel() }
-                        )
+                    VStack(spacing: 12) {
+                        ForEach(LocalModelSpec.supported) { spec in
+                            let isCached = modelManager.modelCacheStates[spec.id] ?? false
+                            let isDownloading = modelManager.downloadingModelIds.contains(spec.id)
+                            let isSelected = appState.settings.llmModelId == spec.id
+                            let errorMsg = modelManager.modelErrors[spec.id]
+
+                            let state: ModelState = {
+                                if isCached { return .ready }
+                                if isDownloading { return .loading }
+                                if let err = errorMsg { return .error(err) }
+                                return .notDownloaded
+                            }()
+
+                            ModelRow(
+                                name: spec.displayName + (spec.capability == .vision ? " 👁" : "") + (isSelected ? " ✦" : ""),
+                                description: spec.description,
+                                size: spec.sizeDescription,
+                                state: state,
+                                downloadProgress: 0,
+                                onDownload: {
+                                    Task { await modelManager.downloadLLMModel(modelId: spec.id) }
+                                },
+                                onDelete: { modelManager.deleteLLMModel(modelId: spec.id) }
+                            )
+                        }
                     }
                 }
                 .padding(12)
@@ -112,7 +114,7 @@ struct ModelSettingsView: View {
             .padding(24)
         }
         .onAppear {
-            modelManager.refreshCachedModelStates()
+            modelManager.refreshAllCacheStates()
         }
     }
 
@@ -131,7 +133,7 @@ struct ModelSettingsView: View {
             if case .downloading = appState.llmModelState { return appState.llmModelState }
             if case .loading = appState.llmModelState { return appState.llmModelState }
         }
-        if modelManager.isLocalLLMDownloading { return .loading }
+        if !modelManager.downloadingModelIds.isEmpty { return .loading }
         return .notDownloaded
     }
 }

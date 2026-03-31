@@ -54,7 +54,7 @@ struct LocalModelSpec: Identifiable, Codable, Hashable {
             minMemoryGB: 16
         ),
         LocalModelSpec(
-            id: "mlx-community/Qwen3-Coder-30B-A3B-MLX-4bit",
+            id: "mlx-community/Qwen3-Coder-30B-A3B-Instruct-4bit",
             displayName: "Qwen3 Coder 30B MoE (4-bit)",
             description: "코딩 특화 MoE — 활성 3B, 코드 교정에 강점",
             sizeBytes: 5_000_000_000,
@@ -62,8 +62,8 @@ struct LocalModelSpec: Identifiable, Codable, Hashable {
             minMemoryGB: 16
         ),
         LocalModelSpec(
-            id: "mlx-community/glm-4-9b-chat-4bit",
-            displayName: "GLM-4 9B (4-bit)",
+            id: "mlx-community/GLM-4.7-Flash-4bit",
+            displayName: "GLM-4.7 Flash (4-bit)",
             description: "중국어/한국어 강점 — GLM 아키텍처",
             sizeBytes: 5_500_000_000,
             capability: .text,
