@@ -119,15 +119,23 @@ final class ModelManager: ObservableObject {
 
     private func isModelCached(repoId: String) -> Bool {
         let fm = FileManager.default
-        let cacheDir = fm.homeDirectoryForCurrentUser
+        // MLX Swift는 ~/Library/Caches/models/{org}/{name}/ 에 캐시
+        let mlxCacheDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/models/\(repoId)")
+        if fm.fileExists(atPath: mlxCacheDir.path) { return true }
+        // HuggingFace 표준 캐시도 체크 (fallback)
+        let hfCacheDir = fm.homeDirectoryForCurrentUser
             .appendingPathComponent(".cache/huggingface/hub")
-        let modelDir = cacheDir.appendingPathComponent("models--" + repoId.replacingOccurrences(of: "/", with: "--"))
-        return fm.fileExists(atPath: modelDir.path)
+        let hfModelDir = hfCacheDir.appendingPathComponent("models--" + repoId.replacingOccurrences(of: "/", with: "--"))
+        return fm.fileExists(atPath: hfModelDir.path)
     }
 
-    private func huggingFaceCachePath(repoId: String) -> URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".cache/huggingface/hub/models--" + repoId.replacingOccurrences(of: "/", with: "--"))
+    private func modelCachePaths(repoId: String) -> [URL] {
+        let fm = FileManager.default
+        return [
+            fm.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/models/\(repoId)"),
+            fm.homeDirectoryForCurrentUser.appendingPathComponent(".cache/huggingface/hub/models--" + repoId.replacingOccurrences(of: "/", with: "--"))
+        ]
     }
 
     // MARK: - Provider 로딩 (앱 시작 시)
@@ -278,8 +286,9 @@ final class ModelManager: ObservableObject {
             appState.llmProvider = nil
             appState.llmModelState = .notDownloaded
         }
-        let cachePath = huggingFaceCachePath(repoId: modelId)
-        try? FileManager.default.removeItem(at: cachePath)
+        for path in modelCachePaths(repoId: modelId) {
+            try? FileManager.default.removeItem(at: path)
+        }
         modelCacheStates[modelId] = false
     }
 
@@ -291,8 +300,9 @@ final class ModelManager: ObservableObject {
         }
         mlxAudioDownloadState = .notDownloaded
         modelCacheStates[appState.settings.mlxAudioModelId] = false
-        let cachePath = huggingFaceCachePath(repoId: appState.settings.mlxAudioModelId)
-        try? FileManager.default.removeItem(at: cachePath)
+        for path in modelCachePaths(repoId: appState.settings.mlxAudioModelId) {
+            try? FileManager.default.removeItem(at: path)
+        }
     }
 
     var totalDiskUsage: Int64 {

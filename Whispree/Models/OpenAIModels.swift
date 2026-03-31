@@ -26,4 +26,26 @@ enum OpenAIModel: String, CaseIterable, Codable {
             case .gpt52codex: "이전 버전. 안정성 우선"
         }
     }
+
+    /// 교정 품질 점수 (0-100)
+    var qualityScore: Int {
+        switch self {
+            case .gpt54: 100
+            case .gpt53codexSpark: 88
+            case .gpt53codex: 82
+            case .gpt54mini: 78
+            case .gpt52codex: 75
+        }
+    }
+
+    /// 예상 레이턴시 (ms)
+    var estimatedLatencyMs: Int {
+        switch self {
+            case .gpt53codexSpark: 400
+            case .gpt54mini: 600
+            case .gpt53codex: 800
+            case .gpt52codex: 900
+            case .gpt54: 1200
+        }
+    }
 }

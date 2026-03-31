@@ -39,36 +39,78 @@ struct LLMSettingsView: View {
                 // Local Model Picker
                 if appState.settings.llmProviderType == .local {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("로컬 모델")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
+                        HStack {
+                            Text("로컬 모델")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(DeviceCapability.current.chipName) · \(DeviceCapability.current.totalRAMGB) GB")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
 
-                        Picker("Model", selection: Binding(
-                            get: { appState.settings.llmModelId },
-                            set: { newId in
-                                appState.settings.llmModelId = newId
-                                appState.settings.save()
-                                Task { await appState.switchLLMProvider(to: .local) }
+                        // 현재 STT 모델 크기 (조합 계산용)
+                        let sttOverhead: Int64 = {
+                            switch appState.settings.sttProviderType {
+                            case .whisperKit: return 1_500_000_000
+                            case .mlxAudio: return 1_000_000_000
+                            case .groq: return 0
                             }
-                        )) {
+                        }()
+
+                        VStack(spacing: 8) {
                             ForEach(LocalModelSpec.supported) { spec in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack {
-                                        Text(spec.displayName)
-                                        if spec.capability == .vision {
-                                            Image(systemName: "eye")
-                                                .font(.caption2)
-                                                .foregroundStyle(.blue)
+                                let compat = spec.compatibility(otherModelSizeBytes: sttOverhead)
+                                let isSelected = appState.settings.llmModelId == spec.id
+                                Button {
+                                    appState.settings.llmModelId = spec.id
+                                    appState.settings.save()
+                                    Task { await appState.switchLLMProvider(to: .local) }
+                                } label: {
+                                    HStack(alignment: .top) {
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                            .font(.title3)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            HStack(spacing: 4) {
+                                                Text(spec.displayName)
+                                                    .font(.headline)
+                                                if spec.capability == .vision {
+                                                    Image(systemName: "eye")
+                                                        .font(.caption2)
+                                                        .foregroundStyle(.blue)
+                                                }
+                                            }
+                                            Text(spec.description)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
                                         }
+
+                                        Spacer()
+
+                                        ModelMetricsView(
+                                            sizeText: spec.sizeDescription,
+                                            ramPercent: compat.ramUsagePercent,
+                                            tokPerSec: compat.estimatedTokPerSec,
+                                            latencyMs: nil,
+                                            qualityScore: spec.qualityScore,
+                                            grade: compat.grade
+                                        )
                                     }
-                                    Text("\(spec.description) (\(spec.sizeDescription))")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(.quaternary.opacity(0.3))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                    )
                                 }
-                                .tag(spec.id)
+                                .buttonStyle(.plain)
                             }
                         }
-                        .pickerStyle(.radioGroup)
 
                         if let spec = LocalModelSpec.find(appState.settings.llmModelId),
                            spec.capability == .vision {
@@ -149,24 +191,50 @@ struct LLMSettingsView: View {
                             .font(.caption.bold())
                             .foregroundStyle(.secondary)
 
-                        Picker("Model", selection: Binding(
-                            get: { appState.settings.openaiModel },
-                            set: {
-                                appState.settings.openaiModel = $0
-                                appState.settings.save()
-                            }
-                        )) {
+                        VStack(spacing: 8) {
                             ForEach(OpenAIModel.allCases, id: \.self) { model in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(model.displayName)
-                                    Text(model.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                let isSelected = appState.settings.openaiModel == model
+                                Button {
+                                    appState.settings.openaiModel = model
+                                    appState.settings.save()
+                                } label: {
+                                    HStack(alignment: .top) {
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                            .font(.title3)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(model.displayName)
+                                                .font(.headline)
+                                            Text(model.description)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        Spacer()
+
+                                        ModelMetricsView(
+                                            sizeText: "☁️",
+                                            ramPercent: nil,
+                                            tokPerSec: nil,
+                                            latencyMs: model.estimatedLatencyMs,
+                                            qualityScore: model.qualityScore,
+                                            grade: .runsGreat
+                                        )
+                                    }
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(.quaternary.opacity(0.3))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                    )
                                 }
-                                .tag(model)
+                                .buttonStyle(.plain)
                             }
                         }
-                        .pickerStyle(.radioGroup)
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
