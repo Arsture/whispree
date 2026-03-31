@@ -4,6 +4,7 @@ import Foundation
 final class NoneProvider: LLMProvider {
     let name = "없음 (원문 사용)"
     let requiresNetwork = false
+    let supportsVision = false
 
     func validate() -> ProviderValidation {
         .valid

@@ -4,7 +4,6 @@ import Foundation
 @MainActor
 final class ModelManager: ObservableObject {
     @Published var whisperModelInfo = ModelInfo.whisperLargeV3Turbo
-    @Published var llmModelInfo = ModelInfo.qwen3_4B
     @Published var isWhisperKitDownloading = false
     @Published var isMLXAudioDownloading = false
     @Published var isLocalLLMDownloading = false
@@ -21,7 +20,6 @@ final class ModelManager: ObservableObject {
 
     private let appState: AppState
     private let sttService: STTService
-    private let llmService: LLMService
     private var cancellables = Set<AnyCancellable>()
 
     static var modelsDirectory: URL {
@@ -29,10 +27,9 @@ final class ModelManager: ObservableObject {
         return appSupport.appendingPathComponent("Whispree/Models", isDirectory: true)
     }
 
-    init(appState: AppState, sttService: STTService, llmService: LLMService) {
+    init(appState: AppState, sttService: STTService) {
         self.appState = appState
         self.sttService = sttService
-        self.llmService = llmService
         createModelsDirectoryIfNeeded()
         observeProviderStates()
         refreshCachedModelStates()
@@ -46,10 +43,13 @@ final class ModelManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        appState.$llmModelState
+        // LLM 모델 ID 변경 시 다운로드 상태 재평가
+        appState.$settings
+            .map(\.llmModelId)
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                self?.llmModelInfo.state = state
+            .sink { [weak self] _ in
+                self?.refreshLLMDownloadState()
             }
             .store(in: &cancellables)
     }
@@ -64,24 +64,32 @@ final class ModelManager: ObservableObject {
     // MARK: - 디스크 캐시 기반 모델 상태 확인
 
     func refreshCachedModelStates() {
-        // 이미 세션 중 다운로드 확인된 모델은 유지 (OR 로직)
-        // 삭제 시에만 명시적으로 false 설정됨
         whisperKitDownloaded = whisperKitDownloaded || isModelCached(repoId: "argmaxinc/whisperkit-coreml")
-        mlxAudioDownloaded = mlxAudioDownloaded || isModelCached(repoId: "mlx-community/Qwen3-ASR-1.7B-8bit")
-        localLLMDownloaded = localLLMDownloaded || isModelCached(repoId: "mlx-community/Qwen3-4B-Instruct-2507-4bit")
+        mlxAudioDownloaded = mlxAudioDownloaded || isModelCached(repoId: appState.settings.mlxAudioModelId)
+        refreshLLMDownloadState()
 
         if mlxAudioDownloaded, mlxAudioDownloadState == .notDownloaded {
             mlxAudioDownloadState = .ready
         }
     }
 
+    /// LLM 다운로드 상태만 재평가 (모델 ID 변경 시 호출)
+    private func refreshLLMDownloadState() {
+        localLLMDownloaded = isModelCached(repoId: appState.settings.llmModelId)
+    }
+
     private func isModelCached(repoId: String) -> Bool {
         let fm = FileManager.default
-        // HuggingFace 캐시: ~/.cache/huggingface/hub/models--{org}--{name}/
         let cacheDir = fm.homeDirectoryForCurrentUser
             .appendingPathComponent(".cache/huggingface/hub")
         let modelDir = cacheDir.appendingPathComponent("models--" + repoId.replacingOccurrences(of: "/", with: "--"))
         return fm.fileExists(atPath: modelDir.path)
+    }
+
+    /// HuggingFace 캐시 경로 생성
+    private func huggingFaceCachePath(repoId: String) -> URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cache/huggingface/hub/models--" + repoId.replacingOccurrences(of: "/", with: "--"))
     }
 
     // MARK: - Provider 로딩 (앱 시작 시)
@@ -91,13 +99,11 @@ final class ModelManager: ObservableObject {
         await appState.switchLLMProvider(to: appState.settings.llmProviderType)
         refreshCachedModelStates()
 
-        // MLX Audio가 다운로드되어 있고 현재 활성 프로바이더가 아니면 백그라운드 warmup
         if mlxAudioDownloaded, appState.settings.sttProviderType != .mlxAudio {
             Task { await warmupMLXAudioInBackground() }
         }
     }
 
-    /// MLX Audio 프로세스를 백그라운드에서 미리 시작하여 콜드 스타트 제거
     func warmupMLXAudioInBackground() async {
         guard appState.prewarmedMLXProvider == nil else { return }
         let provider = MLXAudioProvider(modelId: appState.settings.mlxAudioModelId)
@@ -105,7 +111,7 @@ final class ModelManager: ObservableObject {
             try await provider.setup()
             appState.prewarmedMLXProvider = provider
         } catch {
-            // warmup 실패 시 무시 — 사용자가 전환할 때 콜드 스타트로 폴백
+            // warmup 실패 시 무시
         }
     }
 
@@ -140,7 +146,6 @@ final class ModelManager: ObservableObject {
 
         if originalType != .mlxAudio {
             await appState.switchSTTProvider(to: originalType)
-            // 다운로드 성공 후 백그라운드 warmup (다음번 사용 시 콜드 스타트 제거)
             if mlxAudioDownloaded {
                 Task { await warmupMLXAudioInBackground() }
             }
@@ -182,16 +187,13 @@ final class ModelManager: ObservableObject {
 
     func downloadLLMModel() async throws {
         isLocalLLMDownloading = true
-        llmModelInfo.state = .downloading(progress: 0)
         do {
             await appState.switchLLMProvider(to: .local)
             if case let .error(msg) = appState.llmModelState {
                 throw NSError(domain: "ModelManager", code: 2, userInfo: [NSLocalizedDescriptionKey: msg])
             }
-            llmModelInfo.state = .ready
             localLLMDownloaded = true
         } catch {
-            llmModelInfo.state = .error(error.localizedDescription)
             throw error
         }
         isLocalLLMDownloading = false
@@ -222,12 +224,13 @@ final class ModelManager: ObservableObject {
     }
 
     func deleteLLMModel() {
-        llmService.unloadModel()
         Task { await appState.llmProvider?.teardown() }
         appState.llmProvider = nil
-        llmModelInfo.state = .notDownloaded
         appState.llmModelState = .notDownloaded
         localLLMDownloaded = false
+        // 현재 선택된 모델의 캐시 삭제
+        let cachePath = huggingFaceCachePath(repoId: appState.settings.llmModelId)
+        try? FileManager.default.removeItem(at: cachePath)
     }
 
     func deleteMLXAudioModel() {
@@ -238,10 +241,8 @@ final class ModelManager: ObservableObject {
         }
         mlxAudioDownloaded = false
         mlxAudioDownloadState = .notDownloaded
-        // HuggingFace 캐시 삭제
-        let cacheDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".cache/huggingface/hub/models--mlx-community--Qwen3-ASR-1.7B-8bit")
-        try? FileManager.default.removeItem(at: cacheDir)
+        let cachePath = huggingFaceCachePath(repoId: appState.settings.mlxAudioModelId)
+        try? FileManager.default.removeItem(at: cachePath)
     }
 
     var totalDiskUsage: Int64 {

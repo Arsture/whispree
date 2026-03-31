@@ -4,6 +4,7 @@ import Foundation
 final class OpenAIProvider: LLMProvider {
     let name = "OpenAI (GPT)"
     let requiresNetwork = true
+    let supportsVision = true
 
     private let authService: CodexAuthService
     private let oauthService: OAuthService

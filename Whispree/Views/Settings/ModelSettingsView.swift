@@ -52,17 +52,31 @@ struct ModelSettingsView: View {
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
 
-                    ModelRow(
-                        name: "Qwen3 4B Instruct (4-bit)",
-                        description: "한국어/영어 텍스트 교정",
-                        size: "~2.0 GB",
-                        state: modelManager.localLLMDownloaded ? .ready : activeLLMState,
-                        downloadProgress: appState.llmDownloadProgress,
-                        onDownload: {
-                            Task { await modelManager.downloadLocalLLMModel() }
-                        },
-                        onDelete: { modelManager.deleteLLMModel() }
-                    )
+                    if let spec = LocalModelSpec.find(appState.settings.llmModelId) {
+                        ModelRow(
+                            name: spec.displayName,
+                            description: spec.description,
+                            size: spec.sizeDescription,
+                            state: modelManager.localLLMDownloaded ? .ready : activeLLMState,
+                            downloadProgress: appState.llmDownloadProgress,
+                            onDownload: {
+                                Task { await modelManager.downloadLocalLLMModel() }
+                            },
+                            onDelete: { modelManager.deleteLLMModel() }
+                        )
+                    } else {
+                        ModelRow(
+                            name: appState.settings.llmModelId,
+                            description: "커스텀 모델",
+                            size: "—",
+                            state: modelManager.localLLMDownloaded ? .ready : activeLLMState,
+                            downloadProgress: appState.llmDownloadProgress,
+                            onDownload: {
+                                Task { await modelManager.downloadLocalLLMModel() }
+                            },
+                            onDelete: { modelManager.deleteLLMModel() }
+                        )
+                    }
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)

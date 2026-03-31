@@ -36,8 +36,58 @@ struct LLMSettingsView: View {
                         .fill(.quaternary.opacity(0.5))
                 )
 
-                // Screenshot Context Section (OpenAI only)
-                if appState.settings.llmProviderType == .openai {
+                // Local Model Picker
+                if appState.settings.llmProviderType == .local {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("로컬 모델")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        Picker("Model", selection: Binding(
+                            get: { appState.settings.llmModelId },
+                            set: { newId in
+                                appState.settings.llmModelId = newId
+                                appState.settings.save()
+                                Task { await appState.switchLLMProvider(to: .local) }
+                            }
+                        )) {
+                            ForEach(LocalModelSpec.supported) { spec in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack {
+                                        Text(spec.displayName)
+                                        if spec.capability == .vision {
+                                            Image(systemName: "eye")
+                                                .font(.caption2)
+                                                .foregroundStyle(.blue)
+                                        }
+                                    }
+                                    Text("\(spec.description) (\(spec.sizeDescription))")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .tag(spec.id)
+                            }
+                        }
+                        .pickerStyle(.radioGroup)
+
+                        if let spec = LocalModelSpec.find(appState.settings.llmModelId),
+                           spec.capability == .vision {
+                            Label("이 모델은 스크린샷 컨텍스트를 활용합니다", systemImage: "eye")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+                }
+
+                // Screenshot Context Section (Vision providers)
+                if appState.settings.llmProviderType == .openai ||
+                   (appState.settings.llmProviderType == .local && appState.llmProvider?.supportsVision == true) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("스크린샷 컨텍스트")
                             .font(.caption.bold())

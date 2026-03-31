@@ -115,7 +115,7 @@ struct MainDashboardView: View {
         if appState.transcriptionState == .correcting {
             return "Correcting..."
         }
-        if !modelManager.whisperModelInfo.state.isReady {
+        if appState.whisperModelState != .ready {
             return "Model not ready"
         }
         return "Ready - press hotkey to record"
@@ -124,7 +124,7 @@ struct MainDashboardView: View {
     private var statusColor: Color {
         if appState.isRecording { return .red }
         if appState.transcriptionState.isActive { return .orange }
-        if modelManager.whisperModelInfo.state.isReady { return .green }
+        if appState.whisperModelState == .ready { return .green }
         return .secondary
     }
 
@@ -381,12 +381,25 @@ struct MainDashboardView: View {
                 }
             }
 
-            // OpenAI model info
+            // Model info
             if appState.settings.llmProviderType == .openai {
                 Text(appState.settings.openaiModel.displayName)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .padding(.leading, 28)
+            } else if appState.settings.llmProviderType == .local {
+                let spec = LocalModelSpec.find(appState.settings.llmModelId)
+                HStack(spacing: 4) {
+                    Text(spec?.displayName ?? appState.settings.llmModelId)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    if spec?.capability == .vision {
+                        Image(systemName: "eye")
+                            .font(.caption2)
+                            .foregroundStyle(.blue)
+                    }
+                }
+                .padding(.leading, 28)
             }
         }
         .padding(12)
@@ -421,9 +434,11 @@ struct MainDashboardView: View {
 
     private var llmProviderIcon: String {
         switch appState.settings.llmProviderType {
-            case .none: "xmark.circle"
-            case .local: "text.badge.checkmark"
-            case .openai: "globe"
+            case .none: return "xmark.circle"
+            case .local:
+                let spec = LocalModelSpec.find(appState.settings.llmModelId)
+                return spec?.capability == .vision ? "eye" : "text.badge.checkmark"
+            case .openai: return "globe"
         }
     }
 
