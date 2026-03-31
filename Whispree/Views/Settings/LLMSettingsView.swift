@@ -83,11 +83,99 @@ struct LLMSettingsView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(.quaternary.opacity(0.5))
                     )
+
+                    // Screenshot Context Section (Local vision model)
+                    if appState.llmProvider?.supportsVision == true {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("스크린샷 컨텍스트")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("활성화")
+                                    Text("녹음 시 화면을 캡처하여 교정 정확도를 높입니다")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Toggle("", isOn: Binding(
+                                    get: { appState.settings.isScreenshotContextEnabled },
+                                    set: {
+                                        appState.settings.isScreenshotContextEnabled = $0
+                                        appState.settings.save()
+                                    }
+                                ))
+                                .toggleStyle(.switch)
+                                .labelsHidden()
+                            }
+
+                            if appState.settings.isScreenshotContextEnabled {
+                                Divider()
+
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("에이전트에 전달")
+                                        Text("텍스트 삽입 후 캡처된 스크린샷을 대상 앱에 이미지로 붙여넣습니다")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Toggle("", isOn: Binding(
+                                        get: { appState.settings.isScreenshotPasteEnabled },
+                                        set: {
+                                            appState.settings.isScreenshotPasteEnabled = $0
+                                            appState.settings.save()
+                                        }
+                                    ))
+                                    .toggleStyle(.switch)
+                                    .labelsHidden()
+                                }
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.quaternary.opacity(0.5))
+                        )
+                    }
                 }
 
-                // Screenshot Context Section (Vision providers)
-                if appState.settings.llmProviderType == .openai ||
-                   (appState.settings.llmProviderType == .local && appState.llmProvider?.supportsVision == true) {
+                // OpenAI Model Section
+                if appState.settings.llmProviderType == .openai {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OpenAI 모델")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        Picker("Model", selection: Binding(
+                            get: { appState.settings.openaiModel },
+                            set: {
+                                appState.settings.openaiModel = $0
+                                appState.settings.save()
+                            }
+                        )) {
+                            ForEach(OpenAIModel.allCases, id: \.self) { model in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(model.displayName)
+                                    Text(model.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .tag(model)
+                            }
+                        }
+                        .pickerStyle(.radioGroup)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // Screenshot Context Section (OpenAI — always vision-capable)
                     VStack(alignment: .leading, spacing: 8) {
                         Text("스크린샷 컨텍스트")
                             .font(.caption.bold())
@@ -134,40 +222,6 @@ struct LLMSettingsView: View {
                                 .labelsHidden()
                             }
                         }
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
-                }
-
-                // OpenAI Model Section
-                if appState.settings.llmProviderType == .openai {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("OpenAI 모델")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
-
-                        Picker("Model", selection: Binding(
-                            get: { appState.settings.openaiModel },
-                            set: {
-                                appState.settings.openaiModel = $0
-                                appState.settings.save()
-                            }
-                        )) {
-                            ForEach(OpenAIModel.allCases, id: \.self) { model in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(model.displayName)
-                                    Text(model.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .tag(model)
-                            }
-                        }
-                        .pickerStyle(.radioGroup)
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
