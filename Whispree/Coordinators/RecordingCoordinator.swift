@@ -77,9 +77,9 @@ final class RecordingCoordinator: ObservableObject {
             previousApp = frontmost
         }
 
-        // 연속 스크린샷 캡처 시작 (OpenAI + 토글 ON일 때만)
+        // 연속 스크린샷 캡처 시작 (Vision 지원 프로바이더 + 토글 ON일 때)
         if appState.settings.isScreenshotContextEnabled,
-           appState.settings.llmProviderType == .openai
+           appState.llmProvider?.supportsVision == true
         {
             appState.capturedScreenshots = []
             continuousCapture.onCapture = { [weak appState] screenshot in

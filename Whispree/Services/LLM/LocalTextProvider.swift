@@ -32,7 +32,7 @@ final class LocalTextProvider: LLMProvider {
     func correct(text: String, systemPrompt: String, glossary: [String]?, screenshots: [Data] = []) async throws -> String {
         guard let modelContainer else { throw LLMError.modelNotLoaded }
 
-        var fullPrompt = systemPrompt
+        var fullPrompt = systemPrompt + "\n/no_think"
         if let glossary, !glossary.isEmpty {
             fullPrompt += "\n\n용어 사전 (반드시 이 형태로 보존):\n" + glossary.joined(separator: ", ")
         }
@@ -52,7 +52,7 @@ final class LocalTextProvider: LLMProvider {
                         repetitionPenalty: 1.2
                     )
                     return try MLXLMCommon.generate(input: input, parameters: params, context: context) { tokens in
-                        if tokens.count > 500 { return .stop }
+                        if tokens.count > 2000 { return .stop }
                         return .more
                     }
                 }
