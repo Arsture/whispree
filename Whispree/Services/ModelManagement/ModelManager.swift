@@ -145,18 +145,6 @@ final class ModelManager: ObservableObject {
         await appState.switchLLMProvider(to: appState.settings.llmProviderType)
         refreshAllCacheStates()
 
-        if mlxAudioDownloaded, appState.settings.sttProviderType != .mlxAudio {
-            Task { await warmupMLXAudioInBackground() }
-        }
-    }
-
-    func warmupMLXAudioInBackground() async {
-        guard appState.prewarmedMLXProvider == nil else { return }
-        let provider = MLXAudioProvider(modelId: appState.settings.mlxAudioModelId)
-        do {
-            try await provider.setup()
-            appState.prewarmedMLXProvider = provider
-        } catch {}
     }
 
     // MARK: - LLM 모델 다운로드 (provider 전환 없이, 병렬 가능)
@@ -214,9 +202,6 @@ final class ModelManager: ObservableObject {
 
         if originalType != .mlxAudio {
             await appState.switchSTTProvider(to: originalType)
-            if mlxAudioDownloaded {
-                Task { await warmupMLXAudioInBackground() }
-            }
         }
         isMLXAudioDownloading = false
     }
