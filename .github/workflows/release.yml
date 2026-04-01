@@ -58,12 +58,14 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
-        id: changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --unreleased --strip header
-          output: CHANGES.md
+        run: |
+          brew install git-cliff
+          git cliff --config cliff.toml --unreleased --strip header --output CHANGES.md || true
+          if [ ! -s CHANGES.md ]; then
+            echo "Whispree v${{ steps.version.outputs.version }}" > CHANGES.md
+          fi
+          echo "--- Generated changelog ---"
+          cat CHANGES.md
 
       - name: Set version in Info.plist (build only, not committed)
         run: |
