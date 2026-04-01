@@ -65,18 +65,32 @@ Wants to be [OpenCode](https://github.com/nicepkg/opencode). Still a long way to
 | | STT | LLM |
 |---|---|---|
 | **Cloud (Recommended)** | [Groq](https://groq.com/) — accurate, fast | [OpenAI via Codex CLI](https://github.com/openai/codex) — use your existing account |
-| **Local** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — decent accuracy, a bit slow | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — slow and underwhelming |
-| **Local** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — less accurate, slightly faster | — |
+| **Local** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML+ANE, decent accuracy | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — 6 models supported |
+| **Local** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — fast, lightweight | [MLXVLM](https://github.com/ml-explore/mlx-swift-lm) — vision model (screenshot context) |
 
 ### Supported Models
 
-| Provider | Model |
-|----------|-------|
-| **Groq (Cloud STT)** | `whisper-large-v3-turbo` |
-| **OpenAI (Cloud LLM)** | `gpt-5.4` (default), `gpt-5.4-mini`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`, `gpt-5.2-codex` |
-| **WhisperKit (Local STT)** | `openai_whisper-large-v3_turbo` (CoreML + ANE optimized) |
-| **MLX Audio (Local STT)** | `Qwen3-ASR-1.7B-8bit` (Python worker default, swappable with other mlx-audio models) |
-| **Local LLM** | `Qwen3-4B-Instruct-2507-4bit` (mlx-swift-lm) |
+The built-in **Can I Run** feature detects your hardware (chip, RAM, bandwidth) and shows compatibility grades for each model.
+
+#### STT (Speech Recognition)
+
+| Provider | Model | Size | Type |
+|----------|-------|------|------|
+| **Groq** | `whisper-large-v3-turbo` | ☁️ | Cloud |
+| **WhisperKit** | `openai_whisper-large-v3_turbo` | ~1.5 GB | Local (CoreML+ANE) |
+| **MLX Audio** | `Qwen3-ASR-1.7B-8bit` | ~1.0 GB | Local (Python worker) |
+
+#### LLM (Text Correction)
+
+| Provider | Model | Size | Notes |
+|----------|-------|------|-------|
+| **OpenAI** | `gpt-5.4` (default), `5.4-mini`, `5.3-codex`, `5.3-codex-spark`, `5.2-codex` | ☁️ | Best quality |
+| **Local Text** | `Qwen3-1.7B-4bit` | ~940 MB | Lightweight, fast |
+| **Local Text** | `Qwen3-4B-Instruct-2507-4bit` (default) | ~2.1 GB | Balanced default |
+| **Local Text** | `Qwen3-8B-4bit` | ~4.3 GB | High-quality Korean |
+| **Local Text** | `Qwen3-Coder-30B-A3B-Instruct-4bit` | ~16 GB | MoE coding (32GB+ recommended) |
+| **Local Text** | `GLM-4.7-Flash-4bit` | ~16 GB | Chinese/Korean (32GB+ recommended) |
+| **Local Vision** | `Qwen3-VL-4B-Instruct-8bit` | ~4.8 GB | Screenshot context |
 
 ## Installation
 
@@ -121,9 +135,9 @@ If a word keeps getting misheard, register it with `Ctrl+Shift+D`. Build domain 
 Access from the menu bar icon:
 
 - **General** — Change hotkeys, recording mode (Push to Talk / Toggle), launch at login
-- **STT** — Choose STT provider (WhisperKit, Groq, MLX Audio)
-- **LLM** — Choose LLM provider (None, Local Qwen3, OpenAI via Codex), set correction mode
-- **Models** — Download and manage local models
+- **STT** — Choose STT provider (WhisperKit, Groq, MLX Audio) + compatibility grades
+- **LLM** — Choose LLM provider (None, 6 local models, 5 OpenAI models) + correction mode
+- **Downloads** — Download/delete local models + Can I Run compatibility (RAM%, tok/s, grade)
 
 ## Requirements
 
