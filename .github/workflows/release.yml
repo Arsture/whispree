@@ -57,6 +57,14 @@ jobs:
 
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
+      - name: Generate changelog
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --unreleased --strip header
+          output: CHANGES.md
+
       - name: Set version in Info.plist (build only, not committed)
         run: |
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.version }}" Whispree/Resources/Info.plist
@@ -156,6 +164,7 @@ jobs:
                 <title>Version ${{ steps.version.outputs.version }}</title>
                 <sparkle:version>${{ steps.version.outputs.version }}</sparkle:version>
                 <sparkle:shortVersionString>${{ steps.version.outputs.version }}</sparkle:shortVersionString>
+                <sparkle:releaseNotesLink>https://arsture.github.io/whispree/release-notes.html</sparkle:releaseNotesLink>
                 <pubDate>${PUBDATE}</pubDate>
                 <enclosure url="https://github.com/Arsture/whispree/releases/download/v${{ steps.version.outputs.version }}/Whispree.zip"
                            sparkle:version="${{ steps.version.outputs.version }}"
@@ -167,11 +176,15 @@ jobs:
           </rss>
           EOF
 
+      - name: Generate release notes HTML
+        run: python3 .github/scripts/md-to-html.py CHANGES.md appcast/release-notes.html
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Whispree v${{ steps.version.outputs.version }}
+          body_path: CHANGES.md
           files: |
             Whispree.zip
             Whispree.dmg

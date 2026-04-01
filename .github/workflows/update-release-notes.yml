@@ -1,0 +1,53 @@
+name: Update Release Notes
+
+on:
+  release:
+    types: [edited]
+
+jobs:
+  update-notes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check if latest release
+        id: check
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const { data: latest } = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            if (latest.id !== context.payload.release.id) {
+              core.notice('Edited release is not the latest — skipping.');
+              return 'skip';
+            }
+            return 'proceed';
+
+      - name: Checkout code
+        if: steps.check.outputs.result == 'proceed'
+        uses: actions/checkout@v4
+
+      - name: Fetch release body
+        if: steps.check.outputs.result == 'proceed'
+        run: |
+          gh api repos/${{ github.repository }}/releases/${{ github.event.release.id }} --jq '.body // ""' > release-body.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release notes HTML
+        if: steps.check.outputs.result == 'proceed'
+        run: |
+          mkdir -p deploy
+          python3 .github/scripts/md-to-html.py release-body.md deploy/release-notes.html
+
+      - name: Deploy to GitHub Pages
+        if: steps.check.outputs.result == 'proceed'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          keep_files: true
