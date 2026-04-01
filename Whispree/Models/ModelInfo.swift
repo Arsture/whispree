@@ -23,13 +23,7 @@ struct ModelInfo: Identifiable {
         huggingFaceRepo: "argmaxinc/whisperkit-coreml"
     )
 
-    static let qwen3_4B = ModelInfo(
-        id: "qwen3-4b-instruct-2507-4bit",
-        name: "Qwen 3 4B Instruct (4-bit)",
-        description: String(localized: "Multilingual text correction model (119 languages)"),
-        sizeBytes: 2_500_000_000,
-        huggingFaceRepo: "mlx-community/Qwen3-4B-Instruct-2507-4bit"
-    )
+    // LLM 모델 정보는 LocalModelSpec에서 관리 (Single Source of Truth)
 }
 
 struct TranscriptionRecord: Identifiable, Codable {

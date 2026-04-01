@@ -3,9 +3,10 @@ import MLXLLM
 import MLXLMCommon
 
 @MainActor
-final class LocalLLMProvider: LLMProvider {
-    let name = "로컬 LLM (Qwen3)"
+final class LocalTextProvider: LLMProvider {
+    let name = "로컬 LLM"
     let requiresNetwork = false
+    let supportsVision = false
 
     private var modelContainer: ModelContainer?
     private let modelId: String
@@ -15,7 +16,7 @@ final class LocalLLMProvider: LLMProvider {
         modelContainer != nil ? .valid : .invalid("로컬 LLM 모델이 로드되지 않았습니다. 모델을 다운로드해주세요.")
     }
 
-    init(modelId: String = "mlx-community/Qwen3-4B-Instruct-2507-4bit") {
+    init(modelId: String = LocalModelSpec.defaultModelId) {
         self.modelId = modelId
     }
 
@@ -31,8 +32,7 @@ final class LocalLLMProvider: LLMProvider {
     func correct(text: String, systemPrompt: String, glossary: [String]?, screenshots: [Data] = []) async throws -> String {
         guard let modelContainer else { throw LLMError.modelNotLoaded }
 
-        // glossary를 시스템 프롬프트에 주입
-        var fullPrompt = systemPrompt
+        var fullPrompt = systemPrompt + "\n/no_think"
         if let glossary, !glossary.isEmpty {
             fullPrompt += "\n\n용어 사전 (반드시 이 형태로 보존):\n" + glossary.joined(separator: ", ")
         }
@@ -52,7 +52,7 @@ final class LocalLLMProvider: LLMProvider {
                         repetitionPenalty: 1.2
                     )
                     return try MLXLMCommon.generate(input: input, parameters: params, context: context) { tokens in
-                        if tokens.count > 500 { return .stop }
+                        if tokens.count > 2000 { return .stop }
                         return .more
                     }
                 }
@@ -61,7 +61,6 @@ final class LocalLLMProvider: LLMProvider {
                 if let thinkEnd = text.range(of: "</think>") {
                     text = String(text[thinkEnd.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
                 } else if text.hasPrefix("<think>") {
-                    // Thinking block never closed (token limit hit) → discard
                     return ""
                 }
                 return text
@@ -79,15 +78,16 @@ final class LocalLLMProvider: LLMProvider {
 
         if result.isEmpty { return text }
 
-        // 단어 단위 안전장치: 50% 이상 변경 시 원본 반환
         let changeRatio = Self.wordEditDistance(text, result)
         if changeRatio > 0.5 { return text }
 
         return result
     }
 
+    // MARK: - Word Edit Distance
+
     /// 단어 단위 편집 거리 비율 (0.0 ~ 1.0)
-    private static func wordEditDistance(_ a: String, _ b: String) -> Double {
+    static func wordEditDistance(_ a: String, _ b: String) -> Double {
         let wordsA = a.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         let wordsB = b.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         guard !wordsA.isEmpty else { return wordsB.isEmpty ? 0 : 1 }

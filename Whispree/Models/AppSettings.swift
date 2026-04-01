@@ -79,6 +79,27 @@ enum STTProviderType: String, Codable, CaseIterable {
 
 enum LLMProviderType: String, Codable, CaseIterable {
     case none = "없음 (원문 사용)"
-    case local = "로컬 LLM (Qwen3)"
+    case local = "로컬 MLX"
     case openai = "OpenAI (GPT)"
+
+    var displayName: String {
+        switch self {
+            case .none: "없음 (원문 사용)"
+            case .local: "로컬 MLX"
+            case .openai: "OpenAI (GPT)"
+        }
+    }
+
+    /// 이전 rawValue에서 마이그레이션
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        switch rawValue {
+        case "로컬 LLM (Qwen3)": self = .local  // 이전 rawValue
+        default:
+            guard let value = LLMProviderType(rawValue: rawValue) else {
+                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Unknown LLMProviderType: \(rawValue)"))
+            }
+            self = value
+        }
+    }
 }

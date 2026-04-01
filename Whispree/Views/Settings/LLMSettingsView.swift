@@ -36,8 +36,214 @@ struct LLMSettingsView: View {
                         .fill(.quaternary.opacity(0.5))
                 )
 
-                // Screenshot Context Section (OpenAI only)
+                // Local Model Picker
+                if appState.settings.llmProviderType == .local {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("로컬 모델")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(DeviceCapability.current.chipName) · \(DeviceCapability.current.totalRAMGB) GB")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        // 현재 STT 모델 크기 (조합 계산용)
+                        let sttOverhead: Int64 = {
+                            switch appState.settings.sttProviderType {
+                            case .whisperKit: return 1_500_000_000
+                            case .mlxAudio: return 1_000_000_000
+                            case .groq: return 0
+                            }
+                        }()
+
+                        VStack(spacing: 8) {
+                            ForEach(LocalModelSpec.supported) { spec in
+                                let compat = spec.compatibility(otherModelSizeBytes: sttOverhead)
+                                let isSelected = appState.settings.llmModelId == spec.id
+                                Button {
+                                    appState.settings.llmModelId = spec.id
+                                    appState.settings.save()
+                                    Task { await appState.switchLLMProvider(to: .local) }
+                                } label: {
+                                    HStack(alignment: .top) {
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                            .font(.title3)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            HStack(spacing: 4) {
+                                                Text(spec.displayName)
+                                                    .font(.headline)
+                                                if spec.capability == .vision {
+                                                    Image(systemName: "eye")
+                                                        .font(.caption2)
+                                                        .foregroundStyle(.blue)
+                                                }
+                                            }
+                                            Text(spec.description)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        Spacer()
+
+                                        ModelMetricsView(
+                                            sizeText: spec.sizeDescription,
+                                            ramPercent: compat.ramUsagePercent,
+                                            tokPerSec: compat.estimatedTokPerSec,
+                                            latencyMs: nil,
+                                            qualityScore: spec.qualityScore,
+                                            grade: compat.grade
+                                        )
+                                    }
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(.quaternary.opacity(0.3))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        if let spec = LocalModelSpec.find(appState.settings.llmModelId),
+                           spec.capability == .vision {
+                            Label("이 모델은 스크린샷 컨텍스트를 활용합니다", systemImage: "eye")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // Screenshot Context Section (Local vision model)
+                    if appState.llmProvider?.supportsVision == true {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("스크린샷 컨텍스트")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("활성화")
+                                    Text("녹음 시 화면을 캡처하여 교정 정확도를 높입니다")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Toggle("", isOn: Binding(
+                                    get: { appState.settings.isScreenshotContextEnabled },
+                                    set: {
+                                        appState.settings.isScreenshotContextEnabled = $0
+                                        appState.settings.save()
+                                    }
+                                ))
+                                .toggleStyle(.switch)
+                                .labelsHidden()
+                            }
+
+                            if appState.settings.isScreenshotContextEnabled {
+                                Divider()
+
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("에이전트에 전달")
+                                        Text("텍스트 삽입 후 캡처된 스크린샷을 대상 앱에 이미지로 붙여넣습니다")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Toggle("", isOn: Binding(
+                                        get: { appState.settings.isScreenshotPasteEnabled },
+                                        set: {
+                                            appState.settings.isScreenshotPasteEnabled = $0
+                                            appState.settings.save()
+                                        }
+                                    ))
+                                    .toggleStyle(.switch)
+                                    .labelsHidden()
+                                }
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.quaternary.opacity(0.5))
+                        )
+                    }
+                }
+
+                // OpenAI Model Section
                 if appState.settings.llmProviderType == .openai {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OpenAI 모델")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 8) {
+                            ForEach(OpenAIModel.allCases, id: \.self) { model in
+                                let isSelected = appState.settings.openaiModel == model
+                                Button {
+                                    appState.settings.openaiModel = model
+                                    appState.settings.save()
+                                } label: {
+                                    HStack(alignment: .top) {
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                            .font(.title3)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(model.displayName)
+                                                .font(.headline)
+                                            Text(model.description)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        Spacer()
+
+                                        ModelMetricsView(
+                                            sizeText: "☁️",
+                                            ramPercent: nil,
+                                            tokPerSec: nil,
+                                            latencyMs: model.estimatedLatencyMs,
+                                            qualityScore: model.qualityScore,
+                                            grade: .runsGreat
+                                        )
+                                    }
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(.quaternary.opacity(0.3))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // Screenshot Context Section (OpenAI — always vision-capable)
                     VStack(alignment: .leading, spacing: 8) {
                         Text("스크린샷 컨텍스트")
                             .font(.caption.bold())
@@ -84,40 +290,6 @@ struct LLMSettingsView: View {
                                 .labelsHidden()
                             }
                         }
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
-                }
-
-                // OpenAI Model Section
-                if appState.settings.llmProviderType == .openai {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("OpenAI 모델")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
-
-                        Picker("Model", selection: Binding(
-                            get: { appState.settings.openaiModel },
-                            set: {
-                                appState.settings.openaiModel = $0
-                                appState.settings.save()
-                            }
-                        )) {
-                            ForEach(OpenAIModel.allCases, id: \.self) { model in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(model.displayName)
-                                    Text(model.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .tag(model)
-                            }
-                        }
-                        .pickerStyle(.radioGroup)
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -213,16 +385,42 @@ struct LLMSettingsView: View {
                     )
                 }
 
-                // Model Download Notice
+                // Model Status Notice
                 if appState.settings.llmProviderType == .local,
                    !appState.llmModelState.isReady
                 {
+                    let isCached = modelManager.modelCacheStates[appState.settings.llmModelId] ?? false
                     HStack(spacing: 8) {
-                        Image(systemName: "info.circle")
-                            .foregroundStyle(.blue)
-                        Text("모델 탭에서 LLM 모델을 다운로드하세요.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        if isCached {
+                            // 다운로드됨 + 로딩 중
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("모델 로딩 중...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if case .loading = appState.llmModelState {
+                            // 다운로드 중
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("모델 다운로드 중...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if case let .error(msg) = appState.llmModelState {
+                            // 에러
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.red)
+                            Text(msg)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .lineLimit(2)
+                        } else {
+                            // 다운로드 필요
+                            Image(systemName: "arrow.down.circle")
+                                .foregroundStyle(.blue)
+                            Text("다운로드 탭에서 '\(LocalModelSpec.find(appState.settings.llmModelId)?.displayName ?? "모델")' 을 다운로드하세요.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)

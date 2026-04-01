@@ -116,8 +116,19 @@ final class AppState: ObservableObject {
                 llmProvider = NoneProvider()
                 llmModelState = .ready
             case .local:
-                let provider = LocalLLMProvider(modelId: settings.llmModelId)
+                let spec = LocalModelSpec.find(settings.llmModelId)
+                let provider: any LLMProvider
+                if spec?.capability == .vision {
+                    provider = LocalVisionProvider(modelId: settings.llmModelId)
+                } else {
+                    provider = LocalTextProvider(modelId: settings.llmModelId)
+                }
                 llmProvider = provider
+                // Vision 모델은 스크린샷 자동 활성화
+                if provider.supportsVision {
+                    settings.isScreenshotContextEnabled = true
+                    settings.save()
+                }
                 do {
                     try await provider.setup()
                     let validation = provider.validate()

@@ -6,9 +6,8 @@ enum Constants {
 
     enum Models {
         static let defaultWhisperModel = "openai_whisper-large-v3_turbo"
-        static let defaultLLMModel = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+        static let defaultLLMModel = LocalModelSpec.defaultModelId
         static let whisperModelSize: Int64 = 1_500_000_000
-        static let llmModelSize: Int64 = 2_500_000_000
     }
 
     enum Limits {
