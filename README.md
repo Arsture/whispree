@@ -159,6 +159,16 @@ Access from the menu bar icon:
 
 ## Tips
 
+> **Use Structured Mode by default.** If you talk to AI often, turn on Structured mode in the LLM settings. Even rambling speech gets organized into clean bullet points. The clearer the idea in your head, the bigger the payoff — the time you'd spend formatting just disappears.
+
+> **Pour out your plans by speaking.** When you already have a vision in your head, typing it out is the bottleneck. Hit the hotkey and talk — Structured Mode handles the formatting. Especially in early planning, speaking is far more efficient than writing things out.
+
+> **When studying, speak the boundary of your understanding.** "I get it up to here, but this part I don't understand" — Whispree is perfect for dumping that out verbally. Articulating what you don't know in text takes forever, but speaking lets it flow naturally.
+
+> **Make full use of screenshots.** During recording, screenshots are captured automatically as you look at different windows. Switching tabs instantly captures the previous one, and pausing on a screen for 1.5 seconds triggers a capture. Every screen you look at gets recorded. After recording, a selection panel lets you choose which screenshots to attach to your AI prompt. With Vision-capable models like OpenAI, the LLM references screenshots during correction — so even formulas and technical terms get fixed accurately. Look at an equation in a paper and say "I don't understand this part," and both the screenshot and your voice go to the AI together.
+
+> **When you can't organize your thoughts, just type.** Speaking is faster when your thoughts are clear; typing helps you think when they're not. Whispree is closer to "a tool for quickly delivering what you already know."
+
 > **Office Worker Tip**: Wear AirPods and pretend you're on a call. Nobody will think you're talking to objects.
 
 ## Contributing
