@@ -9,9 +9,8 @@
 ![Build](https://img.shields.io/github/actions/workflow/status/Arsture/whispree/release.yml)
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 
-<!-- 데모 영상 -->
 <p align="center">
-  <em>데모 영상 준비 중</em>
+  <img src="assets/korean-demo.png" alt="Whispree 한국어 데모" width="720">
 </p>
 
 ## 주요 기능
@@ -57,40 +56,6 @@ Whispree는 **AI에게 말로 시키는 앱**입니다. Cursor, Claude, ChatGPT 
 STT는 Groq을 쓰고, LLM은 Codex OAuth를 빌려씁니다.
 Groq STT는 무료이고, OpenAI LLM 교정은 [Codex CLI](https://github.com/openai/codex) 인증 토큰을 그대로 가져다 씁니다.
 OpenAI 계정만 있으면 사실상 추가 비용 없이 고품질 STT + LLM 교정을 쓸 수 있습니다.
-
-### 프로바이더 선택
-
-[OpenCode](https://github.com/nicepkg/opencode)가 되고 싶습니다. 아직은 갈길이 멀지만, STT와 LLM 프로바이더를 직접 골라 쓸 수 있습니다.
-
-| | STT | LLM |
-|---|---|---|
-| **클라우드 (권장)** | [Groq](https://groq.com/) — 정확, 빠름 | [OpenAI via Codex CLI](https://github.com/openai/codex) — 기존 계정 그대로 |
-| **로컬** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML+ANE, 적당히 정확 | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — 6개 모델 지원 |
-| **로컬** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — 빠름, 가벼움 | [MLXVLM](https://github.com/ml-explore/mlx-swift-lm) — 비전 모델 (스크린샷 컨텍스트) |
-
-### 지원 모델
-
-앱 내 **Can I Run** 기능이 하드웨어(칩, RAM, 대역폭)를 감지하여 각 모델의 호환성 등급을 자동으로 표시합니다.
-
-#### STT (음성 인식)
-
-| 프로바이더 | 모델 | 크기 | 타입 |
-|----------|------|------|------|
-| **Groq** | `whisper-large-v3-turbo` | ☁️ | 클라우드 |
-| **WhisperKit** | `openai_whisper-large-v3_turbo` | ~1.5 GB | 로컬 (CoreML+ANE) |
-| **MLX Audio** | `Qwen3-ASR-1.7B-8bit` | ~1.0 GB | 로컬 (Python worker) |
-
-#### LLM (텍스트 교정)
-
-| 프로바이더 | 모델 | 크기 | 비고 |
-|----------|------|------|------|
-| **OpenAI** | `gpt-5.4` (기본), `5.4-mini`, `5.3-codex`, `5.3-codex-spark`, `5.2-codex` | ☁️ | 최고 품질 |
-| **로컬 Text** | `Qwen3-1.7B-4bit` | ~940 MB | 경량, 빠른 속도 |
-| **로컬 Text** | `Qwen3-4B-Instruct-2507-4bit` (기본) | ~2.1 GB | 균형 잡힌 기본값 |
-| **로컬 Text** | `Qwen3-8B-4bit` | ~4.3 GB | 고품질 한국어 |
-| **로컬 Text** | `Qwen3-Coder-30B-A3B-Instruct-4bit` | ~16 GB | MoE 코딩 특화 (32GB+ 권장) |
-| **로컬 Text** | `GLM-4.7-Flash-4bit` | ~16 GB | 중국어/한국어 (32GB+ 권장) |
-| **로컬 Vision** | `Qwen3-VL-4B-Instruct-8bit` | ~4.8 GB | 스크린샷 컨텍스트 활용 |
 
 ## 설치
 
@@ -139,6 +104,54 @@ SPM 의존성은 첫 빌드 시 자동으로 해결됩니다.
 - **LLM** — LLM 프로바이더 선택 (없음, 로컬 6종, OpenAI 5종) + 교정 모드 설정
 - **다운로드** — 로컬 모델 다운로드/삭제 + Can I Run 호환성 (RAM%, tok/s, 등급)
 
+## 팁
+
+> **Structured Mode를 기본으로 쓰세요.** AI한테 말로 지시하는 경우가 많다면, LLM 설정에서 Structured 모드를 켜두세요. 두서없이 말해도 불릿포인트로 정리된 프롬프트가 들어갑니다. 머릿속에 아이디어가 명확할수록 효과가 큽니다 — 타이핑으로 정리하는 시간이 통째로 사라집니다.
+
+> **기획할 때 말로 쏟아내세요.** 머릿속에 구상이 잡혀 있을 때, 그걸 타이핑으로 옮기는 건 병목입니다. 핫키 누르고 쭈루룩 말하면 Structured Mode가 구조를 잡아줍니다. 초기 기획일수록, 말로 빠르게 쏟아내는 게 텍스트로 정리하는 것보다 훨씬 효율적입니다.
+
+> **공부할 때 이해의 경계를 말하세요.** "여기까지는 이해했는데, 이 부분부터 모르겠다"를 말로 쏟아내는 데 Whispree가 잘 맞습니다. 모르는 걸 텍스트로 정리하려면 오래 걸리지만, 말로는 생각나는 대로 빠르게 나옵니다.
+
+> **스크린샷을 적극적으로 활용하세요.** 녹음 중에 화면을 보면 자동으로 스크린샷이 찍힙니다. 탭을 전환하면 이전 탭이 즉시 캡처되고, 한 화면에서 스크롤하다 1.5초 멈추면 그 시점이 캡처됩니다. 여러 탭을 돌아다녀도 본 화면이 전부 기록됩니다. 녹음이 끝나면 선택 패널에서 AI에 보낼 스크린샷을 골라 첨부할 수 있습니다. OpenAI 같은 Vision 지원 모델을 쓰면 LLM이 스크린샷을 참고해서 교정하기 때문에, 수식이나 전문 용어도 정확하게 잡아줍니다. 논문의 수식을 보면서 "이 부분이 이해가 안 된다"고 말하면, 스크린샷 + 음성이 함께 AI에 들어갑니다.
+
+> **말이 정리가 안 될 때는 타이핑하세요.** 생각이 명확할 때는 말이 빠르고, 아직 뭘 말해야 할지 모를 때는 타이핑하며 정리하는 게 낫습니다. Whispree는 "이미 아는 걸 빠르게 전달하는 도구"에 가깝습니다.
+
+> **직장인 팁**: 에어팟 끼고 통화하는 척하면 됩니다. 사물과 대화하는 사람으로 보이지 않아요.
+
+## 프로바이더 선택
+
+[OpenCode](https://github.com/nicepkg/opencode)가 되고 싶습니다. 아직은 갈길이 멀지만, STT와 LLM 프로바이더를 직접 골라 쓸 수 있습니다.
+
+| | STT | LLM |
+|---|---|---|
+| **클라우드 (권장)** | [Groq](https://groq.com/) — 정확, 빠름 | [OpenAI via Codex CLI](https://github.com/openai/codex) — 기존 계정 그대로 |
+| **로컬** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML+ANE, 적당히 정확 | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — 6개 모델 지원 |
+| **로컬** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — 빠름, 가벼움 | [MLXVLM](https://github.com/ml-explore/mlx-swift-lm) — 비전 모델 (스크린샷 컨텍스트) |
+
+### 지원 모델
+
+앱 내 **Can I Run** 기능이 하드웨어(칩, RAM, 대역폭)를 감지하여 각 모델의 호환성 등급을 자동으로 표시합니다.
+
+#### STT (음성 인식)
+
+| 프로바이더 | 모델 | 크기 | 타입 |
+|----------|------|------|------|
+| **Groq** | `whisper-large-v3-turbo` | ☁️ | 클라우드 |
+| **WhisperKit** | `openai_whisper-large-v3_turbo` | ~1.5 GB | 로컬 (CoreML+ANE) |
+| **MLX Audio** | `Qwen3-ASR-1.7B-8bit` | ~1.0 GB | 로컬 (Python worker) |
+
+#### LLM (텍스트 교정)
+
+| 프로바이더 | 모델 | 크기 | 비고 |
+|----------|------|------|------|
+| **OpenAI** | `gpt-5.4` (기본), `5.4-mini`, `5.3-codex`, `5.3-codex-spark`, `5.2-codex` | ☁️ | 최고 품질 |
+| **로컬 Text** | `Qwen3-1.7B-4bit` | ~940 MB | 경량, 빠른 속도 |
+| **로컬 Text** | `Qwen3-4B-Instruct-2507-4bit` (기본) | ~2.1 GB | 균형 잡힌 기본값 |
+| **로컬 Text** | `Qwen3-8B-4bit` | ~4.3 GB | 고품질 한국어 |
+| **로컬 Text** | `Qwen3-Coder-30B-A3B-Instruct-4bit` | ~16 GB | MoE 코딩 특화 (32GB+ 권장) |
+| **로컬 Text** | `GLM-4.7-Flash-4bit` | ~16 GB | 중국어/한국어 (32GB+ 권장) |
+| **로컬 Vision** | `Qwen3-VL-4B-Instruct-8bit` | ~4.8 GB | 스크린샷 컨텍스트 활용 |
+
 ## 요구 사항
 
 - macOS 14.0+ (Sonoma)
@@ -157,10 +170,6 @@ SPM 의존성은 첫 빌드 시 자동으로 해결됩니다.
 > 그래서 그렇게 바꾸고 계속 쓰다보니 애착이 생겨서 *"잠깐, 이거 내 Whisper 인데?"* 라는 생각이 들었습니다.
 >
 > 그래서 **Whispree**가 되었습니다.
-
-## 팁
-
-> **직장인 팁**: 에어팟 끼고 통화하는 척하면 됩니다. 사물과 대화하는 사람으로 보이지 않아요.
 
 ## 기여하기
 
