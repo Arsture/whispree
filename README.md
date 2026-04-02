@@ -9,9 +9,8 @@
 ![Build](https://img.shields.io/github/actions/workflow/status/Arsture/whispree/release.yml)
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 
-<!-- Demo video -->
 <p align="center">
-  <em>Demo video coming soon</em>
+  <img src="assets/english-demo.png" alt="Whispree English Demo" width="720">
 </p>
 
 ## Features

@@ -9,9 +9,8 @@
 ![Build](https://img.shields.io/github/actions/workflow/status/Arsture/whispree/release.yml)
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 
-<!-- 데모 영상 -->
 <p align="center">
-  <em>데모 영상 준비 중</em>
+  <img src="assets/korean-demo.png" alt="Whispree 한국어 데모" width="720">
 </p>
 
 ## 주요 기능
