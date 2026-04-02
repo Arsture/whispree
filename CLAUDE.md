@@ -49,15 +49,17 @@ macOS menu bar STT app. Record speech → WhisperKit transcribe → LLM correct 
 
 **Recording pipeline** (orchestrated by `RecordingCoordinator`):
 ```
-Hotkey(Ctrl+Shift+R) → AudioService (record + FFT) → STTProvider.transcribe() → LLMProvider.correct() → TextInsertionService.insertText()
+Hotkey → AudioService (record + FFT) → [ContinuousScreenCaptureService (VLM 활성 시)]
+  → STTProvider.transcribe() → LLMProvider.correct(screenshots:)
+  → [ScreenshotSelectionView (스크린샷 선택)] → TextInsertionService.insertText()
 ```
 
 **Quick Fix pipeline** (orchestrated by `AppDelegate` + `QuickFixService`):
 ```
-Hotkey(Ctrl+Shift+D) → QuickFixService.captureSelectedText() (Cmd+C) → QuickFixPanelView → replaceText() (Cmd+V) + addToDictionary()
+Hotkey → QuickFixService.captureSelectedText() (Cmd+C) → QuickFixPanelView → replaceText() (Cmd+V) + addToDictionary()
 ```
 
-**Central state**: `AppState` (@MainActor ObservableObject) — holds transcription state, providers, settings, audio levels, history. All Views observe this.
+**Central state**: `AppState` (@MainActor ObservableObject) — holds transcription state, providers, settings, audio levels, history, captured screenshots. All Views observe this.
 
 **Provider abstraction**: Both STT and LLM use protocol-based providers switchable at runtime via `AppState.switchSTTProvider(to:)` / `switchLLMProvider(to:)`.
 
@@ -68,11 +70,21 @@ Hotkey(Ctrl+Shift+D) → QuickFixService.captureSelectedText() (Cmd+C) → Quick
 
 ### LLM Providers (`@MainActor protocol LLMProvider`)
 - `NoneProvider` — passthrough, no correction
-- `LocalLLMProvider` — Qwen3-4B via mlx-swift-lm, 5s timeout, word-edit-distance safety (0.5 threshold)
+- `LocalTextProvider` — MLX text-only LLM via MLXLLM, 15s timeout, word-edit-distance safety (0.5 threshold), `<think>` block stripping
+- `LocalVisionProvider` — MLX VLM via MLXVLM, 30s timeout, max 3 screenshots base64 encoding, 500 token limit
 - `OpenAIProvider` — ChatGPT Responses API with SSE streaming. 인증 우선순위: (1) `CodexAuthService` (`~/.codex/auth.json`), (2) `OAuthService` (`~/.whispree/oauth.json`, PKCE 브라우저 로그인 fallback)
+
+### Screenshot Capture
+`ContinuousScreenCaptureService` (@MainActor) — VLM 활성 시 녹음 중 앱 전환/스크롤/클릭 감지 기반 디바운스 캡처 (1.5초 idle 후 캡처, 최대 20장). `ScreenCaptureService`가 CGWindowListCopyWindowInfo로 실제 윈도우 캡처. Screen Recording 권한 필요.
 
 ### Text Insertion
 `TextInsertionService.insertText()` is async. Activates previous app → clipboard + CGEvent Cmd+V. Falls back to clipboard-only when no valid target app (e.g., recording from Settings window). Requires Accessibility permission (`AXIsProcessTrusted`).
+
+### Hotkey System
+`EventTapHotkeyService` — CGEventTap(cghidEventTap) 기반 전역 핫키, macOS 시스템 단축키보다 먼저 인터셉트. 단축키 녹화 모드 + 통합 ESC 핸들러. `ShortcutConflictDetector`로 53+ 알려진 시스템 단축키 충돌 감지.
+
+### Device Compatibility ("Can I Run")
+`DeviceCapability` (Apple Silicon 하드웨어 감지) + `LocalModelSpec` (MLX 모델 레지스트리: text 5개 + vision 1개) + `ModelCompatibility` (RAM/속도 기반 6단계 등급 평가). canirun.ai 방식의 호환성 점수 산출.
 
 ## Key Design Decisions
 
@@ -81,19 +93,19 @@ Hotkey(Ctrl+Shift+D) → QuickFixService.captureSelectedText() (Cmd+C) → Quick
 - **TextInsertionService uses `Task.sleep` not `Thread.sleep`** — yields MainActor during waits.
 - **`RecordingCoordinator.startRecording()`** force-resets stuck states (transcribing/correcting/inserting) from previous failed pipelines.
 - **`lastExternalApp`** tracked in `RecordingCoordinator` via `NSWorkspace.didActivateApplicationNotification` — captures the app before Whispree to avoid pasting into Whispree itself.
-- **Word-edit-distance safety** in `LLMService`: word-based Levenshtein, threshold 0.5. Prevents LLM hallucination from replacing the entire text.
-- **LLMService vs LLMProvider**: `LLMService`는 mlx-swift-lm 직접 사용 (모델 로딩/관리, `ModelManager`가 사용). `LLMProvider` 프로토콜은 교정 파이프라인 추상화 (`RecordingCoordinator`가 `AppState.llmProvider`를 통해 사용).
+- **Word-edit-distance safety** in `LocalTextProvider`/`LocalVisionProvider`: word-based Levenshtein, threshold 0.5. Prevents LLM hallucination from replacing the entire text.
+- **LocalTextProvider vs LocalVisionProvider**: `LocalTextProvider`는 MLXLLM 텍스트 전용 (15초 타임아웃). `LocalVisionProvider`는 MLXVLM 비전 모델 (30초 타임아웃, 스크린샷 base64 인코딩). 둘 다 `LLMProvider` 프로토콜 구현.
 - **CorrectionPrompts** are in Korean with few-shot examples. 4가지 모드: `standard` (언어별 분기), `fillerRemoval` (필러 제거), `structured` (구조화), `custom` (사용자 정의). `codeSwitchPrompt` handles Korean-English codeswitching (밸리데이션 → validation).
 - **QuickFix** (`Ctrl+Shift+D`): 선택 텍스트 캡처 → 교정 단어/매핑 입력 → 대상 앱에 교체 삽입 + 도메인 사전에 자동 등록. `QuickFixService` + `QuickFixPanelView`.
 
 ## Settings Persistence
 
-`AppSettings` (Codable) saved to UserDefaults key `"WhispreeSettings"`. Key fields: `recordingMode`, `language`, `isLLMEnabled`, `hasCompletedOnboarding`, `launchAtLogin`, `showOverlay`, `correctionMode`, `customLLMPrompt`, `whisperModelId`, `llmModelId`, `mlxAudioModelId`, `sttProviderType`, `llmProviderType`, `openaiModel`, `groqApiKey`, `domainWordSets`.
+`AppSettings` (Codable) saved to UserDefaults key `"WhispreeSettings"`. Key fields: `recordingMode`, `language`, `isLLMEnabled`, `hasCompletedOnboarding`, `launchAtLogin`, `showOverlay`, `correctionMode`, `customLLMPrompt`, `whisperModelId`, `llmModelId`, `mlxAudioModelId`, `sttProviderType`, `llmProviderType`, `openaiModel`, `groqApiKey`, `domainWordSets`, `isScreenshotContextEnabled`, `isScreenshotPasteEnabled`.
 
 ## SPM Dependencies
 
 - WhisperKit 0.9.0 — STT (CoreML + Neural Engine)
-- mlx-swift-lm (main branch) — local LLM inference (MLXLLM, MLXLMCommon)
+- mlx-swift-lm (main branch) — local LLM/VLM inference (MLXLLM, MLXVLM, MLXLMCommon)
 - KeyboardShortcuts 2.0.0+ — global hotkey
 - LaunchAtLogin 1.0.0+ — login item
 - Sparkle 2.6.0+ — 자동 업데이트 (appcast.xml via GitHub Pages)
@@ -104,8 +116,9 @@ Hotkey(Ctrl+Shift+D) → QuickFixService.captureSelectedText() (Cmd+C) → Quick
 
 ## Concurrency Notes
 
-- `AppState`, `RecordingCoordinator`, `AudioService`, `AppDelegate` — all `@MainActor`
+- `AppState`, `RecordingCoordinator`, `AudioService`, `AppDelegate`, `ContinuousScreenCaptureService` — all `@MainActor`
 - `WhisperKitProvider`, `GroqSTTProvider`, `MLXAudioProvider` — nonisolated (NOT @MainActor), `@unchecked Sendable`
+- `EventTapHotkeyService`, `ScreenCaptureService` — nonisolated (NOT @MainActor)
 - Audio tap callback runs on audio thread; dispatches to MainActor via `Task { @MainActor in ... }`
 - `processPipeline()` runs in a `Task` on MainActor; `await sttProvider.transcribe()` suspends MainActor and runs inference on background executor
 
@@ -117,14 +130,15 @@ Hotkey(Ctrl+Shift+D) → QuickFixService.captureSelectedText() (Cmd+C) → Quick
 - @Whispree/AGENTS.md — 메인 앱 타겟 (파이프라인, 동시성 모델)
 - @Whispree/App/AGENTS.md — 앱 진입점, AppState 중앙 상태
 - @Whispree/Coordinators/AGENTS.md — RecordingCoordinator 파이프라인 오케스트레이션
-- @Whispree/Models/AGENTS.md — 데이터 모델, 설정, 상태 enum
-- @Whispree/Services/AGENTS.md — 서비스 레이어 개요
+- @Whispree/Models/AGENTS.md — 데이터 모델, 설정, 상태 enum, 디바이스/모델 호환성
+- @Whispree/Services/AGENTS.md — 서비스 레이어 개요 (9개 서비스)
 - @Whispree/Services/Audio/AGENTS.md — 마이크 녹음 + FFT
 - @Whispree/Services/Auth/AGENTS.md — Codex 토큰 재사용 + OAuth PKCE 인증
-- @Whispree/Services/Hotkey/AGENTS.md — 전역 단축키
-- @Whispree/Services/LLM/AGENTS.md — LLM 교정 (None/Local/OpenAI)
+- @Whispree/Services/Hotkey/AGENTS.md — 전역 단축키 + CGEventTap + 충돌 감지
+- @Whispree/Services/LLM/AGENTS.md — LLM 교정 (None/LocalText/LocalVision/OpenAI)
 - @Whispree/Services/ModelManagement/AGENTS.md — ML 모델 다운로드
 - @Whispree/Services/QuickFix/AGENTS.md — Quick Fix (선택 텍스트 교정 + 사전 등록)
+- @Whispree/Services/ScreenCapture/AGENTS.md — 스크린샷 캡처 (단일 + 디바운스 연속)
 - @Whispree/Services/STT/AGENTS.md — STT 프로바이더 (WhisperKit/Groq/MLX Audio)
 - @Whispree/Services/TextInsertion/AGENTS.md — 클립보드 + CGEvent 붙여넣기
 - @Whispree/Views/AGENTS.md — SwiftUI UI 레이어
