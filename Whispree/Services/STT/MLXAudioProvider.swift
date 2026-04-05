@@ -16,7 +16,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         _isReady ? .valid : .invalid("MLX Audio 모델이 로드되지 않았습니다.")
     }
 
-    private static func resolveUvPath() -> String? {
+    private static func findUvPath() -> String? {
         let fm = FileManager.default
         let home = NSHomeDirectory()
 
@@ -36,7 +36,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
     }
 
     var isAvailable: Bool {
-        Self.resolveUvPath() != nil
+        Self.findUvPath() != nil
     }
 
 
@@ -81,7 +81,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
     }
 
     func setup() async throws {
-        guard let uvPath = Self.resolveUvPath() else {
+        guard let uvPath = Self.findUvPath() else {
             throw STTError.transcriptionFailed("uv가 설치되어 있지 않습니다. curl -LsSf https://astral.sh/uv/install.sh | sh 로 설치하세요.")
         }
 
