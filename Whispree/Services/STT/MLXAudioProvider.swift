@@ -16,10 +16,29 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
         _isReady ? .valid : .invalid("MLX Audio 모델이 로드되지 않았습니다.")
     }
 
-    var isAvailable: Bool {
-        FileManager.default.fileExists(atPath: "/opt/homebrew/bin/uv")
-            || FileManager.default.fileExists(atPath: "/usr/local/bin/uv")
+    private static func resolveUvPath() -> String? {
+        let fm = FileManager.default
+        let home = NSHomeDirectory()
+
+        let candidatePaths = [
+            "\(home)/.local/bin/uv",  // 공식 스크립트 기본 경로
+            "/opt/homebrew/bin/uv",   // Apple Silicon Homebrew
+            "/usr/local/bin/uv"       // Intel Homebrew
+        ]
+
+        for path in candidatePaths {
+            if fm.isExecutableFile(atPath: path) {
+                return path
+            }
+        }
+
+        return nil
     }
+
+    var isAvailable: Bool {
+        Self.resolveUvPath() != nil
+    }
+
 
     init(modelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit") {
         self.modelId = modelId
@@ -62,7 +81,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
     }
 
     func setup() async throws {
-        guard isAvailable else {
+        guard let uvPath = Self.resolveUvPath() else {
             throw STTError.transcriptionFailed("uv가 설치되어 있지 않습니다. curl -LsSf https://astral.sh/uv/install.sh | sh 로 설치하세요.")
         }
 
@@ -72,9 +91,6 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
 
         // 고아 프로세스 정리
         Self.killOrphanedWorkers()
-
-        let uvPath = FileManager.default.fileExists(atPath: "/opt/homebrew/bin/uv")
-            ? "/opt/homebrew/bin/uv" : "/usr/local/bin/uv"
 
         // uv sync (첫 실행 시 의존성 설치)
         let venvPath = workerPath + "/.venv"
