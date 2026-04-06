@@ -18,7 +18,7 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
 
     private static func findUvPath() -> String? {
         let fm = FileManager.default
-        let home = NSHomeDirectory()
+        let home = fm.homeDirectoryForCurrentUser.path
 
         let candidatePaths = [
             "\(home)/.local/bin/uv",  // 공식 스크립트 기본 경로
@@ -38,7 +38,6 @@ final class MLXAudioProvider: STTProvider, @unchecked Sendable {
     var isAvailable: Bool {
         Self.findUvPath() != nil
     }
-
 
     init(modelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit") {
         self.modelId = modelId
