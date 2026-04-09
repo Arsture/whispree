@@ -24,7 +24,7 @@ struct OnboardingView: View {
             HStack(spacing: 8) {
                 ForEach(0 ..< totalSteps, id: \.self) { step in
                     Capsule()
-                        .fill(step <= currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .fill(step <= currentStep ? DesignTokens.accentPrimary : DesignTokens.Surface.subdued)
                         .frame(height: 4)
                 }
             }
@@ -54,7 +54,7 @@ struct OnboardingView: View {
             Spacer()
             Image(systemName: "waveform.circle.fill")
                 .font(.system(size: 80))
-                .foregroundStyle(.blue)
+                .foregroundStyle(DesignTokens.accentPrimary)
 
             Text("Welcome to Whispree")
                 .font(.largeTitle.bold())
@@ -82,7 +82,7 @@ struct OnboardingView: View {
             Spacer()
             Image(systemName: "lock.shield")
                 .font(.system(size: 60))
-                .foregroundStyle(.orange)
+                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
 
             Text("Permissions")
                 .font(.title.bold())
@@ -101,7 +101,7 @@ struct OnboardingView: View {
                 } label: {
                     permissionCard(
                         icon: "mic.fill",
-                        iconColor: .blue,
+                        iconColor: DesignTokens.accentPrimary,
                         title: "마이크",
                         description: "음성 녹음에 필요합니다",
                         isGranted: micGranted
@@ -118,7 +118,7 @@ struct OnboardingView: View {
                 } label: {
                     permissionCard(
                         icon: "hand.raised.fill",
-                        iconColor: .blue,
+                        iconColor: DesignTokens.accentPrimary,
                         title: "손쉬운 사용",
                         description: "다른 앱에 텍스트를 붙여넣기 위해 필요합니다",
                         isGranted: axGranted
@@ -135,7 +135,7 @@ struct OnboardingView: View {
                 } label: {
                     permissionCard(
                         icon: "camera.viewfinder",
-                        iconColor: .blue,
+                        iconColor: DesignTokens.accentPrimary,
                         title: "화면 녹화",
                         description: "다른 앱 화면을 캡처하여 AI 교정의 맥락을 제공합니다",
                         isGranted: screenRecordingGranted
@@ -153,7 +153,7 @@ struct OnboardingView: View {
                 } label: {
                     permissionCard(
                         icon: "arrow.triangle.2.circlepath",
-                        iconColor: .blue,
+                        iconColor: DesignTokens.accentPrimary,
                         title: "앱 관리",
                         description: "자동 업데이트에 필요합니다 (선택)",
                         isGranted: false,
@@ -169,7 +169,7 @@ struct OnboardingView: View {
                     .padding(.bottom, 8)
                     .padding(.top, -4)
             }
-            .background(.quaternary.opacity(0.5))
+            .background(cardBackground())
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Spacer()
@@ -195,7 +195,7 @@ struct OnboardingView: View {
             Spacer()
             Image(systemName: "key.fill")
                 .font(.system(size: 60))
-                .foregroundStyle(.blue)
+                .foregroundStyle(DesignTokens.accentPrimary)
 
             Text("서비스 연동")
                 .font(.title.bold())
@@ -210,14 +210,14 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "bolt.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                             .frame(width: 24)
                         Text("Groq Cloud STT")
                             .font(.headline)
                         Spacer()
                         if !appState.settings.groqApiKey.isEmpty {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                         } else {
                             Text("선택사항")
                                 .font(.caption)
@@ -243,14 +243,14 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "sparkles")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                             .frame(width: 24)
                         Text("OpenAI LLM 교정")
                             .font(.headline)
                         Spacer()
                         if appState.authService.isLoggedIn || appState.oauthService.isLoggedIn {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                         } else {
                             Text("선택사항")
                                 .font(.caption)
@@ -263,14 +263,14 @@ struct OnboardingView: View {
                         .foregroundStyle(.secondary)
 
                     if appState.authService.isLoggedIn {
-                        Label("Codex CLI 인증됨", systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
+                            Label("Codex CLI 인증됨", systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                     } else if appState.oauthService.isLoggedIn {
                         HStack {
                             Label("로그인됨", systemImage: "checkmark.circle.fill")
                                 .font(.caption)
-                                .foregroundStyle(.green)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                             Spacer()
                             Button("로그아웃") {
                                 appState.oauthService.logout()
@@ -304,13 +304,13 @@ struct OnboardingView: View {
                         if let error = appState.oauthService.loginError {
                             Label(error, systemImage: "xmark.circle.fill")
                                 .font(.caption)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                         }
                     }
                 }
                 .padding(16)
             }
-            .background(.quaternary.opacity(0.5))
+            .background(cardBackground())
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Spacer()
@@ -332,7 +332,7 @@ struct OnboardingView: View {
 
             Image(systemName: "mic.and.signal.meter")
                 .font(.system(size: 50))
-                .foregroundStyle(.blue)
+                .foregroundStyle(DesignTokens.accentPrimary)
 
             Text("녹음 방법")
                 .font(.title.bold())
@@ -357,7 +357,7 @@ struct OnboardingView: View {
                     description: "한 번 눌러 시작, 다시 눌러 중지"
                 )
             }
-            .background(.quaternary.opacity(0.5))
+            .background(cardBackground())
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             // Test area
@@ -391,7 +391,7 @@ struct OnboardingView: View {
                     .font(.system(.body))
                     .frame(height: 50)
                     .scrollContentBackground(.hidden)
-                    .background(Color.secondary.opacity(0.08))
+                    .background(DesignTokens.Surface.subdued)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(alignment: .topLeading) {
                         if demoText.isEmpty, appState.transcriptionState == .idle {
@@ -420,7 +420,7 @@ struct OnboardingView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(Color.secondary.opacity(0.05))
+                .background(DesignTokens.Surface.subdued)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             } else {
@@ -433,7 +433,7 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(Color.secondary.opacity(0.05))
+                .background(DesignTokens.Surface.subdued)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
@@ -444,9 +444,9 @@ struct OnboardingView: View {
         switch appState.transcriptionState {
             case .recording:
                 HStack(spacing: 4) {
-                    Circle().fill(.red).frame(width: 6, height: 6)
+                    Circle().fill(DesignTokens.semanticColors(for: .danger).foreground).frame(width: 6, height: 6)
                     Text("녹음 중...")
-                        .font(.caption).foregroundStyle(.red)
+                        .font(.caption).foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                 }
             case .transcribing:
                 HStack(spacing: 4) {
@@ -467,9 +467,9 @@ struct OnboardingView: View {
                 } else {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                         Text("전사 완료!")
-                            .font(.caption).foregroundStyle(.green)
+                            .font(.caption).foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                     }
                 }
         }
@@ -483,7 +483,7 @@ struct OnboardingView: View {
 
             Image(systemName: "character.textbox")
                 .font(.system(size: 50))
-                .foregroundStyle(.orange)
+                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
 
             Text("Quick Fix")
                 .font(.title.bold())
@@ -502,7 +502,7 @@ struct OnboardingView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.quaternary.opacity(0.5))
+            .background(cardBackground())
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             // Test area
@@ -510,7 +510,7 @@ struct OnboardingView: View {
                 HStack {
                     Text("아래에서 단어를 선택하고 테스트해보세요")
                         .font(.caption)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(DesignTokens.accentPrimary)
                     Spacer()
                     shortcutBadge(shortcutText(for: .quickFix))
                 }
@@ -519,7 +519,7 @@ struct OnboardingView: View {
                     .font(.system(.body))
                     .frame(height: 50)
                     .scrollContentBackground(.hidden)
-                    .background(Color.secondary.opacity(0.08))
+                    .background(DesignTokens.Surface.subdued)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
@@ -588,7 +588,7 @@ struct OnboardingView: View {
             if isGranted {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title3)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
             } else {
                 Text(actionLabel)
                     .font(.caption.bold())
@@ -610,10 +610,14 @@ struct OnboardingView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(appState.settings.recordingMode == mode ? Color.accentColor.opacity(0.15) : Color.secondary.opacity(0.1))
+                        .fill(
+                            appState.settings.recordingMode == mode
+                                ? DesignTokens.semanticColors(for: .accent).background
+                                : DesignTokens.Surface.subdued
+                        )
                         .frame(width: 36, height: 36)
                     Image(systemName: icon)
-                        .foregroundStyle(appState.settings.recordingMode == mode ? .blue : .secondary)
+                        .foregroundStyle(appState.settings.recordingMode == mode ? DesignTokens.accentPrimary : .secondary)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -626,7 +630,7 @@ struct OnboardingView: View {
                 Spacer()
 
                 Image(systemName: appState.settings.recordingMode == mode ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(appState.settings.recordingMode == mode ? .blue : .secondary.opacity(0.5))
+                    .foregroundStyle(appState.settings.recordingMode == mode ? DesignTokens.accentPrimary : .secondary.opacity(0.5))
                     .font(.title3)
             }
             .padding(14)
@@ -641,7 +645,7 @@ struct OnboardingView: View {
                 .font(.caption.bold())
                 .foregroundStyle(.white)
                 .frame(width: 20, height: 20)
-                .background(.orange)
+                .background(DesignTokens.semanticColors(for: .warning).foreground)
                 .clipShape(Circle())
             Text(text)
                 .font(.subheadline)
@@ -653,8 +657,21 @@ struct OnboardingView: View {
             .font(.system(.caption, design: .rounded).bold())
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(.quaternary)
+            .background(DesignTokens.Surface.subdued)
             .clipShape(RoundedRectangle(cornerRadius: 5))
+    }
+
+    private func cardBackground(cornerRadius: CGFloat = 12) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(DesignTokens.cardBackground)
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(DesignTokens.Surface.cardTint)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+            }
     }
 
     private func shortcutText(for name: KeyboardShortcuts.Name) -> String {

@@ -27,7 +27,7 @@ struct ScreenshotSelectionView: View {
             // Header
             HStack {
                 Image(systemName: "photo.on.rectangle.angled")
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(DesignTokens.accentPrimary)
                 Text("스크린샷 선택")
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
@@ -55,7 +55,7 @@ struct ScreenshotSelectionView: View {
                             icon: selectedIndices.count == appState.capturedScreenshots.count
                                 ? "checkmark.circle.fill" : "circle.grid.2x2",
                             label: "모두 선택",
-                            color: .blue
+                            color: DesignTokens.accentPrimary
                         )
                         .id(1)
 
@@ -97,7 +97,7 @@ struct ScreenshotSelectionView: View {
         HStack(spacing: 3) {
             Text(key).font(.system(size: 9, design: .monospaced))
                 .padding(.horizontal, 3).padding(.vertical, 1)
-                .background(.quaternary.opacity(0.5))
+                .background(DesignTokens.Surface.subdued)
                 .clipShape(RoundedRectangle(cornerRadius: 3))
             Text(label).font(.system(size: 9)).foregroundStyle(.secondary)
         }
@@ -118,11 +118,11 @@ struct ScreenshotSelectionView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(focusedIndex == index ? Color.accentColor.opacity(0.15) : .clear)
+                .fill(focusedIndex == index ? DesignTokens.semanticColors(for: .accent).background : .clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(focusedIndex == index ? Color.accentColor.opacity(0.4) : .clear, lineWidth: 1)
+                .stroke(focusedIndex == index ? DesignTokens.accentPrimary.opacity(0.4) : .clear, lineWidth: 1)
         )
         .contentShape(Rectangle())
         .onTapGesture {
@@ -136,7 +136,7 @@ struct ScreenshotSelectionView: View {
     private func imageRow(index: Int, screenshot: CapturedScreenshot, imageIndex: Int) -> some View {
         HStack(spacing: 8) {
             Image(systemName: selectedIndices.contains(imageIndex) ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(selectedIndices.contains(imageIndex) ? .blue : .secondary)
+                .foregroundStyle(selectedIndices.contains(imageIndex) ? DesignTokens.accentPrimary : .secondary)
                 .frame(width: 16)
 
             if let image = screenshot.image {
@@ -165,11 +165,11 @@ struct ScreenshotSelectionView: View {
         .padding(.vertical, 4)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(focusedIndex == index ? Color.accentColor.opacity(0.15) : .clear)
+                .fill(focusedIndex == index ? DesignTokens.semanticColors(for: .accent).background : .clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(focusedIndex == index ? Color.accentColor.opacity(0.4) : .clear, lineWidth: 1)
+                .stroke(focusedIndex == index ? DesignTokens.accentPrimary.opacity(0.4) : .clear, lineWidth: 1)
         )
         .contentShape(Rectangle())
         .onTapGesture {

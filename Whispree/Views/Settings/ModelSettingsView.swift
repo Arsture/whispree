@@ -218,7 +218,7 @@ struct DownloadableModelRow: View {
             case .ready:
                 HStack {
                     Label("준비됨", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green).font(.caption)
+                        .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground).font(.caption)
                     Spacer()
                     Button("삭제", role: .destructive) { onDelete() }
                         .font(.caption).controlSize(.small)
@@ -226,7 +226,7 @@ struct DownloadableModelRow: View {
             case let .error(msg):
                 HStack {
                     Label(msg, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red).font(.caption).lineLimit(2)
+                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground).font(.caption).lineLimit(2)
                     Spacer()
                     Button("재시도") { onDownload() }
                         .font(.caption).controlSize(.small)

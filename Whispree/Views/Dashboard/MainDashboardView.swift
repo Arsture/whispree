@@ -145,13 +145,13 @@ struct MainDashboardView: View {
 
                 Text("Listening... (ESC to cancel)")
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
             } else if appState.transcriptionState == .transcribing {
                 ProgressView()
                     .scaleEffect(0.8)
                 Text("Transcribing your speech...")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
             } else if appState.transcriptionState == .correcting {
                 ProgressView()
                     .scaleEffect(0.8)
@@ -184,7 +184,7 @@ struct MainDashboardView: View {
     private var accessibilityWarningSection: some View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
+                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Accessibility 권한 필요")
                     .font(.caption.bold())
@@ -203,7 +203,15 @@ struct MainDashboardView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
+                .fill(DesignTokens.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(DesignTokens.Surface.cardTint)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                }
         )
     }
 
@@ -241,7 +249,7 @@ struct MainDashboardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("STT Result")
                         .font(.caption2)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                     Text(appState.finalText)
                         .font(.body)
                         .textSelection(.enabled)
@@ -267,7 +275,15 @@ struct MainDashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
+                .fill(DesignTokens.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(DesignTokens.Surface.cardTint)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                }
         )
     }
 
@@ -298,7 +314,15 @@ struct MainDashboardView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
+                .fill(DesignTokens.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(DesignTokens.Surface.cardTint)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                }
         )
     }
 
@@ -356,7 +380,7 @@ struct MainDashboardView: View {
             if appState.settings.sttProviderType == .groq, appState.settings.groqApiKey.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                         .font(.caption2)
                     Text("STT 설정에서 Groq API Key를 입력하세요")
                         .font(.caption2)
@@ -409,7 +433,15 @@ struct MainDashboardView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
+                .fill(DesignTokens.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(DesignTokens.Surface.cardTint)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                }
         )
     }
 
@@ -450,11 +482,11 @@ struct MainDashboardView: View {
             case .ready:
                 Label("Ready", systemImage: "checkmark.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
             case .notDownloaded, .error:
                 Label("Not Ready", systemImage: "xmark.circle")
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
             case let .downloading(progress):
                 if progress > 0 {
                     HStack(spacing: 4) {

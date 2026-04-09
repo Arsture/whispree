@@ -47,7 +47,7 @@ struct MenuBarView: View {
                         .textSelection(.enabled)
                 }
                 .padding(8)
-                .background(.quaternary.opacity(0.5))
+                .background(DesignTokens.Surface.subdued)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             }
 
@@ -83,7 +83,7 @@ struct MenuBarView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.blue)
+                .foregroundStyle(DesignTokens.accentPrimary)
 
                 Spacer()
 
@@ -91,7 +91,7 @@ struct MenuBarView: View {
                     NSApp.terminate(nil)
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.red)
+                .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
             }
             .font(.subheadline)
         }
@@ -103,21 +103,20 @@ struct MenuBarView: View {
         Group {
             if appState.whisperModelState.isReady {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
             } else {
                 Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
             }
         }
     }
 
     private var statusColor: Color {
         switch appState.transcriptionState {
-            case .idle: .green
-            case .recording: .red
-            case .transcribing, .correcting: .orange
-            case .inserting: .blue
-            case .selectingScreenshots: .purple
+            case .idle: DesignTokens.semanticColors(for: .success).foreground
+            case .recording: DesignTokens.semanticColors(for: .danger).foreground
+            case .transcribing, .correcting: DesignTokens.semanticColors(for: .warning).foreground
+            case .inserting, .selectingScreenshots: DesignTokens.accentPrimary
         }
     }
 }
@@ -129,7 +128,7 @@ struct AudioLevelBar: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(.quaternary)
+                    .fill(DesignTokens.Surface.subdued)
 
                 RoundedRectangle(cornerRadius: 2)
                     .fill(barColor)
@@ -140,8 +139,8 @@ struct AudioLevelBar: View {
     }
 
     private var barColor: Color {
-        if level > 0.8 { return .red }
-        if level > 0.5 { return .orange }
-        return .green
+        if level > 0.8 { return DesignTokens.semanticColors(for: .danger).foreground }
+        if level > 0.5 { return DesignTokens.semanticColors(for: .warning).foreground }
+        return DesignTokens.semanticColors(for: .success).foreground
     }
 }

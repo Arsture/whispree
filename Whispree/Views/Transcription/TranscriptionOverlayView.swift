@@ -45,7 +45,7 @@ struct TranscriptionOverlayView: View {
                             .foregroundStyle(.tertiary)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
-                            .background(.quaternary.opacity(0.5))
+                            .background(DesignTokens.Surface.subdued)
                             .clipShape(RoundedRectangle(cornerRadius: 3))
                     }
                     HStack(spacing: 4) {
@@ -57,7 +57,7 @@ struct TranscriptionOverlayView: View {
                             .foregroundStyle(.tertiary)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
-                            .background(.quaternary.opacity(0.5))
+                            .background(DesignTokens.Surface.subdued)
                             .clipShape(RoundedRectangle(cornerRadius: 3))
                     }
                     Spacer()
@@ -103,20 +103,20 @@ struct TranscriptionOverlayView: View {
                 switch appState.transcriptionState {
                     case .recording:
                         Image(systemName: "mic.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                             .symbolEffect(.pulse)
                     case .transcribing:
                         Image(systemName: "text.bubble")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                     case .correcting:
                         Image(systemName: "text.badge.checkmark")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignTokens.accentPrimary)
                     case .inserting:
                         Image(systemName: "checkmark.circle")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                     case .selectingScreenshots:
                         Image(systemName: "photo.on.rectangle.angled")
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(DesignTokens.accentPrimary)
                     case .idle:
                         Image(systemName: "mic")
                             .foregroundStyle(.secondary)

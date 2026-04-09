@@ -106,11 +106,11 @@ struct GeneralSettingsView: View {
                         if appState.settings.language == .auto {
                             HStack(spacing: 4) {
                                 Image(systemName: "exclamationmark.triangle")
-                                    .foregroundStyle(.yellow)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                                     .font(.caption2)
                                 Text("Auto-detect may not always work correctly. Select a specific language for better accuracy.")
                                     .font(.caption)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                             }
                         }
                     }
@@ -151,12 +151,12 @@ struct GeneralSettingsView: View {
                             Spacer()
                             if micGranted {
                                 Label("Granted", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                                     .font(.caption)
                             } else {
                                 HStack(spacing: 8) {
                                     Label("Not Granted", systemImage: "xmark.circle.fill")
-                                        .foregroundStyle(.red)
+                                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                                         .font(.caption)
                                     Button("Request") {
                                         Task {
@@ -173,12 +173,12 @@ struct GeneralSettingsView: View {
                             Spacer()
                             if axGranted {
                                 Label("Granted", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                                     .font(.caption)
                             } else {
                                 HStack(spacing: 8) {
                                     Label("Not Granted", systemImage: "xmark.circle.fill")
-                                        .foregroundStyle(.red)
+                                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                                         .font(.caption)
                                     Button("Open Settings") {
                                         TextInsertionService.requestAccessibilityPermission()
@@ -193,12 +193,12 @@ struct GeneralSettingsView: View {
                             Spacer()
                             if screenRecordingGranted {
                                 Label("Granted", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                                     .font(.caption)
                             } else {
                                 HStack(spacing: 8) {
                                     Label("Not Granted", systemImage: "xmark.circle.fill")
-                                        .foregroundStyle(.red)
+                                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                                         .font(.caption)
                                     Button("권한 요청") {
                                         CGRequestScreenCaptureAccess()
@@ -243,7 +243,7 @@ struct GeneralSettingsView: View {
     private func shortcutConflictBanner(_ conflict: ShortcutConflict) -> some View {
         HStack(alignment: .top, spacing: 4) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
+                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                 .font(.caption2)
             Text("\(conflict.source)의 '\(conflict.featureName)' 기능을 override 중입니다. 다른 단축키로 변경하면 기존 기능이 자동 복구됩니다.")
                 .font(.caption)

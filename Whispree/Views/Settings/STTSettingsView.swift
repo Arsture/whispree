@@ -91,11 +91,11 @@ struct STTSettingsView: View {
                         if appState.settings.groqApiKey.isEmpty {
                             Label("console.groq.com에서 무료 API Key를 발급받으세요", systemImage: "info.circle")
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                         } else {
                             Label("API Key 설정됨", systemImage: "checkmark.circle.fill")
                                 .font(.caption)
-                                .foregroundStyle(.green)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                         }
                     }
                     .padding(12)
@@ -179,7 +179,11 @@ struct STTSettingsView: View {
                         systemImage: appState.settings.vadEnabled ? "waveform.badge.minus" : "waveform"
                     )
                     .font(.caption)
-                    .foregroundStyle(appState.settings.vadEnabled ? .orange : .green)
+                    .foregroundStyle(
+                        appState.settings.vadEnabled
+                            ? DesignTokens.semanticColors(for: .warning).foreground
+                            : DesignTokens.semanticColors(for: .success).foreground
+                    )
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -231,7 +235,7 @@ struct STTProviderRow: View {
                         switch state {
                         case .ready:
                             Label("Ready", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green).font(.caption)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground).font(.caption)
                         case .loading:
                             HStack(spacing: 4) {
                                 ProgressView().controlSize(.small)
@@ -244,10 +248,10 @@ struct STTProviderRow: View {
                             }
                         case .notDownloaded:
                             Label("Download required", systemImage: "arrow.down.circle")
-                                .foregroundStyle(.orange).font(.caption)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground).font(.caption)
                         case let .error(msg):
                             Label(msg, systemImage: "xmark.circle")
-                                .foregroundStyle(.red).font(.caption)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground).font(.caption)
                         }
                     }
                     .padding(.leading, 32)

@@ -28,7 +28,7 @@ struct QuickFixPanelView: View {
             HStack {
                 Image(systemName: "character.textbox")
                     .font(.title2)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(DesignTokens.accentPrimary)
                 Text("Quick Fix")
                     .font(.headline)
                 Spacer()
@@ -57,7 +57,7 @@ struct QuickFixPanelView: View {
                     .frame(width: 90, alignment: .trailing)
                 Text(originalText)
                     .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignTokens.textPrimary)
                     .textSelection(.enabled)
                 Spacer()
             }
@@ -82,7 +82,7 @@ struct QuickFixPanelView: View {
                         .frame(width: 90)
                     Label("\"\(originalText)\" → \"\(correctedText.isEmpty ? "..." : correctedText)\"", systemImage: "arrow.right")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                     Spacer()
                 }
             }

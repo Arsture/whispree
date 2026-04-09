@@ -295,7 +295,7 @@ struct LLMSettingsView: View {
                                 Text("인증 방식:")
                                 Spacer()
                                 Label("Codex CLI", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                                     .font(.caption)
                             }
                             if let accountId = appState.authService.currentAccountId {
@@ -313,7 +313,7 @@ struct LLMSettingsView: View {
                                 Text("인증 방식:")
                                 Spacer()
                                 Label("OpenAI 로그인", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                                     .font(.caption)
                             }
                             Button("로그아웃") {
@@ -323,7 +323,7 @@ struct LLMSettingsView: View {
                         } else {
                             // Not authenticated
                             Label("로그인이 필요합니다", systemImage: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                                 .font(.caption)
 
                             Button {
@@ -348,7 +348,7 @@ struct LLMSettingsView: View {
 
                             if let error = appState.oauthService.loginError {
                                 Label(error, systemImage: "xmark.circle.fill")
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                                     .font(.caption)
                             }
 
@@ -393,10 +393,10 @@ struct LLMSettingsView: View {
                         } else if case let .error(msg) = appState.llmModelState {
                             // 에러
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.red)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                             Text(msg)
                                 .font(.caption)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                                 .lineLimit(2)
                         } else {
                             // 다운로드 필요

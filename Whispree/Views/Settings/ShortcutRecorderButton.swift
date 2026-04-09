@@ -55,8 +55,8 @@ struct ShortcutRecorderButton: View {
     private var recordingContent: some View {
         VStack(spacing: 12) {
             ZStack {
-                Circle().fill(.red.opacity(0.15)).frame(width: 28, height: 28)
-                Circle().fill(.red).frame(width: 10, height: 10)
+                Circle().fill(DesignTokens.semanticColors(for: .danger).background).frame(width: 28, height: 28)
+                Circle().fill(DesignTokens.semanticColors(for: .danger).foreground).frame(width: 10, height: 10)
             }
 
             Text("새 단축키를 입력하세요")
@@ -70,7 +70,7 @@ struct ShortcutRecorderButton: View {
             } else {
                 Text(verbatim: recorder.liveModifiers)
                     .font(.system(.title3, design: .rounded).bold())
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(DesignTokens.accentPrimary)
                     .frame(height: 28)
             }
 
@@ -92,7 +92,7 @@ struct ShortcutRecorderButton: View {
         VStack(spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                     .font(.title3)
                 Text(verbatim: "\(shortcut)")
                     .font(.system(.title3, design: .rounded).bold())

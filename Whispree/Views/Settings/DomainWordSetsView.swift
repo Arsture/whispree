@@ -94,7 +94,7 @@ struct DomainWordSetsView: View {
                             if alreadyAdded {
                                 Label("추가됨", systemImage: "checkmark.circle.fill")
                                     .font(.caption)
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                             } else {
                                 Button("추가") {
                                     // wrapper-backed 배열은 copy-mutate-reassign 패턴 필수
@@ -112,7 +112,15 @@ struct DomainWordSetsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
+                        .fill(DesignTokens.cardBackground)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(DesignTokens.Surface.cardTint)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                        }
                 )
             }
             .padding(24)
@@ -202,8 +210,8 @@ private struct WordSetRow: View {
                     HStack(spacing: 8) {
                         Text("\(wordSet.words.count)개 단어")
                         if !wordSet.corrections.isEmpty {
-                            Text("\(wordSet.corrections.count)개 매핑")
-                                .foregroundStyle(.orange)
+                        Text("\(wordSet.corrections.count)개 매핑")
+                                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                         }
                     }
                     .font(.caption)
@@ -249,7 +257,7 @@ private struct WordSetRow: View {
 
                                 Button(action: { onDeleteWord(wordIndex) }) {
                                     Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.red.opacity(0.8))
+                                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground.opacity(0.8))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -270,7 +278,7 @@ private struct WordSetRow: View {
 
                     Button(action: onAddWord) {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(DesignTokens.accentPrimary)
                     }
                     .buttonStyle(.plain)
                     .disabled(newWordText.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -284,7 +292,7 @@ private struct WordSetRow: View {
 
                 Text("교정 매핑 (LLM only)")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                     .padding(.bottom, 4)
 
                 if wordSet.corrections.isEmpty {
@@ -298,17 +306,17 @@ private struct WordSetRow: View {
                             HStack(spacing: 6) {
                                 Text(wordSet.corrections[corrIndex].from)
                                     .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
                                 Image(systemName: "arrow.right")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Text(wordSet.corrections[corrIndex].to)
                                     .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
                                 Spacer()
                                 Button(action: { onDeleteCorrection(corrIndex) }) {
                                     Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.red.opacity(0.8))
+                                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground.opacity(0.8))
                                 }
                                 .buttonStyle(.plain)
                             }
