@@ -25,7 +25,7 @@ final class AudioService: ObservableObject {
         AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
     }
 
-    func startRecording() throws {
+    func startRecording(channelSelection: Int = 0) throws {
         guard !isRecording else { return }
 
         let engine = AVAudioEngine()
@@ -43,36 +43,59 @@ final class AudioService: ObservableObject {
             interleaved: false
         )!
 
-        let converter = AVAudioConverter(from: inputFormat, to: targetFormat)
+        // Build a mono input format at the native sample rate for the converter.
+        // This lets us feed extracted mono samples regardless of device channel count.
+        let monoInputFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: inputFormat.sampleRate,
+            channels: 1,
+            interleaved: false
+        )!
+
+        let converter = AVAudioConverter(from: monoInputFormat, to: targetFormat)
+
+        // Capture by value so the audio thread never crosses MainActor isolation
+        let capturedChannelSelection = channelSelection
 
         inputNode.installTap(onBus: 0, bufferSize: 4_096, format: inputFormat) { [weak self] buffer, _ in
             guard let self else { return }
 
-            // Calculate audio level (RMS)
-            let channelData = buffer.floatChannelData?[0]
             let frameLength = Int(buffer.frameLength)
-            if let channelData, frameLength > 0 {
+            guard frameLength > 0 else { return }
+
+            // Extract mono samples (mixdown or specific channel)
+            let monoSamples = AudioService.extractMonoSamples(from: buffer, channelSelection: capturedChannelSelection)
+
+            // Calculate audio level (RMS) and FFT from mono samples
+            monoSamples.withUnsafeBufferPointer { ptr in
+                guard let base = ptr.baseAddress else { return }
                 var rms: Float = 0
-                for i in 0 ..< frameLength {
-                    rms += channelData[i] * channelData[i]
-                }
+                for i in 0 ..< frameLength { rms += base[i] * base[i] }
                 rms = sqrtf(rms / Float(frameLength))
-                // dB normalization with gentle curve (no over-boost)
                 let db = 20 * log10f(max(rms, 1e-6))
                 let normalized = max(0.0, (db + 50) / 45) // -50dB to -5dB → 0 to 1
                 let level = min(1.0, normalized)
-
-                let bands = AudioService.computeFrequencyBands(from: channelData, frameLength: frameLength)
+                let bands = AudioService.computeFrequencyBands(from: base, frameLength: frameLength)
                 Task { @MainActor in
                     self.currentLevel = level
                     self.frequencyBands = bands
                 }
             }
 
-            // Convert to target format and accumulate
-            if let converter {
+            // Build a mono AVAudioPCMBuffer from extracted samples and convert to target format
+            if let converter,
+               let monoBuffer = AVAudioPCMBuffer(pcmFormat: monoInputFormat, frameCapacity: AVAudioFrameCount(frameLength)),
+               let dest = monoBuffer.floatChannelData?[0]
+            {
+                monoBuffer.frameLength = AVAudioFrameCount(frameLength)
+                monoSamples.withUnsafeBufferPointer { src in
+                    if let base = src.baseAddress {
+                        dest.update(from: base, count: frameLength)
+                    }
+                }
+
                 let ratio = targetSampleRate / inputFormat.sampleRate
-                let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+                let outputFrameCapacity = AVAudioFrameCount(Double(frameLength) * ratio)
                 guard let convertedBuffer = AVAudioPCMBuffer(
                     pcmFormat: targetFormat,
                     frameCapacity: outputFrameCapacity
@@ -87,7 +110,7 @@ final class AudioService: ObservableObject {
                     }
                     inputBufferConsumed = true
                     outStatus.pointee = .haveData
-                    return buffer
+                    return monoBuffer
                 }
 
                 if error == nil, let data = convertedBuffer.floatChannelData?[0] {
@@ -103,6 +126,41 @@ final class AudioService: ObservableObject {
         try engine.start()
         audioEngine = engine
         isRecording = true
+    }
+
+    // MARK: - Channel Extraction
+
+    /// 입력 버퍼에서 모노 샘플 배열을 추출합니다. 오디오 스레드에서 호출되므로 nonisolated static.
+    /// - channelSelection 0: 모든 채널 평균 다운믹스
+    /// - channelSelection 1~N: 해당 채널(1-indexed) 사용. 범위 초과 시 채널 1로 폴백.
+    private nonisolated static func extractMonoSamples(from buffer: AVAudioPCMBuffer, channelSelection: Int) -> [Float] {
+        let channelCount = Int(buffer.format.channelCount)
+        let frameLength = Int(buffer.frameLength)
+        guard let channelData = buffer.floatChannelData, frameLength > 0, channelCount > 0 else {
+            return Array(repeating: 0, count: max(frameLength, 0))
+        }
+
+        if channelSelection >= 1, channelSelection <= channelCount {
+            // 특정 채널 (1-indexed)
+            let ch = channelData[channelSelection - 1]
+            return Array(UnsafeBufferPointer(start: ch, count: frameLength))
+        } else {
+            // 자동 다운믹스: 모든 채널 평균 (클리핑 방지)
+            var mono = [Float](repeating: 0, count: frameLength)
+            for c in 0 ..< channelCount {
+                let ch = channelData[c]
+                for i in 0 ..< frameLength {
+                    mono[i] += ch[i]
+                }
+            }
+            if channelCount > 1 {
+                let divisor = Float(channelCount)
+                for i in 0 ..< frameLength {
+                    mono[i] /= divisor
+                }
+            }
+            return mono
+        }
     }
 
     // MARK: - FFT Frequency Analysis

@@ -1,3 +1,4 @@
+import AVFoundation
 import CoreGraphics
 import KeyboardShortcuts
 import SwiftUI
@@ -10,6 +11,7 @@ struct GeneralSettingsView: View {
     @State private var screenRecordingGranted = false
     @State private var recordingConflict: ShortcutConflict?
     @State private var quickFixConflict: ShortcutConflict?
+    @State private var inputChannelCount: Int = 1
 
     var body: some View {
         ScrollView {
@@ -65,6 +67,31 @@ struct GeneralSettingsView: View {
                         }
                     }
                     .pickerStyle(.radioGroup)
+                }
+
+                // Audio Input Channel Section (다채널 장치일 때만 표시)
+                if inputChannelCount > 1 {
+                    SettingsCard(title: "Audio Input") {
+                        VStack(spacing: 8) {
+                            Picker("입력 채널:", selection: Binding(
+                                get: { appState.settings.audioInputChannel },
+                                set: {
+                                    appState.settings.audioInputChannel = $0
+                                    appState.settings.save()
+                                }
+                            )) {
+                                Text("자동 (모든 채널 다운믹스)").tag(0)
+                                ForEach(1 ... inputChannelCount, id: \.self) { ch in
+                                    Text("채널 \(ch)").tag(ch)
+                                }
+                            }
+
+                            Text("외장 오디오 인터페이스에서 마이크가 연결된 채널을 선택하세요. 다음 녹음부터 적용됩니다.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
                 }
 
                 // Language Section
@@ -220,6 +247,8 @@ struct GeneralSettingsView: View {
         }
         .onAppear {
             refreshPermissions()
+            let engine = AVAudioEngine()
+            inputChannelCount = max(1, Int(engine.inputNode.outputFormat(forBus: 0).channelCount))
         }
     }
 
