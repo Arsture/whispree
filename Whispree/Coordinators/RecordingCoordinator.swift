@@ -11,6 +11,7 @@ final class RecordingCoordinator: ObservableObject {
     private var currentTask: Task<Void, Never>?
     private var levelCancellable: AnyCancellable?
     private var bandsCancellable: AnyCancellable?
+    private var thinkingPauseCancellable: AnyCancellable?
     private var workspaceObserver: AnyCancellable?
     private var previousApp: NSRunningApplication?
     private var lastExternalApp: NSRunningApplication?
@@ -36,6 +37,12 @@ final class RecordingCoordinator: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak appState] bands in
                 appState?.frequencyBands = bands
+            }
+
+        thinkingPauseCancellable = audioService.$isThinkingPause
+            .receive(on: DispatchQueue.main)
+            .sink { [weak appState] isPaused in
+                appState?.isThinkingPause = isPaused
             }
 
         // Track last non-Whispree frontmost app for text insertion
@@ -141,11 +148,27 @@ final class RecordingCoordinator: ObservableObject {
     // MARK: - Pipeline
 
     private func processPipeline(audioBuffer: [Float]) async {
+        // Step 0: VAD — 무음 구간 자동 제거 (모든 STT 프로바이더 공통 pre-processing)
+        // 3개 프로바이더(WhisperKit/Groq/MLX Audio) 모두에 적용되어 전사 토큰/비용/지연 절감.
+        let trimmedBuffer: [Float] = {
+            guard appState.settings.vadEnabled else { return audioBuffer }
+            let original = audioBuffer.count
+            let trimmed = AudioService.trimSilence(audioBuffer)
+            #if DEBUG
+            if trimmed.count != original {
+                let ratio = Double(trimmed.count) / Double(max(1, original))
+                print("[VAD] \(original) → \(trimmed.count) samples (\(String(format: "%.1f", ratio * 100))%)")
+            }
+            #endif
+            return trimmed
+        }()
+
         // Step 1: Transcribe via STT Provider
         appState.transcriptionState = .transcribing
 
         defer {
             appState.transcriptionState = .idle
+            appState.isThinkingPause = false
         }
 
         do {
@@ -160,7 +183,7 @@ final class RecordingCoordinator: ObservableObject {
             }
 
             let result = try await sttProvider.transcribe(
-                audioBuffer: audioBuffer,
+                audioBuffer: trimmedBuffer,
                 language: appState.settings.language == .auto ? nil : appState.settings.language,
                 promptTokens: nil
             )

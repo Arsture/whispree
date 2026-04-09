@@ -4,13 +4,20 @@ import SwiftUI
 struct TranscriptionOverlayView: View {
     @EnvironmentObject var appState: AppState
 
+    /// 녹음 중 thinking pause 상태인가? (UI 전환 기준)
+    private var isThinkingPauseActive: Bool {
+        appState.transcriptionState == .recording && appState.isThinkingPause
+    }
+
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 6) {
                 statusIcon
-                Text(appState.transcriptionState.displayText)
+                Text(statusText)
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.35), value: isThinkingPauseActive)
                 Spacer(minLength: 0)
                 if appState.transcriptionState == .transcribing || appState.transcriptionState == .correcting {
                     ProgressView()
@@ -20,7 +27,9 @@ struct TranscriptionOverlayView: View {
             }
             NeonWaveformView()
                 .frame(height: 40)
-                .opacity(appState.isRecording ? 1 : 0.3)
+                .opacity(waveformOpacity)
+                .animation(.easeInOut(duration: 0.4), value: isThinkingPauseActive)
+                .animation(.easeInOut(duration: 0.2), value: appState.isRecording)
 
             if appState.isRecording {
                 HStack(spacing: 12) {
@@ -68,31 +77,53 @@ struct TranscriptionOverlayView: View {
         return "⌃⇧R"
     }
 
+    private var statusText: String {
+        if isThinkingPauseActive {
+            return String(localized: "무음 스킵 중")
+        }
+        return appState.transcriptionState.displayText
+    }
+
+    private var waveformOpacity: Double {
+        if !appState.isRecording { return 0.3 }
+        return isThinkingPauseActive ? 0.35 : 1.0
+    }
+
+    @ViewBuilder
     private var statusIcon: some View {
         Group {
-            switch appState.transcriptionState {
-                case .recording:
-                    Image(systemName: "mic.fill")
-                        .foregroundStyle(.red)
-                        .symbolEffect(.pulse)
-                case .transcribing:
-                    Image(systemName: "text.bubble")
-                        .foregroundStyle(.orange)
-                case .correcting:
-                    Image(systemName: "text.badge.checkmark")
-                        .foregroundStyle(.blue)
-                case .inserting:
-                    Image(systemName: "checkmark.circle")
-                        .foregroundStyle(.green)
-                case .selectingScreenshots:
-                    Image(systemName: "photo.on.rectangle.angled")
-                        .foregroundStyle(.purple)
-                case .idle:
-                    Image(systemName: "mic")
-                        .foregroundStyle(.secondary)
+            if isThinkingPauseActive {
+                // Thinking pause: "무음 스킵 중" — waveform.slash (secondary), gentle pulse
+                Image(systemName: "waveform.slash")
+                    .foregroundStyle(.secondary)
+                    .symbolEffect(.pulse, options: .repeating.speed(0.6))
+            } else {
+                switch appState.transcriptionState {
+                    case .recording:
+                        Image(systemName: "mic.fill")
+                            .foregroundStyle(.red)
+                            .symbolEffect(.pulse)
+                    case .transcribing:
+                        Image(systemName: "text.bubble")
+                            .foregroundStyle(.orange)
+                    case .correcting:
+                        Image(systemName: "text.badge.checkmark")
+                            .foregroundStyle(.blue)
+                    case .inserting:
+                        Image(systemName: "checkmark.circle")
+                            .foregroundStyle(.green)
+                    case .selectingScreenshots:
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .foregroundStyle(.purple)
+                    case .idle:
+                        Image(systemName: "mic")
+                            .foregroundStyle(.secondary)
+                }
             }
         }
         .font(.caption)
+        .contentTransition(.symbolEffect(.replace))
+        .animation(.easeInOut(duration: 0.3), value: isThinkingPauseActive)
     }
 }
 

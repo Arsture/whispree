@@ -17,6 +17,9 @@ final class AppState: ObservableObject {
     @Published var currentAudioLevel: Float = 0.0
     @Published var frequencyBands: [Float] = Array(repeating: 0, count: 64)
     @Published var isRecording: Bool = false
+    /// 녹음 중 일정 시간 이상 무음이 지속되는 상태. TranscriptionOverlayView가
+    /// "무음 스킵 중" 인디케이터로 전환하기 위해 사용.
+    @Published var isThinkingPause: Bool = false
 
     // MARK: - Screenshots
 

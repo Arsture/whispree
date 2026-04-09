@@ -38,6 +38,10 @@ struct AppSettings: Codable {
     /// 1~N = 특정 채널만 사용 (1-indexed)
     var audioInputChannel: Int = 0
 
+    /// VAD (Voice Activity Detection) — 무음 구간 자동 제거
+    /// STT 진입 전 공통 pre-processing, 모든 프로바이더(WhisperKit/Groq/MLX Audio)에 적용
+    var vadEnabled: Bool = true
+
     /// 도메인 단어 세트
     var domainWordSets: [DomainWordSet] = []
 
