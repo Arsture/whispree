@@ -146,6 +146,41 @@ final class AppState: ObservableObject {
                 } catch {
                     llmModelState = .error(error.localizedDescription)
                 }
+            case .cloud:
+                let service = settings.cloudLLMService
+                let apiKey = settings.cloudLLMApiKeys[service.rawValue] ?? ""
+                let provider = CloudLLMProvider(
+                    service: service,
+                    modelId: settings.cloudLLMModel,
+                    apiKey: apiKey
+                )
+                llmProvider = provider
+                if provider.supportsVision {
+                    settings.isScreenshotContextEnabled = true
+                    settings.save()
+                }
+                do {
+                    try await provider.setup()
+                    let validation = provider.validate()
+                    llmModelState = validation.isValid ? .ready : .error(validation.message)
+                } catch {
+                    llmModelState = .error(error.localizedDescription)
+                }
+            case .claude:
+                let provider = ClaudeLLMProvider(
+                    model: settings.claudeModel,
+                    apiKey: settings.claudeApiKey
+                )
+                llmProvider = provider
+                settings.isScreenshotContextEnabled = true
+                settings.save()
+                do {
+                    try await provider.setup()
+                    let validation = provider.validate()
+                    llmModelState = validation.isValid ? .ready : .error(validation.message)
+                } catch {
+                    llmModelState = .error(error.localizedDescription)
+                }
         }
     }
 

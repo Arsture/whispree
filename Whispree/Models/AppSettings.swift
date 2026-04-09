@@ -21,8 +21,17 @@ struct AppSettings: Codable {
     /// LLM Provider
     var llmProviderType: LLMProviderType = .none
 
-    /// OpenAI 모델 선택
+    /// OpenAI 모델 선택 (Codex 인증 전용)
     var openaiModel: OpenAIModel = .gpt54
+
+    /// Cloud LLM 설정
+    var cloudLLMService: CloudLLMService = .openai
+    var cloudLLMModel: String = "gpt-4.1-nano"
+    var cloudLLMApiKeys: [String: String] = [:]
+
+    /// Claude 설정
+    var claudeModel: ClaudeModel = .haiku45
+    var claudeApiKey: String = ""
 
     /// Screenshot context
     var isScreenshotContextEnabled: Bool = false
@@ -81,12 +90,16 @@ enum LLMProviderType: String, Codable, CaseIterable {
     case none = "없음 (원문 사용)"
     case local = "로컬 MLX"
     case openai = "OpenAI (GPT)"
+    case cloud = "클라우드 API"
+    case claude = "Claude (Anthropic)"
 
     var displayName: String {
         switch self {
             case .none: "없음 (원문 사용)"
             case .local: "로컬 MLX"
             case .openai: "OpenAI (GPT)"
+            case .cloud: "클라우드 API"
+            case .claude: "Claude (Anthropic)"
         }
     }
 

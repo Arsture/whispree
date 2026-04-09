@@ -67,46 +67,7 @@ struct LLMSettingsView: View {
                                     appState.settings.save()
                                     Task { await appState.switchLLMProvider(to: .local) }
                                 } label: {
-                                    HStack(alignment: .top) {
-                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                            .foregroundStyle(isSelected ? .blue : .secondary)
-                                            .font(.title3)
-
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            HStack(spacing: 4) {
-                                                Text(spec.displayName)
-                                                    .font(.headline)
-                                                if spec.capability == .vision {
-                                                    Image(systemName: "eye")
-                                                        .font(.caption2)
-                                                        .foregroundStyle(.blue)
-                                                }
-                                            }
-                                            Text(spec.description)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
-
-                                        Spacer()
-
-                                        ModelMetricsView(
-                                            sizeText: spec.sizeDescription,
-                                            ramPercent: compat.ramUsagePercent,
-                                            tokPerSec: compat.estimatedTokPerSec,
-                                            latencyMs: nil,
-                                            qualityScore: spec.qualityScore,
-                                            grade: compat.grade
-                                        )
-                                    }
-                                    .padding(8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(.quaternary.opacity(0.3))
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
-                                    )
+                                    localModelSpecRow(spec: spec, isSelected: isSelected, compat: compat)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -128,60 +89,259 @@ struct LLMSettingsView: View {
 
                     // Screenshot Context Section (Local vision model)
                     if appState.llmProvider?.supportsVision == true {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("스크린샷 컨텍스트")
-                                .font(.caption.bold())
-                                .foregroundStyle(.secondary)
+                        screenshotContextSection
+                    }
+                }
 
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("활성화")
-                                    Text("녹음 시 화면을 캡처하여 교정 정확도를 높입니다")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                // Cloud API Section
+                if appState.settings.llmProviderType == .cloud {
+                    // 비용 경고
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("API 사용량에 따라 비용이 발생합니다.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.orange.opacity(0.1))
+                    )
+
+                    // 서비스 선택
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("서비스")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        Picker("서비스", selection: Binding(
+                            get: { appState.settings.cloudLLMService },
+                            set: { newService in
+                                appState.settings.cloudLLMService = newService
+                                appState.settings.cloudLLMModel = newService.defaultModel
+                                appState.settings.save()
+                                Task { await appState.switchLLMProvider(to: .cloud) }
+                            }
+                        )) {
+                            ForEach(CloudLLMService.allCases, id: \.self) { service in
+                                Text(service.displayName).tag(service)
+                            }
+                        }
+                        .labelsHidden()
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // 모델 선택
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("모델")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        let presets = appState.settings.cloudLLMService.presetModels
+                        VStack(spacing: 6) {
+                            ForEach(presets) { preset in
+                                let isSelected = appState.settings.cloudLLMModel == preset.id
+                                Button {
+                                    appState.settings.cloudLLMModel = preset.id
+                                    appState.settings.save()
+                                    Task { await appState.switchLLMProvider(to: .cloud) }
+                                } label: {
+                                    HStack {
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            HStack(spacing: 4) {
+                                                Text(preset.displayName)
+                                                    .font(.headline)
+                                                if preset.supportsVision {
+                                                    Image(systemName: "eye")
+                                                        .font(.caption2)
+                                                        .foregroundStyle(.blue)
+                                                }
+                                            }
+                                            if let price = preset.priceInfo {
+                                                Text(price + " /1M tokens")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(.quaternary.opacity(0.3))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                    )
                                 }
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { appState.settings.isScreenshotContextEnabled },
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        // OpenRouter: 커스텀 모델 ID 입력
+                        if appState.settings.cloudLLMService == .openrouter {
+                            Divider()
+                            HStack {
+                                Text("커스텀 모델:")
+                                    .font(.caption)
+                                TextField("모델 ID", text: Binding(
+                                    get: { appState.settings.cloudLLMModel },
                                     set: {
-                                        appState.settings.isScreenshotContextEnabled = $0
+                                        appState.settings.cloudLLMModel = $0
                                         appState.settings.save()
                                     }
                                 ))
-                                .toggleStyle(.switch)
-                                .labelsHidden()
-                            }
-
-                            if appState.settings.isScreenshotContextEnabled {
-                                Divider()
-
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("에이전트에 전달")
-                                        Text("텍스트 삽입 후 캡처된 스크린샷을 대상 앱에 이미지로 붙여넣습니다")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Toggle("", isOn: Binding(
-                                        get: { appState.settings.isScreenshotPasteEnabled },
-                                        set: {
-                                            appState.settings.isScreenshotPasteEnabled = $0
-                                            appState.settings.save()
-                                        }
-                                    ))
-                                    .toggleStyle(.switch)
-                                    .labelsHidden()
-                                }
+                                .textFieldStyle(.roundedBorder)
+                                .font(.caption.monospaced())
                             }
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.quaternary.opacity(0.5))
-                        )
                     }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // API Key 입력
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("API Key")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        let serviceKey = appState.settings.cloudLLMService.rawValue
+                        SecureField("API Key 입력", text: Binding(
+                            get: { appState.settings.cloudLLMApiKeys[serviceKey] ?? "" },
+                            set: {
+                                appState.settings.cloudLLMApiKeys[serviceKey] = $0
+                                appState.settings.save()
+                                Task { await appState.switchLLMProvider(to: .cloud) }
+                            }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.body, design: .monospaced))
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // Screenshot Context (Vision 지원 시)
+                    if appState.llmProvider?.supportsVision == true {
+                        screenshotContextSection
+                    }
+                }
+
+                // Claude Section
+                if appState.settings.llmProviderType == .claude {
+                    // 비용 경고
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("API 사용량에 따라 비용이 발생합니다.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.orange.opacity(0.1))
+                    )
+
+                    // 모델 선택
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Claude 모델")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 6) {
+                            ForEach(ClaudeModel.allCases, id: \.self) { model in
+                                let isSelected = appState.settings.claudeModel == model
+                                Button {
+                                    appState.settings.claudeModel = model
+                                    appState.settings.save()
+                                    Task { await appState.switchLLMProvider(to: .claude) }
+                                } label: {
+                                    HStack {
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            HStack(spacing: 4) {
+                                                Text(model.displayName)
+                                                    .font(.headline)
+                                                Image(systemName: "eye")
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.blue)
+                                            }
+                                            Text(model.description)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Text(model.priceInfo)
+                                            .font(.caption2.monospaced())
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(.quaternary.opacity(0.3))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // API Key 입력
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Anthropic API Key")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+
+                        SecureField("API Key 입력", text: Binding(
+                            get: { appState.settings.claudeApiKey },
+                            set: {
+                                appState.settings.claudeApiKey = $0
+                                appState.settings.save()
+                                Task { await appState.switchLLMProvider(to: .claude) }
+                            }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.body, design: .monospaced))
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.quaternary.opacity(0.5))
+                    )
+
+                    // Screenshot Context (Claude는 항상 Vision 지원)
+                    screenshotContextSection
                 }
 
                 // OpenAI Model Section
@@ -244,59 +404,7 @@ struct LLMSettingsView: View {
                     )
 
                     // Screenshot Context Section (OpenAI — always vision-capable)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("스크린샷 컨텍스트")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
-
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("활성화")
-                                Text("녹음 시 화면을 캡처하여 교정 정확도를 높입니다")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { appState.settings.isScreenshotContextEnabled },
-                                set: {
-                                    appState.settings.isScreenshotContextEnabled = $0
-                                    appState.settings.save()
-                                }
-                            ))
-                            .toggleStyle(.switch)
-                            .labelsHidden()
-                        }
-
-                        if appState.settings.isScreenshotContextEnabled {
-                            Divider()
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("에이전트에 전달")
-                                    Text("텍스트 삽입 후 캡처된 스크린샷을 대상 앱에 이미지로 붙여넣습니다")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { appState.settings.isScreenshotPasteEnabled },
-                                    set: {
-                                        appState.settings.isScreenshotPasteEnabled = $0
-                                        appState.settings.save()
-                                    }
-                                ))
-                                .toggleStyle(.switch)
-                                .labelsHidden()
-                            }
-                        }
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    screenshotContextSection
 
                     // OpenAI Auth Section
                     VStack(alignment: .leading, spacing: 8) {
@@ -519,6 +627,62 @@ struct LLMSettingsView: View {
         }
     }
 
+    private var screenshotContextSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("스크린샷 컨텍스트")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("활성화")
+                    Text("녹음 시 화면을 캡처하여 교정 정확도를 높입니다")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: Binding(
+                    get: { appState.settings.isScreenshotContextEnabled },
+                    set: {
+                        appState.settings.isScreenshotContextEnabled = $0
+                        appState.settings.save()
+                    }
+                ))
+                .toggleStyle(.switch)
+                .labelsHidden()
+            }
+
+            if appState.settings.isScreenshotContextEnabled {
+                Divider()
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("에이전트에 전달")
+                        Text("텍스트 삽입 후 캡처된 스크린샷을 대상 앱에 이미지로 붙여넣습니다")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { appState.settings.isScreenshotPasteEnabled },
+                        set: {
+                            appState.settings.isScreenshotPasteEnabled = $0
+                            appState.settings.save()
+                        }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                }
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.quaternary.opacity(0.5))
+        )
+    }
+
     private var currentPromptPreview: String {
         CorrectionPrompts.prompt(
             for: appState.settings.correctionMode,
@@ -531,5 +695,49 @@ struct LLMSettingsView: View {
             customPrompt = appState.settings.customLLMPrompt
                 ?? CorrectionPrompts.defaultSystemPrompt
         }
+    }
+
+    @ViewBuilder
+    private func localModelSpecRow(spec: LocalModelSpec, isSelected: Bool, compat: ModelCompatibilityResult) -> some View {
+        HStack(alignment: .top) {
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(isSelected ? .blue : .secondary)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text(spec.displayName)
+                        .font(.headline)
+                    if spec.capability == .vision {
+                        Image(systemName: "eye")
+                            .font(.caption2)
+                            .foregroundStyle(.blue)
+                    }
+                }
+                Text(spec.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            ModelMetricsView(
+                sizeText: spec.sizeDescription,
+                ramPercent: compat.ramUsagePercent,
+                tokPerSec: compat.estimatedTokPerSec,
+                latencyMs: nil,
+                qualityScore: spec.qualityScore,
+                grade: compat.grade
+            )
+        }
+        .padding(8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.quaternary.opacity(0.3))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+        )
     }
 }

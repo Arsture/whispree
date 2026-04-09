@@ -439,6 +439,8 @@ struct MainDashboardView: View {
                 let spec = LocalModelSpec.find(appState.settings.llmModelId)
                 return spec?.capability == .vision ? "eye" : "text.badge.checkmark"
             case .openai: return "globe"
+            case .cloud: return "cloud"
+            case .claude: return "sparkles"
         }
     }
 
