@@ -10,7 +10,8 @@
 
 | File | Description |
 |------|-------------|
-| `AppSettings.swift` | `Codable` 설정 — STT/LLM 프로바이더 타입, API 키, 교정 모드, 언어, 도메인 단어 세트. UserDefaults `"WhispreeSettings"` 키로 저장 |
+| `AppSettings.swift` | `@MainActor final class: ObservableObject` — 3종 property wrapper로 각 필드를 `whispree.<fieldName>` 키에 **개별 저장**. 1회성 legacy blob(`"WhispreeSettings"`) 마이그레이션 내장. private `LegacyAppSettings`는 구 blob 디코드 전용 (건드리지 말 것) |
+| `UserDefault.swift` | 3종 property wrapper: `@UserDefault` / `@RawRepresentableUserDefault` / `@CodableUserDefault`. `_enclosingInstance` static subscript로 ObservableObject 반응성 자동 처리 |
 | `DomainWordSets.swift` | 도메인 특화 단어 세트 (프로그래밍, 의료 등) — STT promptTokens 주입 및 LLM glossary 용 |
 | `ModelInfo.swift` | WhisperKit/LLM 모델 메타데이터 (이름, 크기, 상태) |
 | `OpenAIModels.swift` | OpenAI API 응답 모델 (ChatCompletion, SSE 스트리밍 파싱) |
@@ -23,7 +24,54 @@
 ## For AI Agents
 
 ### Working In This Directory
-- `AppSettings` 변경 시 UserDefaults 직렬화 호환성 주의 (기존 사용자 설정 마이그레이션)
+
+#### AppSettings 필드 추가 시 (CRITICAL)
+
+**절대 struct + JSON blob 방식으로 되돌리지 말 것.** 과거에 그 방식이 Swift synthesized `init(from:)`의 `keyNotFound` throw 때문에 업데이트마다 전체 설정을 리셋시키던 버그를 근본 해결한 구조임 (기존 유저의 groqApiKey / correctionMode / domainWordSets 등이 매번 날아가던 문제).
+
+필드 추가 절차:
+
+1. 타입에 맞는 wrapper 한 줄 선언:
+   ```swift
+   @UserDefault(key: "whispree.newField", defaultValue: false)
+   var newField: Bool
+
+   @RawRepresentableUserDefault(key: "whispree.newEnum", defaultValue: .caseA)
+   var newEnum: SomeEnum   // enum은 이쪽
+
+   @CodableUserDefault(key: "whispree.newList", defaultValue: [])
+   var newList: [SomeCodableStruct]   // Codable 복합 타입은 이쪽
+   ```
+2. `save()` 호출 **절대 금지** — wrapper setter가 자동 저장. AI가 "save() 호출이 누락된 것 같다"고 판단하고 추가하지 말 것.
+3. 기본값은 wrapper 파라미터로. struct declaration의 `var x = default` 문법은 wrapper에 영향 없음.
+4. enum의 rawValue를 바꿔야 할 때: 옛 rawValue를 **삭제하지 말고** `rawAliasMap`에 매핑 추가:
+   ```swift
+   @RawRepresentableUserDefault(
+       key: "whispree.correctionMode",
+       defaultValue: .standard,
+       rawAliasMap: ["promptEngineering": "fillerRemoval"]
+   )
+   ```
+5. 필드 제거 시: wrapper 선언만 삭제. UserDefaults 키는 자연 방치 (orphan key는 무해). 필요하면 `migrateLegacyBlobIfNeeded()` 옆에 one-off cleanup 추가.
+
+#### Collection in-place mutation 금지
+
+`@CodableUserDefault`가 감싼 컬렉션은 static subscript가 **value를 반환**하므로 in-place mutation이 저장되지 않음. 반드시 copy-mutate-reassign:
+
+```swift
+// ❌ 저장 안 됨 (silent failure)
+settings.domainWordSets[i].words.append(word)
+
+// ✅ copy-mutate-reassign
+var sets = settings.domainWordSets
+sets[i].words.append(word)
+settings.domainWordSets = sets
+```
+
+SwiftUI Binding도 동일한 이유로 `$settings.domainWordSets[i]` projection 대신 수동 `Binding(get:set:)` 사용. 참고 구현: `Views/Settings/DomainWordSetsView.swift`, `Services/QuickFix/QuickFixService.swift`.
+
+#### 기타 모델 파일
+
 - `TranscriptionState`는 UI와 `RecordingCoordinator` 양쪽에서 참조 — 상태 추가 시 양쪽 핸들링 필요
 - `DomainWordSets`는 STT Provider의 `promptTokens`와 LLM Provider의 `glossary`에 매핑
 - `DeviceCapability` + `LocalModelSpec` + `ModelCompatibility`가 "Can I Run" 시스템 구성 — 모델 추가 시 세 파일 모두 확인
