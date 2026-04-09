@@ -24,5 +24,16 @@
 	<string>https://arsture.github.io/whispree/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>s44fNNpNBumMWbemL71UC323Ke9lgOL90FIqX/ArQFY=</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.whispree.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>whispree</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -104,6 +104,22 @@ Access from the menu bar icon:
 - **LLM** — Choose LLM provider (None, 6 local models, 5 OpenAI models) + correction mode
 - **Downloads** — Download/delete local models + Can I Run compatibility (RAM%, tok/s, grade)
 
+### Trigger from External Tools
+
+Whispree registers a URL scheme so external automation tools can start/stop recording without a modifier hotkey.
+
+```bash
+open "whispree://toggle"   # start/stop toggle
+open "whispree://push"     # start recording
+open "whispree://release"  # stop & transcribe
+```
+
+Works with **Raycast** (Create Quicklink → assign a hotkey), **Stream Deck** ("System: Open" action — two buttons for push/release), **Keyboard Maestro**, and **AppleScript**:
+
+```applescript
+tell application "Whispree" to open location "whispree://toggle"
+```
+
 ## Tips
 
 > **Use Structured Mode by default.** If you talk to AI often, turn on Structured mode in the LLM settings. Even rambling speech gets organized into clean bullet points. The clearer the idea in your head, the bigger the payoff — the time you'd spend formatting just disappears.

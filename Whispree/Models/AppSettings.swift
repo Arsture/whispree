@@ -33,6 +33,11 @@ struct AppSettings: Codable {
     /// Groq API
     var groqApiKey: String = ""
 
+    /// 오디오 입력 채널 선택
+    /// 0 = 자동 (모든 채널 평균 다운믹스, 기본값)
+    /// 1~N = 특정 채널만 사용 (1-indexed)
+    var audioInputChannel: Int = 0
+
     /// 도메인 단어 세트
     var domainWordSets: [DomainWordSet] = []
 

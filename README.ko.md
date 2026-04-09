@@ -104,6 +104,22 @@ SPM 의존성은 첫 빌드 시 자동으로 해결됩니다.
 - **LLM** — LLM 프로바이더 선택 (없음, 로컬 6종, OpenAI 5종) + 교정 모드 설정
 - **다운로드** — 로컬 모델 다운로드/삭제 + Can I Run 호환성 (RAM%, tok/s, 등급)
 
+### 외부 도구에서 트리거 (URL 스킴)
+
+Whispree는 URL 스킴을 등록하기 때문에, 외부 자동화 도구에서 모디파이어 핫키 없이 바로 녹음을 시작/정지할 수 있습니다.
+
+```bash
+open "whispree://toggle"   # 녹음 시작/정지 토글
+open "whispree://push"     # 녹음 시작
+open "whispree://release"  # 녹음 정지 및 전사
+```
+
+**Raycast** (Create Quicklink → 단축키 할당), **Stream Deck** ("System: Open" 액션 — push/release를 버튼 두 개로 분리), **Keyboard Maestro**, **AppleScript** 모두에서 사용할 수 있습니다.
+
+```applescript
+tell application "Whispree" to open location "whispree://toggle"
+```
+
 ## 팁
 
 > **Structured Mode를 기본으로 쓰세요.** AI한테 말로 지시하는 경우가 많다면, LLM 설정에서 Structured 모드를 켜두세요. 두서없이 말해도 불릿포인트로 정리된 프롬프트가 들어갑니다. 머릿속에 아이디어가 명확할수록 효과가 큽니다 — 타이핑으로 정리하는 시간이 통째로 사라집니다.

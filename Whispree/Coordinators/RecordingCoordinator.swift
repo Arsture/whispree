@@ -89,7 +89,7 @@ final class RecordingCoordinator: ObservableObject {
         }
 
         do {
-            try audioService.startRecording()
+            try audioService.startRecording(channelSelection: appState.settings.audioInputChannel)
             appState.transcriptionState = .recording
             appState.isRecording = true
             appState.partialText = ""
