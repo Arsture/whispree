@@ -171,7 +171,11 @@ struct MainDashboardView: View {
         .frame(height: 80)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(appState.isRecording ? Color.red.opacity(0.08) : .quaternary.opacity(0.5))
+                .fill(
+                    appState.isRecording
+                        ? DesignTokens.semanticColors(for: .danger).background
+                        : DesignTokens.Surface.subdued
+                )
         )
     }
 
