@@ -6,7 +6,9 @@ struct TranscriptionOverlayView: View {
 
     /// 녹음 중 thinking pause 상태인가? (UI 전환 기준)
     private var isThinkingPauseActive: Bool {
-        appState.transcriptionState == .recording && appState.isThinkingPause
+        appState.settings.vadEnabled &&
+            appState.transcriptionState == .recording &&
+            appState.isThinkingPause
     }
 
     var body: some View {

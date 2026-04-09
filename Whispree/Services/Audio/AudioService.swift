@@ -20,9 +20,13 @@ final class AudioService: ObservableObject {
 
     /// raw RMS 기준 무음 판정 threshold (탭 콜백의 raw RMS와 동일 단위)
     /// 조용한 방 기준 ~0.005 이하가 일반적. 키보드/숨소리는 0.01 근처.
-    private let silenceRMSThreshold: Float = 0.008
+    /// VAD가 실제 발화까지 잘라먹지 않도록 보수적으로 낮춘 값.
+    private let silenceRMSThreshold: Float = 0.004
+    /// Thinking pause UX 전용 threshold.
+    /// 실제 VAD trim보다 높게 잡아 아주 작은 숨소리/배경 잡음은 "계속 말하는 중"으로 보지 않음.
+    private let thinkingPauseHoldRMSThreshold: Float = 0.014
     /// 이 이상 무음이 지속되면 thinking pause 상태로 전환 (초)
-    private let thinkingPauseDelay: TimeInterval = 1.2
+    private let thinkingPauseDelay: TimeInterval = 1.0
     /// 첫 발화 판정을 위한 threshold (약간 높게 — 진짜 발화만 카운트)
     private let firstSpeechRMSThreshold: Float = 0.015
     private var lastVoiceTime: Date?
@@ -283,8 +287,9 @@ final class AudioService: ObservableObject {
             hasSpokenOnce = true
             lastVoiceTime = now
             if isThinkingPause { isThinkingPause = false }
-        } else if rawRMS >= silenceRMSThreshold, hasSpokenOnce {
-            // 숨소리/잡음 — 타이머만 연장 (첫 발화 트리거는 아님)
+        } else if rawRMS >= thinkingPauseHoldRMSThreshold, hasSpokenOnce {
+            // 발화에 가까운 에너지 — 타이머만 연장 (첫 발화 트리거는 아님)
+            // 작은 숨소리/배경 잡음은 여기서 걸러서 "무음 스킵 중" UI가 더 잘 뜨게 함.
             lastVoiceTime = now
             if isThinkingPause { isThinkingPause = false }
         } else if hasSpokenOnce, let last = lastVoiceTime {
@@ -305,22 +310,22 @@ final class AudioService: ObservableObject {
     /// - Parameters:
     ///   - audio: 16kHz mono Float 버퍼
     ///   - sampleRate: 기본 16000
-    ///   - rmsThreshold: raw RMS threshold (기본 0.008, AudioService의 silenceRMSThreshold와 동일 기준)
+    ///   - rmsThreshold: raw RMS threshold (기본 0.004, AudioService의 silenceRMSThreshold와 동일 기준)
     ///   - frameMs: 분석 프레임 길이 (기본 100ms)
-    ///   - paddingMs: 발화 세그먼트 앞뒤 패딩 (기본 150ms — STT 인식률 보호)
-    ///   - minSilenceMs: 이 이상 연속 무음만 컷 (기본 400ms — 짧은 호흡은 유지)
+    ///   - paddingMs: 발화 세그먼트 앞뒤 패딩 (기본 350ms — 약한 어미/초성 보호)
+    ///   - minSilenceMs: 이 이상 연속 무음만 컷 (기본 900ms — 생각/호흡 pause 보존 우선)
     /// - Returns: 무음이 제거된 [Float] 버퍼. 전체가 무음으로 판정되면 원본 반환.
     nonisolated static func trimSilence(
         _ audio: [Float],
         sampleRate: Int = 16_000,
-        rmsThreshold: Float = 0.008,
+        rmsThreshold: Float = 0.004,
         frameMs: Int = 100,
-        paddingMs: Int = 150,
-        minSilenceMs: Int = 400
+        paddingMs: Int = 350,
+        minSilenceMs: Int = 900
     ) -> [Float] {
         let frameSize = (sampleRate * frameMs) / 1_000
-        let paddingFrames = max(1, paddingMs / frameMs)
-        let minSilenceFrames = max(1, minSilenceMs / frameMs)
+        let paddingFrames = max(1, Int(ceil(Double(paddingMs) / Double(frameMs))))
+        let minSilenceFrames = max(1, Int(ceil(Double(minSilenceMs) / Double(frameMs))))
 
         guard audio.count >= frameSize * 2 else { return audio }
 

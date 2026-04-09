@@ -144,6 +144,49 @@ struct STTSettingsView: View {
                             .fill(.quaternary.opacity(0.5))
                     )
                 }
+
+                // VAD 설정 — 무음 자동 스킵 + pause UX를 함께 제어
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("무음 자동 스킵")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                            Text("끄면 pause 인디케이터와 무음 후처리를 함께 비활성화합니다.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Toggle("", isOn: Binding(
+                            get: { appState.settings.vadEnabled },
+                            set: {
+                                appState.settings.vadEnabled = $0
+                                if !$0 {
+                                    appState.isThinkingPause = false
+                                }
+                            }
+                        ))
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                    }
+
+                    Label(
+                        appState.settings.vadEnabled
+                            ? "현재 ON — 긴 무음만 잘라서 전사하고, 녹음 중 pause 인디케이터를 표시합니다."
+                            : "현재 OFF — 무음 포함 전체 오디오를 전사하고, pause 인디케이터도 표시하지 않습니다.",
+                        systemImage: appState.settings.vadEnabled ? "waveform.badge.minus" : "waveform"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(appState.settings.vadEnabled ? .orange : .green)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.quaternary.opacity(0.5))
+                )
             }
             .padding(24)
         }

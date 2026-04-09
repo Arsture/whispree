@@ -42,7 +42,8 @@ final class RecordingCoordinator: ObservableObject {
         thinkingPauseCancellable = audioService.$isThinkingPause
             .receive(on: DispatchQueue.main)
             .sink { [weak appState] isPaused in
-                appState?.isThinkingPause = isPaused
+                guard let appState else { return }
+                appState.isThinkingPause = appState.settings.vadEnabled ? isPaused : false
             }
 
         // Track last non-Whispree frontmost app for text insertion
