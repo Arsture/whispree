@@ -67,7 +67,7 @@ struct LLMSettingsView: View {
                                 } label: {
                                     HStack(alignment: .top) {
                                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                            .foregroundStyle(isSelected ? DesignTokens.accentPrimary : .secondary)
                                             .font(.title3)
 
                                         VStack(alignment: .leading, spacing: 2) {
@@ -77,7 +77,7 @@ struct LLMSettingsView: View {
                                                 if spec.capability == .vision {
                                                     Image(systemName: "eye")
                                                         .font(.caption2)
-                                                        .foregroundStyle(.blue)
+                                                        .foregroundStyle(DesignTokens.accentPrimary)
                                                 }
                                             }
                                             Text(spec.description)
@@ -103,7 +103,7 @@ struct LLMSettingsView: View {
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                            .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -114,7 +114,7 @@ struct LLMSettingsView: View {
                            spec.capability == .vision {
                             Label("이 모델은 스크린샷 컨텍스트를 활용합니다", systemImage: "eye")
                                 .font(.caption)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(DesignTokens.accentPrimary)
                         }
                     }
                     .padding(12)
@@ -191,7 +191,7 @@ struct LLMSettingsView: View {
                                 } label: {
                                     HStack(alignment: .top) {
                                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                            .foregroundStyle(isSelected ? .blue : .secondary)
+                                            .foregroundStyle(isSelected ? DesignTokens.accentPrimary : .secondary)
                                             .font(.title3)
 
                                         VStack(alignment: .leading, spacing: 2) {
@@ -220,7 +220,7 @@ struct LLMSettingsView: View {
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                                            .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -401,7 +401,7 @@ struct LLMSettingsView: View {
                         } else {
                             // 다운로드 필요
                             Image(systemName: "arrow.down.circle")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(DesignTokens.accentPrimary)
                             Text("다운로드 탭에서 '\(LocalModelSpec.find(appState.settings.llmModelId)?.displayName ?? "모델")' 을 다운로드하세요.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)

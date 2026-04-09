@@ -133,7 +133,7 @@ struct STTSettingsView: View {
                 {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.down.circle")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignTokens.accentPrimary)
                         Text("다운로드 탭에서 모델을 다운로드하세요.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
@@ -209,7 +209,7 @@ struct STTProviderRow: View {
                 HStack(alignment: .top) {
                     // Radio
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(isSelected ? .blue : .secondary)
+                        .foregroundStyle(isSelected ? DesignTokens.accentPrimary : .secondary)
                         .font(.title3)
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -260,7 +260,7 @@ struct STTProviderRow: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? Color.blue.opacity(0.5) : .clear, lineWidth: 1)
+                    .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

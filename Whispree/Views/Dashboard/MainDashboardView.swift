@@ -54,7 +54,7 @@ struct MainDashboardView: View {
             VStack(spacing: 12) {
                 HStack {
                     Image(systemName: "app.fill")
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(DesignTokens.accentPrimary)
                     Text(screenshot.appName)
                         .font(.headline)
                         .foregroundStyle(.white)
@@ -92,7 +92,7 @@ struct MainDashboardView: View {
         HStack {
             Image(systemName: "waveform.circle.fill")
                 .font(.title)
-                .foregroundStyle(.blue)
+                .foregroundStyle(DesignTokens.accentPrimary)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Whispree")
                     .font(.title2.bold())
@@ -157,7 +157,7 @@ struct MainDashboardView: View {
                     .scaleEffect(0.8)
                 Text("Applying LLM correction...")
                     .font(.caption)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(DesignTokens.accentPrimary)
             } else {
                 Image(systemName: "mic.circle")
                     .font(.system(size: 36))
@@ -171,7 +171,7 @@ struct MainDashboardView: View {
         .frame(height: 80)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(appState.isRecording ? Color.red.opacity(0.08) : Color.secondary.opacity(0.05))
+                .fill(appState.isRecording ? Color.red.opacity(0.08) : .quaternary.opacity(0.5))
         )
     }
 
@@ -199,7 +199,7 @@ struct MainDashboardView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.yellow.opacity(0.1))
+                .fill(.quaternary.opacity(0.5))
         )
     }
 
@@ -250,7 +250,7 @@ struct MainDashboardView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("LLM Corrected")
                             .font(.caption2)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignTokens.accentPrimary)
                         Text(appState.correctedText)
                             .font(.body)
                             .textSelection(.enabled)
@@ -273,7 +273,7 @@ struct MainDashboardView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "camera.viewfinder")
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(DesignTokens.accentPrimary)
                 Text("스크린 컨텍스트")
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
@@ -294,7 +294,7 @@ struct MainDashboardView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.purple.opacity(0.05))
+                .fill(.quaternary.opacity(0.5))
         )
     }
 
@@ -396,7 +396,7 @@ struct MainDashboardView: View {
                     if spec?.capability == .vision {
                         Image(systemName: "eye")
                             .font(.caption2)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignTokens.accentPrimary)
                     }
                 }
                 .padding(.leading, 28)
