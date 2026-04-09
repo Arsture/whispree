@@ -22,12 +22,12 @@ struct SettingsCard<Content: View>: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.caption.bold())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DesignTokens.textSecondary)
 
                     if let description {
                         Text(description)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignTokens.textTertiary)
                     }
                 }
             }
@@ -38,7 +38,15 @@ struct SettingsCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
-                .fill(.quaternary.opacity(0.5)) // MainDashboardView와 동일
+                .fill(DesignTokens.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
+                        .fill(DesignTokens.Surface.cardTint)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
+                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                }
         )
     }
 }
