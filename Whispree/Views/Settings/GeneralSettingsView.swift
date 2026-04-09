@@ -75,10 +75,7 @@ struct GeneralSettingsView: View {
                         VStack(spacing: 8) {
                             Picker("입력 채널:", selection: Binding(
                                 get: { appState.settings.audioInputChannel },
-                                set: {
-                                    appState.settings.audioInputChannel = $0
-                                    appState.settings.save()
-                                }
+                                set: { appState.settings.audioInputChannel = $0 }
                             )) {
                                 Text("자동 (모든 채널 다운믹스)").tag(0)
                                 ForEach(1 ... inputChannelCount, id: \.self) { ch in
@@ -99,10 +96,7 @@ struct GeneralSettingsView: View {
                     VStack(spacing: 8) {
                         Picker("Transcription language:", selection: Binding(
                             get: { appState.settings.language },
-                            set: {
-                                appState.settings.language = $0
-                                appState.settings.save()
-                            }
+                            set: { appState.settings.language = $0 }
                         )) {
                             ForEach(SupportedLanguage.allCases, id: \.self) { lang in
                                 Text(lang.displayName).tag(lang)
@@ -130,10 +124,7 @@ struct GeneralSettingsView: View {
                             Spacer()
                             Toggle("", isOn: Binding(
                                 get: { appState.settings.showOverlay },
-                                set: {
-                                    appState.settings.showOverlay = $0
-                                    appState.settings.save()
-                                }
+                                set: { appState.settings.showOverlay = $0 }
                             ))
                             .toggleStyle(.switch)
                             .labelsHidden()
@@ -144,10 +135,7 @@ struct GeneralSettingsView: View {
                             Spacer()
                             Toggle("", isOn: Binding(
                                 get: { appState.settings.launchAtLogin },
-                                set: {
-                                    appState.settings.launchAtLogin = $0
-                                    appState.settings.save()
-                                }
+                                set: { appState.settings.launchAtLogin = $0 }
                             ))
                             .toggleStyle(.switch)
                             .labelsHidden()

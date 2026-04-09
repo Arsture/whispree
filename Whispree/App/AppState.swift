@@ -51,7 +51,10 @@ final class AppState: ObservableObject {
 
     // MARK: - Settings
 
-    @Published var settings = AppSettings()
+    /// `AppSettings`는 `@MainActor ObservableObject` — property wrapper가 내부적으로
+    /// UserDefaults 저장과 `objectWillChange.send()`를 처리한다.
+    /// `@Published`가 아닌 `let`으로 보유하고, 변경은 아래 `init()`에서 forwarding.
+    let settings: AppSettings
 
     // MARK: - History
 
@@ -66,8 +69,14 @@ final class AppState: ObservableObject {
     }
 
     init() {
-        // authService/oauthService의 @Published 변경을 AppState로 전파
+        self.settings = AppSettings()
+
+        // settings/authService/oauthService의 @Published 변경을 AppState로 전파
         // (SwiftUI가 중첩 ObservableObject 변경을 자동 감지하지 않으므로)
+        settings.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &authCancellables)
+
         authService.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }.store(in: &authCancellables)
@@ -124,7 +133,6 @@ final class AppState: ObservableObject {
                 // Vision 모델은 스크린샷 자동 활성화
                 if provider.supportsVision {
                     settings.isScreenshotContextEnabled = true
-                    settings.save()
                 }
                 do {
                     try await provider.setup()
@@ -135,7 +143,6 @@ final class AppState: ObservableObject {
                 }
             case .openai:
                 settings.isScreenshotContextEnabled = true
-                settings.save()
                 let provider = OpenAIProvider(
                     model: settings.openaiModel,
                     authService: authService,

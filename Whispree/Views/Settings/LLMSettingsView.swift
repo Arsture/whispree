@@ -19,7 +19,6 @@ struct LLMSettingsView: View {
                         set: { (newValue: LLMProviderType) in
                             appState.settings.llmProviderType = newValue
                             appState.settings.isLLMEnabled = (newValue != .none)
-                            appState.settings.save()
                             Task { await appState.switchLLMProvider(to: newValue) }
                         }
                     )) {
@@ -64,7 +63,6 @@ struct LLMSettingsView: View {
                                 let isSelected = appState.settings.llmModelId == spec.id
                                 Button {
                                     appState.settings.llmModelId = spec.id
-                                    appState.settings.save()
                                     Task { await appState.switchLLMProvider(to: .local) }
                                 } label: {
                                     HStack(alignment: .top) {
@@ -143,10 +141,7 @@ struct LLMSettingsView: View {
                                 Spacer()
                                 Toggle("", isOn: Binding(
                                     get: { appState.settings.isScreenshotContextEnabled },
-                                    set: {
-                                        appState.settings.isScreenshotContextEnabled = $0
-                                        appState.settings.save()
-                                    }
+                                    set: { appState.settings.isScreenshotContextEnabled = $0 }
                                 ))
                                 .toggleStyle(.switch)
                                 .labelsHidden()
@@ -165,10 +160,7 @@ struct LLMSettingsView: View {
                                     Spacer()
                                     Toggle("", isOn: Binding(
                                         get: { appState.settings.isScreenshotPasteEnabled },
-                                        set: {
-                                            appState.settings.isScreenshotPasteEnabled = $0
-                                            appState.settings.save()
-                                        }
+                                        set: { appState.settings.isScreenshotPasteEnabled = $0 }
                                     ))
                                     .toggleStyle(.switch)
                                     .labelsHidden()
@@ -196,7 +188,6 @@ struct LLMSettingsView: View {
                                 let isSelected = appState.settings.openaiModel == model
                                 Button {
                                     appState.settings.openaiModel = model
-                                    appState.settings.save()
                                 } label: {
                                     HStack(alignment: .top) {
                                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -259,10 +250,7 @@ struct LLMSettingsView: View {
                             Spacer()
                             Toggle("", isOn: Binding(
                                 get: { appState.settings.isScreenshotContextEnabled },
-                                set: {
-                                    appState.settings.isScreenshotContextEnabled = $0
-                                    appState.settings.save()
-                                }
+                                set: { appState.settings.isScreenshotContextEnabled = $0 }
                             ))
                             .toggleStyle(.switch)
                             .labelsHidden()
@@ -281,10 +269,7 @@ struct LLMSettingsView: View {
                                 Spacer()
                                 Toggle("", isOn: Binding(
                                     get: { appState.settings.isScreenshotPasteEnabled },
-                                    set: {
-                                        appState.settings.isScreenshotPasteEnabled = $0
-                                        appState.settings.save()
-                                    }
+                                    set: { appState.settings.isScreenshotPasteEnabled = $0 }
                                 ))
                                 .toggleStyle(.switch)
                                 .labelsHidden()
@@ -441,7 +426,6 @@ struct LLMSettingsView: View {
                             get: { appState.settings.correctionMode },
                             set: {
                                 appState.settings.correctionMode = $0
-                                appState.settings.save()
                                 loadPromptForMode($0)
                             }
                         )) {
@@ -479,7 +463,6 @@ struct LLMSettingsView: View {
                                 Spacer()
                                 Button("Save Prompt") {
                                     appState.settings.customLLMPrompt = customPrompt
-                                    appState.settings.save()
                                 }
                                 .buttonStyle(.borderedProminent)
                             }

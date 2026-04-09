@@ -1,6 +1,197 @@
+import Combine
 import Foundation
 
-struct AppSettings: Codable {
+/// 앱 전역 설정.
+///
+/// 이전에는 struct + `"WhispreeSettings"` 단일 JSON blob 방식이었으나,
+/// 필드별 `@UserDefault`/`@RawRepresentableUserDefault`/`@CodableUserDefault`
+/// property wrapper 기반으로 재작성됨.
+///
+/// - **변경 전파**: wrapper의 setter가 `objectWillChange.send()`를 자동 호출 →
+///   SwiftUI 뷰가 변경을 자동 감지.
+/// - **저장**: wrapper가 내부적으로 UserDefaults에 set/remove를 수행하므로 `save()` 호출 불필요.
+/// - **마이그레이션**: `init()` 첫 줄에서 `migrateLegacyBlobIfNeeded()` 호출 →
+///   기존 `"WhispreeSettings"` JSON blob을 각 필드 키로 분해 저장 후 blob 삭제.
+@MainActor
+final class AppSettings: ObservableObject {
+
+    // MARK: - Recording
+
+    @RawRepresentableUserDefault(key: "whispree.recordingMode", defaultValue: .pushToTalk)
+    var recordingMode: RecordingMode
+
+    @RawRepresentableUserDefault(key: "whispree.language", defaultValue: .korean)
+    var language: SupportedLanguage
+
+    // MARK: - LLM Toggle & Onboarding
+
+    @UserDefault(key: "whispree.isLLMEnabled", defaultValue: true)
+    var isLLMEnabled: Bool
+
+    @UserDefault(key: "whispree.hasCompletedOnboarding", defaultValue: false)
+    var hasCompletedOnboarding: Bool
+
+    @UserDefault(key: "whispree.launchAtLogin", defaultValue: false)
+    var launchAtLogin: Bool
+
+    @UserDefault(key: "whispree.showOverlay", defaultValue: true)
+    var showOverlay: Bool
+
+    // MARK: - Correction
+
+    @RawRepresentableUserDefault(
+        key: "whispree.correctionMode",
+        defaultValue: .standard,
+        rawAliasMap: ["promptEngineering": "fillerRemoval"]
+    )
+    var correctionMode: CorrectionMode
+
+    @UserDefault(key: "whispree.customLLMPrompt", defaultValue: nil)
+    var customLLMPrompt: String?
+
+    // MARK: - Model preferences
+
+    @UserDefault(
+        key: "whispree.whisperModelId",
+        defaultValue: "openai_whisper-large-v3_turbo"
+    )
+    var whisperModelId: String
+
+    @UserDefault(
+        key: "whispree.llmModelId",
+        defaultValue: "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+    )
+    var llmModelId: String
+
+    @UserDefault(
+        key: "whispree.mlxAudioModelId",
+        defaultValue: "mlx-community/Qwen3-ASR-1.7B-8bit"
+    )
+    var mlxAudioModelId: String
+
+    // MARK: - Providers
+
+    @RawRepresentableUserDefault(
+        key: "whispree.sttProviderType",
+        defaultValue: .whisperKit
+    )
+    var sttProviderType: STTProviderType
+
+    @RawRepresentableUserDefault(
+        key: "whispree.llmProviderType",
+        defaultValue: .none,
+        rawAliasMap: ["로컬 LLM (Qwen3)": "로컬 MLX"]
+    )
+    var llmProviderType: LLMProviderType
+
+    @RawRepresentableUserDefault(key: "whispree.openaiModel", defaultValue: .gpt54)
+    var openaiModel: OpenAIModel
+
+    // MARK: - Screenshot context
+
+    @UserDefault(key: "whispree.isScreenshotContextEnabled", defaultValue: false)
+    var isScreenshotContextEnabled: Bool
+
+    @UserDefault(key: "whispree.isScreenshotPasteEnabled", defaultValue: true)
+    var isScreenshotPasteEnabled: Bool
+
+    // MARK: - Groq API
+
+    @UserDefault(key: "whispree.groqApiKey", defaultValue: "")
+    var groqApiKey: String
+
+    // MARK: - Audio
+
+    /// 오디오 입력 채널 선택.
+    /// 0 = 자동 (모든 채널 평균 다운믹스, 기본값)
+    /// 1~N = 특정 채널만 사용 (1-indexed)
+    @UserDefault(key: "whispree.audioInputChannel", defaultValue: 0)
+    var audioInputChannel: Int
+
+    /// VAD (Voice Activity Detection) — 무음 구간 자동 제거.
+    /// STT 진입 전 공통 pre-processing, 모든 프로바이더(WhisperKit/Groq/MLX Audio)에 적용.
+    @UserDefault(key: "whispree.vadEnabled", defaultValue: true)
+    var vadEnabled: Bool
+
+    // MARK: - Domain words
+
+    @CodableUserDefault(key: "whispree.domainWordSets", defaultValue: [])
+    var domainWordSets: [DomainWordSet]
+
+    // MARK: - Init
+
+    init() {
+        Self.migrateLegacyBlobIfNeeded()
+        runFieldMigrations()
+    }
+
+    /// 필드별 후처리 마이그레이션 — 기존 default 마이그레이션 로직 보존.
+    private func runFieldMigrations() {
+        // 구 Qwen2.5 모델 ID → Qwen3 기본값
+        if llmModelId.contains("Qwen2.5") {
+            llmModelId = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+        }
+        // 스크린샷 에이전트 전달 기본값 ON (컨텍스트 활성 + 전달 비활성인 구 유저)
+        if isScreenshotContextEnabled, !isScreenshotPasteEnabled {
+            isScreenshotPasteEnabled = true
+        }
+    }
+
+    /// 구 `"WhispreeSettings"` JSON blob을 1회성으로 각 필드 키에 분해 저장하고 blob 삭제.
+    ///
+    /// - 성공 시: blob 삭제 → 이후엔 wrapper만 동작.
+    /// - 디코드 실패 시: `whispree.legacyMigrationFailed = true` 플래그 → 재시도 방지.
+    /// - 부분 실패 (crash 등): 다음 부팅에서 idempotent 재실행 (blob이 남아있으므로).
+    static func migrateLegacyBlobIfNeeded() {
+        let defaults = UserDefaults.standard
+        let legacyKey = "WhispreeSettings"
+        let migrationFailedKey = "whispree.legacyMigrationFailed"
+
+        guard !defaults.bool(forKey: migrationFailedKey),
+              let data = defaults.data(forKey: legacyKey) else { return }
+
+        guard let legacy = try? JSONDecoder().decode(LegacyAppSettings.self, from: data) else {
+            defaults.set(true, forKey: migrationFailedKey)
+            return
+        }
+
+        defaults.set(legacy.recordingMode.rawValue, forKey: "whispree.recordingMode")
+        defaults.set(legacy.language.rawValue, forKey: "whispree.language")
+        defaults.set(legacy.isLLMEnabled, forKey: "whispree.isLLMEnabled")
+        defaults.set(legacy.hasCompletedOnboarding, forKey: "whispree.hasCompletedOnboarding")
+        defaults.set(legacy.launchAtLogin, forKey: "whispree.launchAtLogin")
+        defaults.set(legacy.showOverlay, forKey: "whispree.showOverlay")
+        defaults.set(legacy.correctionMode.rawValue, forKey: "whispree.correctionMode")
+        if let prompt = legacy.customLLMPrompt {
+            defaults.set(prompt, forKey: "whispree.customLLMPrompt")
+        }
+        defaults.set(legacy.whisperModelId, forKey: "whispree.whisperModelId")
+        defaults.set(legacy.llmModelId, forKey: "whispree.llmModelId")
+        defaults.set(legacy.mlxAudioModelId, forKey: "whispree.mlxAudioModelId")
+        defaults.set(legacy.sttProviderType.rawValue, forKey: "whispree.sttProviderType")
+        defaults.set(legacy.llmProviderType.rawValue, forKey: "whispree.llmProviderType")
+        defaults.set(legacy.openaiModel.rawValue, forKey: "whispree.openaiModel")
+        defaults.set(legacy.isScreenshotContextEnabled, forKey: "whispree.isScreenshotContextEnabled")
+        defaults.set(legacy.isScreenshotPasteEnabled, forKey: "whispree.isScreenshotPasteEnabled")
+        defaults.set(legacy.groqApiKey, forKey: "whispree.groqApiKey")
+        defaults.set(legacy.audioInputChannel, forKey: "whispree.audioInputChannel")
+        defaults.set(legacy.vadEnabled, forKey: "whispree.vadEnabled")
+        if let wordSetsData = try? JSONEncoder().encode(legacy.domainWordSets) {
+            defaults.set(wordSetsData, forKey: "whispree.domainWordSets")
+        }
+
+        defaults.removeObject(forKey: legacyKey)
+    }
+}
+
+// MARK: - LegacyAppSettings (migration 전용)
+
+/// 구 `"WhispreeSettings"` JSON blob 디코드 전용 private 구조체.
+///
+/// Swift의 synthesized `init(from:)`은 struct declaration의 default value를 무시하므로,
+/// 새 필드 추가 시 누락 키로 디코드가 실패하지 않도록 custom `init(from:)`에서
+/// 모든 필드를 `decodeIfPresent` + default fallback으로 처리.
+private struct LegacyAppSettings: Codable {
     var recordingMode: RecordingMode = .pushToTalk
     var language: SupportedLanguage = .korean
     var isLLMEnabled: Bool = true
@@ -9,70 +200,19 @@ struct AppSettings: Codable {
     var showOverlay: Bool = true
     var correctionMode: CorrectionMode = .standard
     var customLLMPrompt: String?
-
-    // Model preferences
     var whisperModelId: String = "openai_whisper-large-v3_turbo"
     var llmModelId: String = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
     var mlxAudioModelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit"
-
-    /// STT Provider
     var sttProviderType: STTProviderType = .whisperKit
-
-    /// LLM Provider
     var llmProviderType: LLMProviderType = .none
-
-    /// OpenAI 모델 선택
     var openaiModel: OpenAIModel = .gpt54
-
-    /// Screenshot context
     var isScreenshotContextEnabled: Bool = false
-
-    /// 스크린샷을 대상 앱에 이미지로 자동 붙여넣기
     var isScreenshotPasteEnabled: Bool = true
-
-    /// Groq API
     var groqApiKey: String = ""
-
-    /// 오디오 입력 채널 선택
-    /// 0 = 자동 (모든 채널 평균 다운믹스, 기본값)
-    /// 1~N = 특정 채널만 사용 (1-indexed)
     var audioInputChannel: Int = 0
-
-    /// VAD (Voice Activity Detection) — 무음 구간 자동 제거
-    /// STT 진입 전 공통 pre-processing, 모든 프로바이더(WhisperKit/Groq/MLX Audio)에 적용
     var vadEnabled: Bool = true
-
-    /// 도메인 단어 세트
     var domainWordSets: [DomainWordSet] = []
 
-    private static let storageKey = "WhispreeSettings"
-
-    init() {
-        if let data = UserDefaults.standard.data(forKey: Self.storageKey),
-           let decoded = try? JSONDecoder().decode(AppSettings.self, from: data)
-        {
-            self = decoded
-        }
-        // Migrate old model ID to new default
-        if llmModelId.contains("Qwen2.5") {
-            llmModelId = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
-            save()
-        }
-        // Migrate: 스크린샷 에이전트 전달 기본값 ON
-        if isScreenshotContextEnabled, !isScreenshotPasteEnabled {
-            isScreenshotPasteEnabled = true
-            save()
-        }
-    }
-
-    /// 모든 필드를 `decodeIfPresent` + default fallback으로 처리.
-    ///
-    /// Swift의 synthesized `init(from:)`은 struct declaration의 default value를 **무시**하므로,
-    /// 새 필드를 추가하면 기존 유저의 UserDefaults JSON 디코드가 `keyNotFound`로 실패하고
-    /// **모든 설정이 리셋된다** (groqApiKey, correctionMode, domainWordSets 등 포함).
-    ///
-    /// 이를 방지하기 위해 custom `init(from:)`을 작성하여, 누락된 키는 모두 default로 폴백하도록 함.
-    /// 앞으로 어떤 필드를 추가해도 backward compatible하게 유지됨.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         self.recordingMode = (try? c.decodeIfPresent(RecordingMode.self, forKey: .recordingMode)) ?? .pushToTalk
@@ -96,13 +236,9 @@ struct AppSettings: Codable {
         self.vadEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .vadEnabled)) ?? true
         self.domainWordSets = (try? c.decodeIfPresent([DomainWordSet].self, forKey: .domainWordSets)) ?? []
     }
-
-    func save() {
-        if let data = try? JSONEncoder().encode(self) {
-            UserDefaults.standard.set(data, forKey: Self.storageKey)
-        }
-    }
 }
+
+// MARK: - STTProviderType / LLMProviderType
 
 enum STTProviderType: String, Codable, CaseIterable {
     case whisperKit = "WhisperKit"
@@ -131,16 +267,20 @@ enum LLMProviderType: String, Codable, CaseIterable {
         }
     }
 
-    /// 이전 rawValue에서 마이그레이션
+    /// 구 rawValue `"로컬 LLM (Qwen3)"`을 `.local`로 마이그레이션.
+    /// Legacy blob 디코드 경로에서만 호출되며, 현재 저장 경로는 `rawAliasMap`이 담당.
     init(from decoder: Decoder) throws {
         let rawValue = try decoder.singleValueContainer().decode(String.self)
         switch rawValue {
-        case "로컬 LLM (Qwen3)": self = .local  // 이전 rawValue
-        default:
-            guard let value = LLMProviderType(rawValue: rawValue) else {
-                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Unknown LLMProviderType: \(rawValue)"))
-            }
-            self = value
+            case "로컬 LLM (Qwen3)": self = .local
+            default:
+                guard let value = LLMProviderType(rawValue: rawValue) else {
+                    throw DecodingError.dataCorrupted(.init(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Unknown LLMProviderType: \(rawValue)"
+                    ))
+                }
+                self = value
         }
     }
 }

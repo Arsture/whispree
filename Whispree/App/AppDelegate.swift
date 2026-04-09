@@ -272,7 +272,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: OnboardingView { [weak self] in
                 guard let self else { return }
                 appState.settings.hasCompletedOnboarding = true
-                appState.settings.save()
                 DispatchQueue.main.async {
                     self.onboardingWindow?.orderOut(nil)
                     self.onboardingWindow = nil

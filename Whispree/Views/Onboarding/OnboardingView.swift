@@ -231,10 +231,7 @@ struct OnboardingView: View {
 
                     SecureField("Groq API Key", text: Binding(
                         get: { appState.settings.groqApiKey },
-                        set: {
-                            appState.settings.groqApiKey = $0
-                            appState.settings.save()
-                        }
+                        set: { appState.settings.groqApiKey = $0 }
                     ))
                     .textFieldStyle(.roundedBorder)
                 }
@@ -692,7 +689,6 @@ struct OnboardingView: View {
         if appState.authService.isLoggedIn || appState.oauthService.isLoggedIn {
             appState.settings.llmProviderType = .openai
         }
-        appState.settings.save()
 
         // Initialize providers for the demo
         Task {

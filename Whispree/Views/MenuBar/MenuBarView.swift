@@ -56,10 +56,7 @@ struct MenuBarView: View {
             // Quick toggles
             Toggle("LLM Correction", isOn: Binding(
                 get: { appState.settings.isLLMEnabled },
-                set: {
-                    appState.settings.isLLMEnabled = $0
-                    appState.settings.save()
-                }
+                set: { appState.settings.isLLMEnabled = $0 }
             ))
             .toggleStyle(.switch)
             .font(.subheadline)
@@ -67,10 +64,7 @@ struct MenuBarView: View {
             // Recording mode
             Picker("Mode", selection: Binding(
                 get: { appState.settings.recordingMode },
-                set: {
-                    appState.settings.recordingMode = $0
-                    appState.settings.save()
-                }
+                set: { appState.settings.recordingMode = $0 }
             )) {
                 ForEach(RecordingMode.allCases, id: \.self) { mode in
                     Text(mode.displayName).tag(mode)

@@ -414,7 +414,6 @@ struct MainDashboardView: View {
             get: { appState.settings.sttProviderType },
             set: { newType in
                 appState.settings.sttProviderType = newType
-                appState.settings.save()
                 Task { await appState.switchSTTProvider(to: newType) }
             }
         )
@@ -426,7 +425,6 @@ struct MainDashboardView: View {
             set: { newType in
                 appState.settings.llmProviderType = newType
                 appState.settings.isLLMEnabled = (newType != .none)
-                appState.settings.save()
                 Task { await appState.switchLLMProvider(to: newType) }
             }
         )

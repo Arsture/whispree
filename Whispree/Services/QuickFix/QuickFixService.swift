@@ -93,15 +93,20 @@ final class QuickFixService {
 
     /// Adds a corrected word to the "Quick Fix" domain word set (STT + LLM).
     /// Creates the set if it doesn't exist.
+    ///
+    /// `domainWordSets`는 `@CodableUserDefault` wrapper로 저장되므로,
+    /// 배열을 in-place mutate하면 setter가 호출되지 않는다 (wrapper는 value-type subscript).
+    /// 반드시 copy-mutate-reassign 패턴을 써야 저장과 objectWillChange 전파가 동작한다.
     func addWordToDictionary(_ word: String, appState: AppState) {
         let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        let index = ensureQuickFixSet(appState: appState)
-        if !appState.settings.domainWordSets[index].words.contains(trimmed) {
-            appState.settings.domainWordSets[index].words.append(trimmed)
+        var sets = appState.settings.domainWordSets
+        let index = ensureQuickFixSet(in: &sets)
+        if !sets[index].words.contains(trimmed) {
+            sets[index].words.append(trimmed)
         }
-        appState.settings.save()
+        appState.settings.domainWordSets = sets
     }
 
     /// Adds a correction mapping to the "Quick Fix" domain word set (LLM only).
@@ -111,25 +116,26 @@ final class QuickFixService {
         let trimmedTo = to.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedFrom.isEmpty, !trimmedTo.isEmpty else { return }
 
-        let index = ensureQuickFixSet(appState: appState)
+        var sets = appState.settings.domainWordSets
+        let index = ensureQuickFixSet(in: &sets)
         // Avoid duplicate mappings
-        let alreadyExists = appState.settings.domainWordSets[index].corrections.contains {
+        let alreadyExists = sets[index].corrections.contains {
             $0.from == trimmedFrom && $0.to == trimmedTo
         }
         if !alreadyExists {
             let mapping = CorrectionMapping(from: trimmedFrom, to: trimmedTo)
-            appState.settings.domainWordSets[index].corrections.append(mapping)
+            sets[index].corrections.append(mapping)
         }
-        appState.settings.save()
+        appState.settings.domainWordSets = sets
     }
 
-    /// Returns the index of the "Quick Fix" word set, creating it if needed.
-    private func ensureQuickFixSet(appState: AppState) -> Int {
-        if let index = appState.settings.domainWordSets.firstIndex(where: { $0.name == "Quick Fix" }) {
+    /// Returns the index of the "Quick Fix" word set in the passed-in array, creating it if needed.
+    /// Mutates `sets` in place (copy-mutate-reassign 패턴의 in-place 단계).
+    private func ensureQuickFixSet(in sets: inout [DomainWordSet]) -> Int {
+        if let index = sets.firstIndex(where: { $0.name == "Quick Fix" }) {
             return index
         }
-        let quickFixSet = DomainWordSet(name: "Quick Fix", words: [])
-        appState.settings.domainWordSets.append(quickFixSet)
-        return appState.settings.domainWordSets.count - 1
+        sets.append(DomainWordSet(name: "Quick Fix", words: []))
+        return sets.count - 1
     }
 }

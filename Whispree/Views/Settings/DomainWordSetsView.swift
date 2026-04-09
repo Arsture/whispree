@@ -34,8 +34,18 @@ struct DomainWordSetsView: View {
                         )
                 } else {
                     ForEach(appState.settings.domainWordSets.indices, id: \.self) { index in
+                        // `$appState.settings.domainWordSets[index]` 대신 수동 Binding —
+                        // `domainWordSets`는 `@CodableUserDefault` wrapper라 SwiftUI가 projectedValue를
+                        // 내장 제공하지 않으므로, copy-mutate-reassign 패턴으로 setter를 직접 호출.
                         WordSetRow(
-                            wordSet: $appState.settings.domainWordSets[index],
+                            wordSet: Binding(
+                                get: { appState.settings.domainWordSets[index] },
+                                set: { newValue in
+                                    var sets = appState.settings.domainWordSets
+                                    sets[index] = newValue
+                                    appState.settings.domainWordSets = sets
+                                }
+                            ),
                             newWordText: Binding(
                                 get: { newWordText[appState.settings.domainWordSets[index].id] ?? "" },
                                 set: { newWordText[appState.settings.domainWordSets[index].id] = $0 }
@@ -52,7 +62,7 @@ struct DomainWordSetsView: View {
                             onDeleteWord: { wordIndex in deleteWord(at: wordIndex, setIndex: index) },
                             onAddCorrection: { addCorrection(at: index) },
                             onDeleteCorrection: { corrIndex in deleteCorrection(at: corrIndex, setIndex: index) },
-                            onToggle: { save() }
+                            onToggle: {}
                         )
                         .padding(12)
                         .background(
@@ -87,9 +97,10 @@ struct DomainWordSetsView: View {
                                     .foregroundStyle(.green)
                             } else {
                                 Button("추가") {
-                                    let newSet = DomainWordSet.generateDefault(domain: category)
-                                    appState.settings.domainWordSets.append(newSet)
-                                    save()
+                                    // wrapper-backed 배열은 copy-mutate-reassign 패턴 필수
+                                    var sets = appState.settings.domainWordSets
+                                    sets.append(DomainWordSet.generateDefault(domain: category))
+                                    appState.settings.domainWordSets = sets
                                 }
                                 .buttonStyle(.bordered)
                                 .font(.caption)
@@ -108,18 +119,26 @@ struct DomainWordSetsView: View {
         }
     }
 
+    // MARK: - Mutation helpers (copy-mutate-reassign)
+    //
+    // `appState.settings.domainWordSets`는 `@CodableUserDefault` wrapper 프로퍼티라
+    // in-place mutation (예: `sets[index].words.append(...)`)은 setter를 호출하지 않는다.
+    // 반드시 임시 변수에 copy → mutate → 전체 배열 reassign 해야 wrapper가 저장/통지한다.
+
     private func addWord(at index: Int) {
         let id = appState.settings.domainWordSets[index].id
         let word = (newWordText[id] ?? "").trimmingCharacters(in: .whitespaces)
         guard !word.isEmpty else { return }
-        appState.settings.domainWordSets[index].words.append(word)
+        var sets = appState.settings.domainWordSets
+        sets[index].words.append(word)
+        appState.settings.domainWordSets = sets
         newWordText[id] = ""
-        save()
     }
 
     private func deleteWord(at wordIndex: Int, setIndex: Int) {
-        appState.settings.domainWordSets[setIndex].words.remove(at: wordIndex)
-        save()
+        var sets = appState.settings.domainWordSets
+        sets[setIndex].words.remove(at: wordIndex)
+        appState.settings.domainWordSets = sets
     }
 
     private func addCorrection(at index: Int) {
@@ -127,20 +146,17 @@ struct DomainWordSetsView: View {
         let from = (newCorrectionFrom[id] ?? "").trimmingCharacters(in: .whitespaces)
         let to = (newCorrectionTo[id] ?? "").trimmingCharacters(in: .whitespaces)
         guard !from.isEmpty, !to.isEmpty else { return }
-        let mapping = CorrectionMapping(from: from, to: to)
-        appState.settings.domainWordSets[index].corrections.append(mapping)
+        var sets = appState.settings.domainWordSets
+        sets[index].corrections.append(CorrectionMapping(from: from, to: to))
+        appState.settings.domainWordSets = sets
         newCorrectionFrom[id] = ""
         newCorrectionTo[id] = ""
-        save()
     }
 
     private func deleteCorrection(at corrIndex: Int, setIndex: Int) {
-        appState.settings.domainWordSets[setIndex].corrections.remove(at: corrIndex)
-        save()
-    }
-
-    private func save() {
-        appState.settings.save()
+        var sets = appState.settings.domainWordSets
+        sets[setIndex].corrections.remove(at: corrIndex)
+        appState.settings.domainWordSets = sets
     }
 
     private func categoryDescription(for category: DomainCategory) -> String {

@@ -23,7 +23,6 @@ struct STTSettingsView: View {
                             state: appState.settings.sttProviderType == .groq ? appState.whisperModelState : .ready,
                             onSelect: {
                                 appState.settings.sttProviderType = .groq
-                                appState.settings.save()
                                 Task { await appState.switchSTTProvider(to: .groq) }
                             }
                         )
@@ -44,7 +43,6 @@ struct STTSettingsView: View {
                             state: appState.settings.sttProviderType == .mlxAudio ? appState.whisperModelState : (modelManager.mlxAudioDownloaded ? .ready : .notDownloaded),
                             onSelect: {
                                 appState.settings.sttProviderType = .mlxAudio
-                                appState.settings.save()
                                 Task { await appState.switchSTTProvider(to: .mlxAudio) }
                             }
                         )
@@ -65,7 +63,6 @@ struct STTSettingsView: View {
                             state: appState.settings.sttProviderType == .whisperKit ? appState.whisperModelState : (modelManager.whisperKitDownloaded ? .ready : .notDownloaded),
                             onSelect: {
                                 appState.settings.sttProviderType = .whisperKit
-                                appState.settings.save()
                                 Task { await appState.switchSTTProvider(to: .whisperKit) }
                             }
                         )
@@ -87,10 +84,7 @@ struct STTSettingsView: View {
 
                         SecureField("API Key", text: Binding(
                             get: { appState.settings.groqApiKey },
-                            set: {
-                                appState.settings.groqApiKey = $0
-                                appState.settings.save()
-                            }
+                            set: { appState.settings.groqApiKey = $0 }
                         ))
                         .textFieldStyle(.roundedBorder)
 
