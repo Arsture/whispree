@@ -44,17 +44,15 @@ struct ModelMetricsView: View {
     }
 
     private func ramColor(_ percent: Int) -> Color {
-        if percent <= 30 { return DesignTokens.semanticColors(for: .success).foreground }
-        if percent <= 50 { return DesignTokens.semanticColors(for: .warning).foreground }
-        if percent <= 75 { return DesignTokens.Palette.warning }
-        return DesignTokens.semanticColors(for: .danger).foreground
+        if percent >= 90 { return DesignTokens.textColor(for: .danger) }
+        if percent >= 75 { return DesignTokens.textColor(for: .warning) }
+        return DesignTokens.textColor(for: .tertiary)
     }
 
     private func qualityColor(_ score: Int) -> Color {
-        if score >= 80 { return DesignTokens.semanticColors(for: .success).foreground }
-        if score >= 50 { return DesignTokens.semanticColors(for: .warning).foreground }
-        if score >= 20 { return DesignTokens.Palette.warning }
-        return DesignTokens.semanticColors(for: .danger).foreground
+        if score <= 15 { return DesignTokens.textColor(for: .danger) }
+        if score <= 35 { return DesignTokens.textColor(for: .warning) }
+        return DesignTokens.textColor(for: .tertiary)
     }
 }
 

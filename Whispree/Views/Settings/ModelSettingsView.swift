@@ -20,10 +20,7 @@ struct ModelSettingsView: View {
                 .foregroundStyle(.secondary)
                 .padding(12)
                 .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
+                .background(DesignTokens.surfaceBackgroundView())
 
                 // STT Models Section (로컬 다운로드 가능한 모델만)
                 VStack(alignment: .leading, spacing: 8) {
@@ -67,10 +64,7 @@ struct ModelSettingsView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
+                .background(DesignTokens.surfaceBackgroundView())
 
                 // LLM Models Section (로컬만 — OpenAI는 다운로드 대상 아님)
                 VStack(alignment: .leading, spacing: 8) {
@@ -122,10 +116,7 @@ struct ModelSettingsView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
+                .background(DesignTokens.surfaceBackgroundView())
 
                 // Storage Section
                 VStack(alignment: .leading, spacing: 8) {
@@ -146,10 +137,7 @@ struct ModelSettingsView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
+                .background(DesignTokens.surfaceBackgroundView())
             }
             .padding(24)
         }
@@ -218,7 +206,7 @@ struct DownloadableModelRow: View {
             case .ready:
                 HStack {
                     Label("준비됨", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground).font(.caption)
+                        .foregroundStyle(DesignTokens.textColor(for: .secondary)).font(.caption)
                     Spacer()
                     Button("삭제", role: .destructive) { onDelete() }
                         .font(.caption).controlSize(.small)

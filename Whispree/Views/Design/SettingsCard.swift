@@ -17,8 +17,6 @@ struct SettingsCard<Content: View>: View {
     }
 
     var body: some View {
-        let surface = DesignTokens.surfaceStyle(for: .card)
-
         VStack(alignment: .leading, spacing: 8) {
             if let title {
                 VStack(alignment: .leading, spacing: 2) {
@@ -38,17 +36,6 @@ struct SettingsCard<Content: View>: View {
         }
         .padding(DesignTokens.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
-                .fill(surface.fill)
-                .overlay {
-                    RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
-                        .fill(surface.tint)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
-                        .stroke(surface.border, lineWidth: 1)
-                }
-        )
+        .background(DesignTokens.surfaceBackgroundView())
     }
 }

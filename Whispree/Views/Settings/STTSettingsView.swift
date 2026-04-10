@@ -70,10 +70,7 @@ struct STTSettingsView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
+                .background(DesignTokens.surfaceBackgroundView())
 
                 // Groq API Key Section
                 if appState.settings.sttProviderType == .groq {
@@ -95,15 +92,12 @@ struct STTSettingsView: View {
                         } else {
                             Label("API Key 설정됨", systemImage: "checkmark.circle.fill")
                                 .font(.caption)
-                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
+                                .foregroundStyle(DesignTokens.textColor(for: .secondary))
                         }
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
                 }
 
                 // Cold Start Warning
@@ -121,10 +115,7 @@ struct STTSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
                 }
 
                 // Model Download Notice
@@ -139,10 +130,7 @@ struct STTSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
                 }
 
                 // VAD 설정 — 무음 자동 스킵 + pause UX를 함께 제어
@@ -182,15 +170,12 @@ struct STTSettingsView: View {
                     .foregroundStyle(
                         appState.settings.vadEnabled
                             ? DesignTokens.semanticColors(for: .warning).foreground
-                            : DesignTokens.semanticColors(for: .success).foreground
+                            : DesignTokens.textColor(for: .secondary)
                     )
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
+                .background(DesignTokens.surfaceBackgroundView())
             }
             .padding(24)
         }
@@ -235,7 +220,7 @@ struct STTProviderRow: View {
                         switch state {
                         case .ready:
                             Label("Ready", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground).font(.caption)
+                                .foregroundStyle(DesignTokens.textColor(for: .secondary)).font(.caption)
                         case .loading:
                             HStack(spacing: 4) {
                                 ProgressView().controlSize(.small)
@@ -258,10 +243,7 @@ struct STTProviderRow: View {
                 }
             }
             .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.quaternary.opacity(0.3))
-            )
+            .background(DesignTokens.surfaceBackgroundView(role: .inset))
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)

@@ -30,10 +30,7 @@ struct LLMSettingsView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
+                .background(DesignTokens.surfaceBackgroundView())
 
                 // Local Model Picker
                 if appState.settings.llmProviderType == .local {
@@ -97,10 +94,7 @@ struct LLMSettingsView: View {
                                         )
                                     }
                                     .padding(8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(.quaternary.opacity(0.3))
-                                    )
+                                    .background(DesignTokens.surfaceBackgroundView(role: .inset))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
                                             .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
@@ -119,10 +113,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
 
                     // Screenshot Context Section (Local vision model)
                     if appState.llmProvider?.supportsVision == true {
@@ -169,10 +160,7 @@ struct LLMSettingsView: View {
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.quaternary.opacity(0.5))
-                        )
+                        .background(DesignTokens.surfaceBackgroundView())
                     }
                 }
 
@@ -214,10 +202,7 @@ struct LLMSettingsView: View {
                                         )
                                     }
                                     .padding(8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(.quaternary.opacity(0.3))
-                                    )
+                                    .background(DesignTokens.surfaceBackgroundView(role: .inset))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
                                             .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
@@ -229,10 +214,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
 
                     // Screenshot Context Section (OpenAI — always vision-capable)
                     VStack(alignment: .leading, spacing: 8) {
@@ -278,10 +260,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
 
                     // OpenAI Auth Section
                     VStack(alignment: .leading, spacing: 8) {
@@ -295,7 +274,7 @@ struct LLMSettingsView: View {
                                 Text("인증 방식:")
                                 Spacer()
                                 Label("Codex CLI", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
+                                    .foregroundStyle(DesignTokens.textColor(for: .secondary))
                                     .font(.caption)
                             }
                             if let accountId = appState.authService.currentAccountId {
@@ -313,7 +292,7 @@ struct LLMSettingsView: View {
                                 Text("인증 방식:")
                                 Spacer()
                                 Label("OpenAI 로그인", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
+                                    .foregroundStyle(DesignTokens.textColor(for: .secondary))
                                     .font(.caption)
                             }
                             Button("로그아웃") {
@@ -364,10 +343,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
                 }
 
                 // Model Status Notice
@@ -409,10 +385,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
                 }
 
                 // Correction Mode Section
@@ -476,7 +449,7 @@ struct LLMSettingsView: View {
                                     .textSelection(.enabled)
                             }
                             .frame(height: 200)
-                            .background(.quaternary.opacity(0.3))
+                            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 4))
                             .clipShape(RoundedRectangle(cornerRadius: 4))
 
                             Text("Switch to \"Custom\" mode to edit the prompt.")
@@ -486,10 +459,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
+                    .background(DesignTokens.surfaceBackgroundView())
                 }
             }
             .padding(24)

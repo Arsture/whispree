@@ -166,6 +166,24 @@ enum DesignTokens {
         }
     }
 
+    @ViewBuilder
+    static func surfaceBackgroundView(
+        role: SurfaceRole = .card,
+        cornerRadius: CGFloat = cardRadius
+    ) -> some View {
+        let surface = surfaceStyle(for: role)
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(surface.fill)
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(surface.tint)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(surface.border, lineWidth: surface.border == .clear ? 0 : 1)
+            }
+    }
+
     // Backwards-compatible aliases for shared components that still consume the simple tokens.
     static let statusSuccess = Palette.success
     static let statusWarning = Palette.warning

@@ -26,14 +26,12 @@ struct CompatibilityBadge: View {
 private extension CompatibilityGrade {
     var semanticTone: DesignTokens.SemanticTone {
         switch self {
-        case .runsGreat, .runsWell:
-            .success
-        case .decent, .tightFit:
-            .warning
-        case .barelyRuns:
-            .danger
-        case .tooHeavy:
+        case .runsGreat, .runsWell, .decent:
             .neutral
+        case .tightFit:
+            .warning
+        case .barelyRuns, .tooHeavy:
+            .danger
         }
     }
 }
