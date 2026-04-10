@@ -122,10 +122,10 @@ struct MainDashboardView: View {
     }
 
     private var statusColor: Color {
-        if appState.isRecording { return .red }
-        if appState.transcriptionState.isActive { return .orange }
-        if appState.whisperModelState == .ready { return .green }
-        return .secondary
+        if appState.isRecording { return DesignTokens.textColor(for: .danger) }
+        if appState.transcriptionState.isActive { return DesignTokens.textColor(for: .warning) }
+        if appState.whisperModelState == .ready { return DesignTokens.textColor(for: .success) }
+        return DesignTokens.textColor(for: .secondary)
     }
 
     private var statusBadge: some View {
@@ -171,11 +171,14 @@ struct MainDashboardView: View {
         .frame(height: 80)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(
-                    appState.isRecording
-                        ? DesignTokens.semanticColors(for: .danger).background
-                        : DesignTokens.Surface.subdued
-                )
+                .fill(DesignTokens.surfaceStyle(for: .inset).fill)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(
+                            appState.isRecording ? DesignTokens.Border.emphasized : .clear,
+                            lineWidth: 1
+                        )
+                }
         )
     }
 
@@ -249,7 +252,7 @@ struct MainDashboardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("STT Result")
                         .font(.caption2)
-                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                        .foregroundStyle(DesignTokens.textColor(for: .tertiary))
                     Text(appState.finalText)
                         .font(.body)
                         .textSelection(.enabled)
@@ -262,7 +265,7 @@ struct MainDashboardView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("LLM Corrected")
                             .font(.caption2)
-                            .foregroundStyle(DesignTokens.accentPrimary)
+                            .foregroundStyle(DesignTokens.textColor(for: .accent))
                         Text(appState.correctedText)
                             .font(.body)
                             .textSelection(.enabled)

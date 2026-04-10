@@ -17,17 +17,19 @@ struct SettingsCard<Content: View>: View {
     }
 
     var body: some View {
+        let surface = DesignTokens.surfaceStyle(for: .card)
+
         VStack(alignment: .leading, spacing: 8) {
             if let title {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.caption.bold())
-                        .foregroundStyle(DesignTokens.textSecondary)
+                        .foregroundStyle(DesignTokens.textColor(for: .secondary))
 
                     if let description {
                         Text(description)
                             .font(.caption)
-                            .foregroundStyle(DesignTokens.textTertiary)
+                            .foregroundStyle(DesignTokens.textColor(for: .tertiary))
                     }
                 }
             }
@@ -38,14 +40,14 @@ struct SettingsCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
-                .fill(DesignTokens.cardBackground)
+                .fill(surface.fill)
                 .overlay {
                     RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
-                        .fill(DesignTokens.Surface.cardTint)
+                        .fill(surface.tint)
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: DesignTokens.cardRadius)
-                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                        .stroke(surface.border, lineWidth: 1)
                 }
         )
     }

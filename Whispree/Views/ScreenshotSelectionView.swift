@@ -118,11 +118,11 @@ struct ScreenshotSelectionView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(focusedIndex == index ? DesignTokens.semanticColors(for: .accent).background : .clear)
+                .fill(focusedIndex == index ? DesignTokens.interactionColors(for: .selection).background : .clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(focusedIndex == index ? DesignTokens.accentPrimary.opacity(0.4) : .clear, lineWidth: 1)
+                .stroke(focusedIndex == index ? DesignTokens.interactionColors(for: .selection).border : .clear, lineWidth: 1)
         )
         .contentShape(Rectangle())
         .onTapGesture {
@@ -165,11 +165,11 @@ struct ScreenshotSelectionView: View {
         .padding(.vertical, 4)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(focusedIndex == index ? DesignTokens.semanticColors(for: .accent).background : .clear)
+                .fill(focusedIndex == index ? DesignTokens.interactionColors(for: .selection).background : .clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(focusedIndex == index ? DesignTokens.accentPrimary.opacity(0.4) : .clear, lineWidth: 1)
+                .stroke(focusedIndex == index ? DesignTokens.interactionColors(for: .selection).border : .clear, lineWidth: 1)
         )
         .contentShape(Rectangle())
         .onTapGesture {

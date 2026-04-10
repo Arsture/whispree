@@ -38,6 +38,16 @@ enum DesignTokens {
     static let textSecondary = Color.secondary
     static let textTertiary = Color(nsColor: .tertiaryLabelColor)
 
+    enum TextRole {
+        case primary
+        case secondary
+        case tertiary
+        case accent
+        case success
+        case warning
+        case danger
+    }
+
     /// Accent
     static let accentPrimary = Palette.accent
 
@@ -46,6 +56,7 @@ enum DesignTokens {
         static let card = Color(nsColor: .controlBackgroundColor)
         static let cardTint = Color.primary.opacity(0.03)
         static let subdued = Color.primary.opacity(0.05)
+        static let overlay = Color(nsColor: .underPageBackgroundColor)
     }
 
     enum Border {
@@ -59,12 +70,32 @@ enum DesignTokens {
         let border: Color
     }
 
+    struct SurfaceStyle {
+        let fill: Color
+        let tint: Color
+        let border: Color
+    }
+
     enum SemanticTone {
         case accent
         case success
         case warning
         case danger
         case neutral
+    }
+
+    enum SurfaceRole {
+        /// Main content cards / settings groups. Neutral and quiet.
+        case card
+        /// Inset wells / shortcuts / small grouped controls.
+        case inset
+        /// Floating shells / selection surfaces that need slightly stronger separation.
+        case overlay
+    }
+
+    enum InteractionRole {
+        /// Current selection/focus/active row. Uses accent, never semantic colors.
+        case selection
     }
 
     static func semanticColors(for tone: SemanticTone) -> SemanticColors {
@@ -83,6 +114,55 @@ enum DesignTokens {
                 background: Surface.subdued,
                 border: Border.subtle
             )
+        }
+    }
+
+    static func textColor(for role: TextRole) -> Color {
+        switch role {
+        case .primary:
+            textPrimary
+        case .secondary:
+            textSecondary
+        case .tertiary:
+            textTertiary
+        case .accent:
+            accentPrimary
+        case .success:
+            semanticColors(for: .success).foreground
+        case .warning:
+            semanticColors(for: .warning).foreground
+        case .danger:
+            semanticColors(for: .danger).foreground
+        }
+    }
+
+    static func surfaceStyle(for role: SurfaceRole) -> SurfaceStyle {
+        switch role {
+        case .card:
+            SurfaceStyle(
+                fill: cardBackground,
+                tint: Surface.cardTint,
+                border: Border.subtle
+            )
+        case .inset:
+            SurfaceStyle(
+                fill: Surface.subdued,
+                tint: .clear,
+                border: .clear
+            )
+        case .overlay:
+            SurfaceStyle(
+                fill: Surface.overlay,
+                tint: Surface.cardTint,
+                border: Border.emphasized
+            )
+        }
+    }
+
+    static func interactionColors(for role: InteractionRole) -> SemanticColors {
+        switch role {
+        case .selection:
+            semanticColors(base: Palette.accent, backgroundOpacity: 0.11, borderOpacity: 0.3)
         }
     }
 
