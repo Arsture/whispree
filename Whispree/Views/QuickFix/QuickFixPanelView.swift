@@ -50,40 +50,47 @@ struct QuickFixPanelView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             // Original text
-            HStack(alignment: .top) {
-                Text("선택된 텍스트:")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 90, alignment: .trailing)
-                Text(originalText)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(DesignTokens.textPrimary)
-                    .textSelection(.enabled)
-                Spacer()
+            panelSection {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("선택된 텍스트")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.textTertiary)
+
+                    Text(originalText)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundStyle(DesignTokens.textPrimary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             // Correction input
-            HStack {
-                Text(mode == .mapping ? "교정할 단어:" : "추가할 단어:")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 90, alignment: .trailing)
-                TextField("올바른 단어를 입력하세요", text: $correctedText)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($isTextFieldFocused)
-                    .onSubmit {
-                        confirmIfValid()
-                    }
+            panelSection {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(mode == .mapping ? "교정할 단어" : "추가할 단어")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.textTertiary)
+
+                    TextField("올바른 단어를 입력하세요", text: $correctedText)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($isTextFieldFocused)
+                        .onSubmit {
+                            confirmIfValid()
+                        }
+                }
             }
 
             if mode == .mapping {
-                HStack(alignment: .top) {
-                    Text("")
-                        .frame(width: 90)
-                    Label("\"\(originalText)\" → \"\(correctedText.isEmpty ? "..." : correctedText)\"", systemImage: "arrow.right")
-                        .font(.caption)
-                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
-                    Spacer()
+                panelSection {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("저장될 매핑")
+                            .font(.caption)
+                            .foregroundStyle(DesignTokens.textTertiary)
+
+                        Label("\"\(originalText)\" → \"\(correctedText.isEmpty ? "..." : correctedText)\"", systemImage: "arrow.right")
+                            .font(.caption)
+                            .foregroundStyle(DesignTokens.accentPrimary)
+                    }
                 }
             }
 
@@ -110,6 +117,26 @@ struct QuickFixPanelView: View {
         .onAppear {
             isTextFieldFocused = true
         }
+    }
+
+    private func panelSection<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(DesignTokens.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(DesignTokens.Surface.cardTint)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                }
+        )
     }
 
     private func confirmIfValid() {

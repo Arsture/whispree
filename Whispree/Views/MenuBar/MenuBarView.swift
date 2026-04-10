@@ -4,76 +4,83 @@ struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             // Header
             HStack {
                 Image(systemName: "waveform")
                     .font(.title2)
+                    .foregroundStyle(DesignTokens.accentPrimary)
                 Text("Whispree")
                     .font(.headline)
                 Spacer()
                 statusBadge
             }
-            .padding(.bottom, 4)
+            .padding(.bottom, 2)
 
-            Divider()
+            sectionCard {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Status")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.textTertiary)
 
-            // Status
-            HStack {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 8, height: 8)
-                Text(appState.transcriptionState.displayText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+                    HStack {
+                        Circle()
+                            .fill(statusColor)
+                            .frame(width: 8, height: 8)
+                        Text(appState.transcriptionState.displayText)
+                            .font(.subheadline)
+                            .foregroundStyle(DesignTokens.textSecondary)
+                    }
 
-            // Audio level during recording
-            if appState.isRecording {
-                AudioLevelBar(level: appState.currentAudioLevel)
-                    .frame(height: 4)
+                    if appState.isRecording {
+                        AudioLevelBar(level: appState.currentAudioLevel)
+                            .frame(height: 4)
+                    }
+                }
             }
 
             // Recent transcription
             if !appState.finalText.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Last transcription")
+                sectionCard {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Last transcription")
+                            .font(.caption)
+                            .foregroundStyle(DesignTokens.textTertiary)
+
+                        Text(appState.correctedText.isEmpty ? appState.finalText : appState.correctedText)
+                            .font(.body)
+                            .foregroundStyle(DesignTokens.textPrimary)
+                            .lineLimit(3)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+
+            sectionCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Controls")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(DesignTokens.textTertiary)
 
-                    Text(appState.correctedText.isEmpty ? appState.finalText : appState.correctedText)
-                        .font(.body)
-                        .lineLimit(3)
-                        .textSelection(.enabled)
-                }
-                .padding(8)
-                .background(DesignTokens.Surface.subdued)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
+                    Toggle("LLM Correction", isOn: Binding(
+                        get: { appState.settings.isLLMEnabled },
+                        set: { appState.settings.isLLMEnabled = $0 }
+                    ))
+                    .toggleStyle(.switch)
+                    .font(.subheadline)
 
-            Divider()
-
-            // Quick toggles
-            Toggle("LLM Correction", isOn: Binding(
-                get: { appState.settings.isLLMEnabled },
-                set: { appState.settings.isLLMEnabled = $0 }
-            ))
-            .toggleStyle(.switch)
-            .font(.subheadline)
-
-            // Recording mode
-            Picker("Mode", selection: Binding(
-                get: { appState.settings.recordingMode },
-                set: { appState.settings.recordingMode = $0 }
-            )) {
-                ForEach(RecordingMode.allCases, id: \.self) { mode in
-                    Text(mode.displayName).tag(mode)
+                    Picker("Mode", selection: Binding(
+                        get: { appState.settings.recordingMode },
+                        set: { appState.settings.recordingMode = $0 }
+                    )) {
+                        ForEach(RecordingMode.allCases, id: \.self) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .font(.subheadline)
                 }
             }
-            .pickerStyle(.segmented)
-            .font(.subheadline)
-
-            Divider()
 
             // Actions
             HStack {
@@ -97,6 +104,26 @@ struct MenuBarView: View {
         }
         .padding(16)
         .frame(width: 320)
+    }
+
+    private func sectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content()
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(DesignTokens.cardBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(DesignTokens.Surface.cardTint)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                }
+        )
     }
 
     private var statusBadge: some View {
@@ -139,8 +166,6 @@ struct AudioLevelBar: View {
     }
 
     private var barColor: Color {
-        if level > 0.8 { return DesignTokens.semanticColors(for: .danger).foreground }
-        if level > 0.5 { return DesignTokens.semanticColors(for: .warning).foreground }
-        return DesignTokens.semanticColors(for: .success).foreground
+        DesignTokens.accentPrimary.opacity(0.45 + min(CGFloat(level), 1) * 0.45)
     }
 }
