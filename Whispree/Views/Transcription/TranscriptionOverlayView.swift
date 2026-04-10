@@ -67,9 +67,7 @@ struct TranscriptionOverlayView: View {
         .frame(width: 280)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var shortcutLabel: String {
@@ -183,11 +181,6 @@ struct NeonWaveformView: View {
             centerLine.addLine(to: CGPoint(x: offsetX + totalWidth, y: midY))
             context.stroke(centerLine, with: .color(.white.opacity(0.08)), lineWidth: 0.5)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(white: 0.08))
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 8))
         .onReceive(timer) { _ in
             let bands = appState.frequencyBands
             let rms = appState.currentAudioLevel

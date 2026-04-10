@@ -40,7 +40,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        guard appState.transcriptionState == .idle else { return false }
         if !flag {
             showMainWindow()
         }
@@ -215,6 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func showMainWindow() {
         if let mainWindow, mainWindow.isVisible {
+            mainWindow.level = .normal
             mainWindow.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -372,7 +372,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 switch state {
                     case .recording, .transcribing, .correcting:
-                        // 메인 윈도우 level을 normal 아래로 → 다른 앱 윈도우 위로 올라올 수 없음
                         self.mainWindow?.level = NSWindow.Level(rawValue: NSWindow.Level.normal.rawValue - 1)
                         showOverlay()
                         self.hideSelectionPanel()
@@ -386,7 +385,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 if self.appState.transcriptionState == .idle {
                                     self.hideOverlay()
-                                    // 파이프라인 완전 종료 후에만 level 복원
                                     self.mainWindow?.level = .normal
                                 }
                             }

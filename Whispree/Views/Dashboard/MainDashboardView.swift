@@ -36,18 +36,7 @@ struct MainDashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.10),
-                    Color.white.opacity(0.03),
-                    .clear
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-        }
+        .liquidBackground()
         .overlay {
             if let screenshot = selectedScreenshot, let image = screenshot.image {
                 screenshotOverlay(screenshot: screenshot, image: image)
@@ -181,14 +170,8 @@ struct MainDashboardView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 92)
-        .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: DesignTokens.Radius.xl))
-        .overlay {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.xl)
-                .stroke(
-                    appState.isRecording ? DesignTokens.interactionColors(for: .selection).border : .clear,
-                    lineWidth: 1
-                )
-        }
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous))
     }
 
     // MARK: - Accessibility Warning
@@ -274,18 +257,7 @@ struct MainDashboardView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(DesignTokens.cardBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(DesignTokens.Surface.cardTint)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
-                }
-        )
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
     }
 
     // MARK: - Screenshot Strip
@@ -313,18 +285,7 @@ struct MainDashboardView: View {
             }
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(DesignTokens.cardBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(DesignTokens.Surface.cardTint)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
-                }
-        )
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
     }
 
     private func screenshotThumbnail(_ screenshot: CapturedScreenshot) -> some View {
@@ -361,7 +322,8 @@ struct MainDashboardView: View {
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
+                // STT
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "mic.fill")
@@ -390,8 +352,10 @@ struct MainDashboardView: View {
                     }
                 }
                 .padding(14)
-                .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
 
+                Divider().padding(.horizontal, 14)
+
+                // LLM
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: llmProviderIcon)
@@ -429,11 +393,10 @@ struct MainDashboardView: View {
                     }
                 }
                 .padding(14)
-                .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
             }
         }
-        .padding(18)
-        .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: DesignTokens.Radius.xxl))
+        .padding(16)
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
     }
 
     private var sttProviderBinding: Binding<STTProviderType> {

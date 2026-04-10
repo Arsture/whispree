@@ -93,7 +93,7 @@ struct GeneralSettingsView: View {
 
                 // Language Section
                 SettingsCard(title: "Language") {
-                    VStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Picker("Transcription language:", selection: Binding(
                             get: { appState.settings.language },
                             set: { appState.settings.language = $0 }
