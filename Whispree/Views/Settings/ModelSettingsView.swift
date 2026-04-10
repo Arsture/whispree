@@ -10,17 +10,17 @@ struct ModelSettingsView: View {
         ScrollView {
             VStack(spacing: 20) {
                 // Device Info Header
-                HStack(spacing: 16) {
-                    Label(device.chipName, systemImage: "cpu")
-                    Label("\(device.totalRAMGB) GB", systemImage: "memorychip")
-                    Label("~\(device.memoryBandwidthGBs) GB/s", systemImage: "arrow.left.arrow.right")
-                    Label("\(device.gpuCores) cores", systemImage: "gpu")
+                HStack(spacing: 10) {
+                    modelInfoPill(device.chipName, systemImage: "cpu")
+                    modelInfoPill("\(device.totalRAMGB) GB", systemImage: "memorychip")
+                    modelInfoPill("~\(device.memoryBandwidthGBs) GB/s", systemImage: "arrow.left.arrow.right")
+                    modelInfoPill("\(device.gpuCores) cores", systemImage: "gpu")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(12)
-                .frame(maxWidth: .infinity)
-                .background(DesignTokens.surfaceBackgroundView())
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
 
                 // STT Models Section (로컬 다운로드 가능한 모델만)
                 VStack(alignment: .leading, spacing: 8) {
@@ -62,9 +62,9 @@ struct ModelSettingsView: View {
                         )
                     }
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView())
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
 
                 // LLM Models Section (로컬만 — OpenAI는 다운로드 대상 아님)
                 VStack(alignment: .leading, spacing: 8) {
@@ -96,9 +96,7 @@ struct ModelSettingsView: View {
                             }()
 
                             DownloadableModelRow(
-                                name: spec.displayName
-                                    + (spec.capability == .vision ? " 👁" : "")
-                                    + (isSelected ? " ✦" : ""),
+                                name: spec.displayName,
                                 description: spec.description,
                                 metrics: .local(
                                     size: spec.sizeDescription,
@@ -108,15 +106,17 @@ struct ModelSettingsView: View {
                                     grade: compat.grade
                                 ),
                                 state: state,
+                                isSelected: isSelected,
+                                supportsVision: spec.capability == .vision,
                                 onDownload: { Task { await modelManager.downloadLLMModel(modelId: spec.id) } },
                                 onDelete: { modelManager.deleteLLMModel(modelId: spec.id) }
                             )
                         }
                     }
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView())
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
 
                 // Storage Section
                 VStack(alignment: .leading, spacing: 8) {
@@ -135,9 +135,9 @@ struct ModelSettingsView: View {
                         NSWorkspace.shared.open(ModelManager.modelsDirectory)
                     }
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView())
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
             }
             .padding(24)
         }
@@ -153,6 +153,14 @@ struct ModelSettingsView: View {
         }
         if modelManager.isWhisperKitDownloading { return .loading }
         return .notDownloaded
+    }
+
+    @ViewBuilder
+    private func modelInfoPill(_ text: String, systemImage: String) -> some View {
+        Label(text, systemImage: systemImage)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 14))
     }
 }
 
@@ -170,14 +178,28 @@ struct DownloadableModelRow: View {
     let description: String
     let metrics: ModelMetrics
     let state: ModelState
+    var isSelected: Bool = false
+    var supportsVision: Bool = false
     let onDownload: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(name).font(.headline)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text(name)
+                            .font(.headline)
+
+                        if supportsVision {
+                            StatusBadge("Vision", icon: "eye", style: .neutral)
+                        }
+
+                        if isSelected {
+                            StatusBadge("사용 중", icon: "checkmark.circle.fill", style: .info)
+                        }
+                    }
+
                     Text(description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -193,7 +215,7 @@ struct DownloadableModelRow: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
             case let .downloading(progress):
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     ProgressView(value: progress)
                     Text("\(Int(progress * 100))% 다운로드 중...")
                         .font(.caption).foregroundStyle(.secondary)
@@ -221,6 +243,17 @@ struct DownloadableModelRow: View {
                 }
             }
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(
+                    isSelected ? DesignTokens.accentPrimary.opacity(0.28) : Color.white.opacity(0.08),
+                    lineWidth: 1
+                )
+        }
+        .shadow(color: Color.black.opacity(isSelected ? 0.10 : 0.06), radius: isSelected ? 14 : 10, y: isSelected ? 6 : 4)
     }
 
     @ViewBuilder

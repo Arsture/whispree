@@ -68,9 +68,9 @@ struct STTSettingsView: View {
                         )
                     }
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView())
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
 
                 // Groq API Key Section
                 if appState.settings.sttProviderType == .groq {
@@ -84,6 +84,8 @@ struct STTSettingsView: View {
                             set: { appState.settings.groqApiKey = $0 }
                         ))
                         .textFieldStyle(.roundedBorder)
+                        .padding(10)
+                        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 16))
 
                         if appState.settings.groqApiKey.isEmpty {
                             Label("console.groq.com에서 무료 API Key를 발급받으세요", systemImage: "info.circle")
@@ -95,9 +97,9 @@ struct STTSettingsView: View {
                                 .foregroundStyle(DesignTokens.textColor(for: .secondary))
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
                 }
 
                 // Cold Start Warning
@@ -113,9 +115,9 @@ struct STTSettingsView: View {
                                 .font(.caption2).foregroundStyle(.secondary)
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
                 }
 
                 // Model Download Notice
@@ -128,9 +130,9 @@ struct STTSettingsView: View {
                         Text("다운로드 탭에서 모델을 다운로드하세요.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
                 }
 
                 // VAD 설정 — 무음 자동 스킵 + pause UX를 함께 제어
@@ -173,9 +175,9 @@ struct STTSettingsView: View {
                             : DesignTokens.textColor(for: .secondary)
                     )
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView())
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
             }
             .padding(24)
         }
@@ -194,14 +196,14 @@ struct STTProviderRow: View {
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top) {
                     // Radio
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(isSelected ? DesignTokens.accentPrimary : .secondary)
                         .font(.title3)
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(title)
                             .font(.headline)
                         Text(description)
@@ -219,8 +221,7 @@ struct STTProviderRow: View {
                     HStack(spacing: 6) {
                         switch state {
                         case .ready:
-                            Label("Ready", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(DesignTokens.textColor(for: .secondary)).font(.caption)
+                            StatusBadge("Ready", icon: "checkmark.circle.fill", style: .neutral)
                         case .loading:
                             HStack(spacing: 4) {
                                 ProgressView().controlSize(.small)
@@ -232,8 +233,7 @@ struct STTProviderRow: View {
                                 Text("Downloading...").font(.caption).foregroundStyle(.secondary)
                             }
                         case .notDownloaded:
-                            Label("Download required", systemImage: "arrow.down.circle")
-                                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground).font(.caption)
+                            StatusBadge("Download required", icon: "arrow.down.circle", style: .warning)
                         case let .error(msg):
                             Label(msg, systemImage: "xmark.circle")
                                 .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground).font(.caption)
@@ -242,14 +242,19 @@ struct STTProviderRow: View {
                     .padding(.leading, 32)
                 }
             }
-            .padding(10)
-            .background(DesignTokens.surfaceBackgroundView(role: .inset))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
-            )
+            .padding(14)
+            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(
+                        isSelected ? DesignTokens.accentPrimary.opacity(0.28) : Color.white.opacity(0.08),
+                        lineWidth: 1
+                    )
+            }
+            .shadow(color: Color.black.opacity(isSelected ? 0.10 : 0.05), radius: isSelected ? 14 : 10, y: isSelected ? 6 : 4)
         }
         .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 20))
     }
 
     @ViewBuilder
