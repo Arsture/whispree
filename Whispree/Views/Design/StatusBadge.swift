@@ -3,13 +3,13 @@ import SwiftUI
 enum StatusBadgeStyle {
     case success, warning, error, info, neutral
 
-    var color: Color {
+    var colors: DesignTokens.SemanticColors {
         switch self {
-            case .success: DesignTokens.statusSuccess
-            case .warning: DesignTokens.statusWarning
-            case .error: DesignTokens.statusError
-            case .info: DesignTokens.statusInfo
-            case .neutral: DesignTokens.textSecondary
+            case .success: DesignTokens.semanticColors(for: .success)
+            case .warning: DesignTokens.semanticColors(for: .warning)
+            case .error: DesignTokens.semanticColors(for: .danger)
+            case .info: DesignTokens.semanticColors(for: .accent)
+            case .neutral: DesignTokens.semanticColors(for: .neutral)
         }
     }
 }
@@ -26,6 +26,8 @@ struct StatusBadge: View {
     }
 
     var body: some View {
+        let colors = style.colors
+
         HStack(spacing: 4) {
             if let icon {
                 Image(systemName: icon)
@@ -34,12 +36,16 @@ struct StatusBadge: View {
             Text(text)
                 .font(.system(.caption, design: .default, weight: .medium))
         }
-        .foregroundStyle(style.color)
+        .foregroundStyle(colors.foreground)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
             Capsule()
-                .fill(style.color.opacity(0.12))
+                .fill(colors.background)
+                .overlay {
+                    Capsule()
+                        .stroke(colors.border, lineWidth: 1)
+                }
         )
     }
 }

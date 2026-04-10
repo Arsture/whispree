@@ -17,6 +17,9 @@ final class AppState: ObservableObject {
     @Published var currentAudioLevel: Float = 0.0
     @Published var frequencyBands: [Float] = Array(repeating: 0, count: 64)
     @Published var isRecording: Bool = false
+    /// 녹음 중 일정 시간 이상 무음이 지속되는 상태. TranscriptionOverlayView가
+    /// "무음 스킵 중" 인디케이터로 전환하기 위해 사용.
+    @Published var isThinkingPause: Bool = false
 
     // MARK: - Screenshots
 
@@ -48,7 +51,10 @@ final class AppState: ObservableObject {
 
     // MARK: - Settings
 
-    @Published var settings = AppSettings()
+    /// `AppSettings`는 `@MainActor ObservableObject` — property wrapper가 내부적으로
+    /// UserDefaults 저장과 `objectWillChange.send()`를 처리한다.
+    /// `@Published`가 아닌 `let`으로 보유하고, 변경은 아래 `init()`에서 forwarding.
+    let settings: AppSettings
 
     // MARK: - History
 
@@ -63,8 +69,14 @@ final class AppState: ObservableObject {
     }
 
     init() {
-        // authService/oauthService의 @Published 변경을 AppState로 전파
+        self.settings = AppSettings()
+
+        // settings/authService/oauthService의 @Published 변경을 AppState로 전파
         // (SwiftUI가 중첩 ObservableObject 변경을 자동 감지하지 않으므로)
+        settings.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &authCancellables)
+
         authService.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }.store(in: &authCancellables)
@@ -121,7 +133,6 @@ final class AppState: ObservableObject {
                 // Vision 모델은 스크린샷 자동 활성화
                 if provider.supportsVision {
                     settings.isScreenshotContextEnabled = true
-                    settings.save()
                 }
                 do {
                     try await provider.setup()
@@ -132,7 +143,6 @@ final class AppState: ObservableObject {
                 }
             case .openai:
                 settings.isScreenshotContextEnabled = true
-                settings.save()
                 let provider = OpenAIProvider(
                     model: settings.openaiModel,
                     authService: authService,

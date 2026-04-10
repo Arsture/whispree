@@ -44,17 +44,15 @@ struct ModelMetricsView: View {
     }
 
     private func ramColor(_ percent: Int) -> Color {
-        if percent <= 30 { return .green }
-        if percent <= 50 { return .yellow }
-        if percent <= 75 { return .orange }
-        return .red
+        if percent >= 90 { return DesignTokens.textColor(for: .danger) }
+        if percent >= 75 { return DesignTokens.textColor(for: .warning) }
+        return DesignTokens.textColor(for: .tertiary)
     }
 
     private func qualityColor(_ score: Int) -> Color {
-        if score >= 80 { return .green }
-        if score >= 50 { return .yellow }
-        if score >= 20 { return .orange }
-        return .red
+        if score <= 15 { return DesignTokens.textColor(for: .danger) }
+        if score <= 35 { return DesignTokens.textColor(for: .warning) }
+        return DesignTokens.textColor(for: .tertiary)
     }
 }
 
@@ -62,7 +60,7 @@ struct ModelMetricsView: View {
 private struct MetricLabel: View {
     let icon: String
     let text: String
-    var color: Color = .secondary
+    var color: Color = DesignTokens.textSecondary
 
     var body: some View {
         HStack(spacing: 2) {

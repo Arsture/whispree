@@ -58,4 +58,17 @@ SwiftUI 뷰 레이어. 대시보드, 설정, 온보딩, 전사 오버레이, Qui
 - `ModelMetricsView`와 `CompatibilityBadge`는 STT/LLM/Model 설정 뷰에서 재사용
 - NSStatusItem(메뉴바 아이콘) + NSWindow(메인 윈도우) 패턴 사용. MenuBarExtra 미사용
 
+### Palette / Color Usage Rules
+- 색 사용의 최상위 근거 문서는 `Whispree/Views/Design/DESIGN-ROLE-HIERARCHY.md` 다. token 선택 전에 먼저 해당 요소의 역할이 구조(surface) / 상호작용(accent) / 의미(semantic) / 텍스트 위계 중 무엇인지 판단한다.
+- 색상은 기본적으로 `DesignTokens`에서만 가져온다. 새로운 화면에서 raw `Color.red`, `Color.blue`, 임의 `opacity` 조합을 직접 추가하지 말고 먼저 토큰/공통 컴포넌트를 확장한다.
+- 예외는 좌측 사이드바 네비게이션 accent 계열이다. 사이드바의 멀티컬러 아이콘/선택 강조는 유지할 수 있지만, content 영역(대시보드 카드·설정 패널·메트릭)은 제한된 palette로 수렴해야 한다.
+- content 영역의 기본 규칙은 **중립 surface + 단일 accent + semantic status**다.
+  - Surface: `surfaceBackground`, `cardBackground` 같은 중립 배경/보더
+  - Accent: 선택, focus, CTA 등 인터랙션 강조
+  - Semantic: success/warning/error/info 같은 상태 표현
+- hierarchy는 color보다 spacing / grouping / typography / material에서 먼저 만들어야 한다. color는 마지막 보강 수단이어야 한다.
+- 상태 색상은 `StatusBadge`, `CompatibilityBadge`, `ModelMetricsView` 같은 공통 표현에서만 우선적으로 사용한다. 본문 카드 배경을 상태별 무지개 tint로 분기하지 않는다.
+- 새 색이 필요하면 먼저 "기존 semantic/accent/surface 토큰으로 해결 가능한가?"를 확인한다. 해결 불가 시 `DesignTokens.swift`에 중앙 정의를 추가하고, 재사용 지점을 함께 정리한다.
+- 색상 변경 시 목표는 "모던한 느낌 유지"이지 "색상 다양성 증가"가 아니다. content 영역은 대비/위계 중심으로 정리하고, 장식용 색상은 최소화한다.
+
 <!-- MANUAL: -->

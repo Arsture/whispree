@@ -214,6 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func showMainWindow() {
         if let mainWindow, mainWindow.isVisible {
+            mainWindow.level = .normal
             mainWindow.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -272,7 +273,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: OnboardingView { [weak self] in
                 guard let self else { return }
                 appState.settings.hasCompletedOnboarding = true
-                appState.settings.save()
                 DispatchQueue.main.async {
                     self.onboardingWindow?.orderOut(nil)
                     self.onboardingWindow = nil
@@ -372,18 +372,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 switch state {
                     case .recording, .transcribing, .correcting:
+                        self.mainWindow?.level = NSWindow.Level(rawValue: NSWindow.Level.normal.rawValue - 1)
                         showOverlay()
                         self.hideSelectionPanel()
                     case .selectingScreenshots:
+                        // level은 낮게 유지 — 선택 패널은 .floating이라 정상 표시
                         self.hideOverlay()
                         self.showSelectionPanel()
                     case .idle, .inserting:
                         self.hideSelectionPanel()
-                        // Brief delay before hiding after inserting
                         if state == .idle {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 if self.appState.transcriptionState == .idle {
                                     self.hideOverlay()
+                                    self.mainWindow?.level = .normal
                                 }
                             }
                         }
@@ -396,7 +398,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard appState.settings.showOverlay else { return }
 
         if overlayPanel != nil {
-            overlayPanel?.orderFront(nil)
             return
         }
 
@@ -410,6 +411,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
+        panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true
 
@@ -421,24 +423,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let y = screen.visibleFrame.maxY - 100
         panel.setFrameOrigin(NSPoint(x: x, y: y))
 
+        let frontApp = NSWorkspace.shared.frontmostApplication
+        let wasOtherApp = frontApp?.bundleIdentifier != Bundle.main.bundleIdentifier
+
         panel.contentView = NSHostingView(
             rootView: TranscriptionOverlayView()
                 .environmentObject(appState)
         )
         panel.orderFront(nil)
         overlayPanel = panel
+
+        // 이전 앱으로 포커스 복원 — 메인 윈도우가 포커스되는 것 방지
+        if wasOtherApp {
+            frontApp?.activate()
+        }
     }
 
     private func hideOverlay() {
         guard overlayPanel != nil else { return }
-        // 오버레이 패널 orderOut 시 macOS가 메인 윈도우로 포커스 이동하는 것 방지
         let frontApp = NSWorkspace.shared.frontmostApplication
-        let shouldRestore = frontApp?.bundleIdentifier != Bundle.main.bundleIdentifier
-        overlayPanel?.orderOut(nil)
-        overlayPanel = nil
-        if shouldRestore {
+        if frontApp?.bundleIdentifier != Bundle.main.bundleIdentifier {
             frontApp?.activate()
         }
+        overlayPanel?.orderOut(nil)
+        overlayPanel = nil
     }
 
     // MARK: - Screenshot Selection Panel
@@ -454,11 +462,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if selectionPanel != nil {
             selectionPanel?.makeKeyAndOrderFront(nil)
             return
-        }
-
-        // 메인 윈도우 숨기기 — 선택 패널만 표시
-        for window in NSApp.windows where !(window is NSPanel) {
-            window.orderOut(nil)
         }
 
         let panel = ManagedPanel(

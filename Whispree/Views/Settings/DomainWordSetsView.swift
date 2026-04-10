@@ -8,34 +8,45 @@ struct DomainWordSetsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Info
-                Text("도메인별 단어 세트를 활성화하면 음성 인식 시 해당 단어들이 더 정확하게 인식됩니다.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
-                    )
-
-                // Word Sets
-                if appState.settings.domainWordSets.isEmpty {
-                    Text("등록된 단어 세트가 없습니다. 아래에서 기본 세트를 추가하세요.")
+            VStack(spacing: 14) {
+                // Guidance (description, not a card)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("도메인 단어 세트")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Text("도메인별 단어 세트를 활성화하면 음성 인식과 교정 단계에서 해당 단어들이 더 정확하게 처리됩니다.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 8)
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.quaternary.opacity(0.5))
-                        )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+
+                if appState.settings.domainWordSets.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.secondary)
+                        Text("등록된 단어 세트가 없습니다")
+                            .font(.headline)
+                        Text("아래에서 기본 세트를 추가하거나 직접 세트를 만들어서 용어와 교정 매핑을 관리하세요.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(28)
+                    .background(DesignTokens.surfaceBackgroundView(role: .card))
                 } else {
                     ForEach(appState.settings.domainWordSets.indices, id: \.self) { index in
                         WordSetRow(
-                            wordSet: $appState.settings.domainWordSets[index],
+                            wordSet: Binding(
+                                get: { appState.settings.domainWordSets[index] },
+                                set: { newValue in
+                                    var sets = appState.settings.domainWordSets
+                                    sets[index] = newValue
+                                    appState.settings.domainWordSets = sets
+                                }
+                            ),
                             newWordText: Binding(
                                 get: { newWordText[appState.settings.domainWordSets[index].id] ?? "" },
                                 set: { newWordText[appState.settings.domainWordSets[index].id] = $0 }
@@ -52,74 +63,70 @@ struct DomainWordSetsView: View {
                             onDeleteWord: { wordIndex in deleteWord(at: wordIndex, setIndex: index) },
                             onAddCorrection: { addCorrection(at: index) },
                             onDeleteCorrection: { corrIndex in deleteCorrection(at: corrIndex, setIndex: index) },
-                            onToggle: { save() }
-                        )
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.quaternary.opacity(0.5))
+                            onToggle: {}
                         )
                     }
                 }
 
-                // Default Sets
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("기본 세트 추가")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
+                // Default sets
+                LiquidSection("기본 세트 추가") {
+                    VStack(spacing: 0) {
+                        ForEach(Array(DomainCategory.allCases.enumerated()), id: \.element) { index, category in
+                            if index > 0 { Divider() }
 
-                    ForEach(DomainCategory.allCases, id: \.self) { category in
-                        let alreadyAdded = appState.settings.domainWordSets.contains {
-                            $0.name == DomainWordSet.generateDefault(domain: category).name
-                        }
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(category.rawValue)
-                                    .font(.body)
-                                Text(categoryDescription(for: category))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            let alreadyAdded = appState.settings.domainWordSets.contains {
+                                $0.name == DomainWordSet.generateDefault(domain: category).name
                             }
-                            Spacer()
-                            if alreadyAdded {
-                                Label("추가됨", systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            } else {
-                                Button("추가") {
-                                    let newSet = DomainWordSet.generateDefault(domain: category)
-                                    appState.settings.domainWordSets.append(newSet)
-                                    save()
+
+                            HStack(alignment: .center, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(category.rawValue)
+                                        .font(.body.weight(.semibold))
+                                    Text(categoryDescription(for: category))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .buttonStyle(.bordered)
-                                .font(.caption)
+
+                                Spacer()
+
+                                if alreadyAdded {
+                                    StatusBadge("추가됨", icon: "checkmark", style: .neutral)
+                                } else {
+                                    Button("추가") {
+                                        var sets = appState.settings.domainWordSets
+                                        sets.append(DomainWordSet.generateDefault(domain: category))
+                                        appState.settings.domainWordSets = sets
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+                                }
                             }
+                            .padding(.vertical, 10)
                         }
                     }
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.quaternary.opacity(0.5))
-                )
             }
             .padding(24)
         }
+        .liquidBackground()
     }
+
+    // MARK: - Data Operations
 
     private func addWord(at index: Int) {
         let id = appState.settings.domainWordSets[index].id
         let word = (newWordText[id] ?? "").trimmingCharacters(in: .whitespaces)
         guard !word.isEmpty else { return }
-        appState.settings.domainWordSets[index].words.append(word)
+        var sets = appState.settings.domainWordSets
+        sets[index].words.append(word)
+        appState.settings.domainWordSets = sets
         newWordText[id] = ""
-        save()
     }
 
     private func deleteWord(at wordIndex: Int, setIndex: Int) {
-        appState.settings.domainWordSets[setIndex].words.remove(at: wordIndex)
-        save()
+        var sets = appState.settings.domainWordSets
+        sets[setIndex].words.remove(at: wordIndex)
+        appState.settings.domainWordSets = sets
     }
 
     private func addCorrection(at index: Int) {
@@ -127,30 +134,29 @@ struct DomainWordSetsView: View {
         let from = (newCorrectionFrom[id] ?? "").trimmingCharacters(in: .whitespaces)
         let to = (newCorrectionTo[id] ?? "").trimmingCharacters(in: .whitespaces)
         guard !from.isEmpty, !to.isEmpty else { return }
-        let mapping = CorrectionMapping(from: from, to: to)
-        appState.settings.domainWordSets[index].corrections.append(mapping)
+        var sets = appState.settings.domainWordSets
+        sets[index].corrections.append(CorrectionMapping(from: from, to: to))
+        appState.settings.domainWordSets = sets
         newCorrectionFrom[id] = ""
         newCorrectionTo[id] = ""
-        save()
     }
 
     private func deleteCorrection(at corrIndex: Int, setIndex: Int) {
-        appState.settings.domainWordSets[setIndex].corrections.remove(at: corrIndex)
-        save()
-    }
-
-    private func save() {
-        appState.settings.save()
+        var sets = appState.settings.domainWordSets
+        sets[setIndex].corrections.remove(at: corrIndex)
+        appState.settings.domainWordSets = sets
     }
 
     private func categoryDescription(for category: DomainCategory) -> String {
         switch category {
-            case .itDev: "API, React, Docker, LLM 등 개발 용어 30개"
-            case .statistics: "T-distribution, p-value, ANOVA 등 통계 용어 24개"
-            case .custom: "직접 단어를 추가할 수 있는 빈 세트"
+        case .itDev: "API, React, Docker, LLM 등 개발 용어 30개"
+        case .statistics: "T-distribution, p-value, ANOVA 등 통계 용어 24개"
+        case .custom: "직접 단어를 추가할 수 있는 빈 세트"
         }
     }
 }
+
+// MARK: - Word Set Row (single .card, no nesting)
 
 private struct WordSetRow: View {
     @Binding var wordSet: DomainWordSet
@@ -167,10 +173,12 @@ private struct WordSetRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
+            // Header — entire text area toggles, chevron expands
+            HStack(spacing: 12) {
                 Toggle(isOn: Binding(
                     get: { wordSet.isEnabled },
-                    set: { wordSet.isEnabled = $0
+                    set: {
+                        wordSet.isEnabled = $0
                         onToggle()
                     }
                 )) {
@@ -179,51 +187,62 @@ private struct WordSetRow: View {
                 .toggleStyle(.switch)
                 .labelsHidden()
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(wordSet.name)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                    HStack(spacing: 8) {
-                        Text("\(wordSet.words.count)개 단어")
-                        if !wordSet.corrections.isEmpty {
-                            Text("\(wordSet.corrections.count)개 매핑")
-                                .foregroundStyle(.orange)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(wordSet.name)
+                            .font(.headline)
+
+                        HStack(spacing: 8) {
+                            Text("\(wordSet.words.count)개 단어")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            if !wordSet.corrections.isEmpty {
+                                Text("\(wordSet.corrections.count)개 매핑")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                Spacer()
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
             }
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
-            }
+            .padding(16)
 
             if isExpanded {
-                // MARK: Words section
+                Divider().padding(.horizontal, 16)
 
-                Divider()
-                    .padding(.vertical, 6)
+                // Words
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Text("단어")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                        Text("STT + LLM")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
 
-                Text("단어 (STT + LLM)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 4)
-
-                if wordSet.words.isEmpty {
-                    Text("단어가 없습니다.")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .padding(.bottom, 6)
-                } else {
-                    LazyVStack(alignment: .leading, spacing: 4) {
+                    if wordSet.words.isEmpty {
+                        Text("단어가 없습니다.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .padding(.vertical, 4)
+                    } else {
                         ForEach(wordSet.words.indices, id: \.self) { wordIndex in
-                            HStack(spacing: 6) {
+                            HStack(spacing: 10) {
                                 TextField("단어", text: Binding(
                                     get: { wordSet.words[wordIndex] },
                                     set: { wordSet.words[wordIndex] = $0 }
@@ -233,100 +252,92 @@ private struct WordSetRow: View {
 
                                 Button(action: { onDeleteWord(wordIndex) }) {
                                     Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.red.opacity(0.8))
+                                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground.opacity(0.8))
                                 }
                                 .buttonStyle(.plain)
                             }
-                            .padding(.vertical, 2)
-
-                            if wordIndex < wordSet.words.count - 1 {
-                                Divider()
-                            }
+                            .padding(.vertical, 4)
                         }
                     }
-                    .padding(.bottom, 6)
-                }
 
-                HStack(spacing: 8) {
-                    TextField("새 단어 추가", text: $newWordText)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit { onAddWord() }
+                    HStack(spacing: 8) {
+                        TextField("새 단어 추가", text: $newWordText)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { onAddWord() }
 
-                    Button(action: onAddWord) {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(Color.accentColor)
+                        Button(action: onAddWord) {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(DesignTokens.accentPrimary)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(newWordText.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(newWordText.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .padding(.bottom, 8)
+                .padding(16)
 
-                // MARK: Corrections section
+                Divider().padding(.horizontal, 16)
 
-                Divider()
-                    .padding(.vertical, 6)
+                // Corrections
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Text("교정 매핑")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                        Text("LLM only")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
 
-                Text("교정 매핑 (LLM only)")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .padding(.bottom, 4)
-
-                if wordSet.corrections.isEmpty {
-                    Text("교정 매핑이 없습니다.")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .padding(.bottom, 6)
-                } else {
-                    LazyVStack(alignment: .leading, spacing: 4) {
+                    if wordSet.corrections.isEmpty {
+                        Text("교정 매핑이 없습니다.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .padding(.vertical, 4)
+                    } else {
                         ForEach(wordSet.corrections.indices, id: \.self) { corrIndex in
-                            HStack(spacing: 6) {
+                            HStack(spacing: 10) {
                                 Text(wordSet.corrections[corrIndex].from)
                                     .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(.secondary)
                                 Image(systemName: "arrow.right")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Text(wordSet.corrections[corrIndex].to)
                                     .font(.system(.body, design: .monospaced))
-                                    .foregroundStyle(.green)
                                 Spacer()
                                 Button(action: { onDeleteCorrection(corrIndex) }) {
                                     Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.red.opacity(0.8))
+                                        .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground.opacity(0.8))
                                 }
                                 .buttonStyle(.plain)
                             }
-                            .padding(.vertical, 2)
-
-                            if corrIndex < wordSet.corrections.count - 1 {
-                                Divider()
-                            }
+                            .padding(.vertical, 4)
                         }
                     }
-                    .padding(.bottom, 6)
-                }
 
-                HStack(spacing: 6) {
-                    TextField("잘못된 표현", text: $newCorrectionFrom)
-                        .textFieldStyle(.roundedBorder)
-                    Image(systemName: "arrow.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField("올바른 단어", text: $newCorrectionTo)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit { onAddCorrection() }
-                    Button(action: onAddCorrection) {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(Color.accentColor)
+                    HStack(spacing: 6) {
+                        TextField("잘못된 표현", text: $newCorrectionFrom)
+                            .textFieldStyle(.roundedBorder)
+                        Image(systemName: "arrow.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextField("올바른 단어", text: $newCorrectionTo)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { onAddCorrection() }
+                        Button(action: onAddCorrection) {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(DesignTokens.accentPrimary)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(
+                            newCorrectionFrom.trimmingCharacters(in: .whitespaces).isEmpty ||
+                                newCorrectionTo.trimmingCharacters(in: .whitespaces).isEmpty
+                        )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(
-                        newCorrectionFrom.trimmingCharacters(in: .whitespaces).isEmpty ||
-                            newCorrectionTo.trimmingCharacters(in: .whitespaces).isEmpty
-                    )
                 }
-                .padding(.bottom, 4)
+                .padding(16)
             }
         }
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
     }
 }

@@ -41,7 +41,6 @@ final class HotkeyManager: ObservableObject {
 
     func updateMode(_ mode: RecordingMode) {
         appState.settings.recordingMode = mode
-        appState.settings.save()
         setupHotkeys()
     }
 

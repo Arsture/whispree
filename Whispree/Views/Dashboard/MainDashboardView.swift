@@ -36,6 +36,7 @@ struct MainDashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .liquidBackground()
         .overlay {
             if let screenshot = selectedScreenshot, let image = screenshot.image {
                 screenshotOverlay(screenshot: screenshot, image: image)
@@ -54,7 +55,7 @@ struct MainDashboardView: View {
             VStack(spacing: 12) {
                 HStack {
                     Image(systemName: "app.fill")
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(DesignTokens.accentPrimary)
                     Text(screenshot.appName)
                         .font(.headline)
                         .foregroundStyle(.white)
@@ -92,7 +93,7 @@ struct MainDashboardView: View {
         HStack {
             Image(systemName: "waveform.circle.fill")
                 .font(.title)
-                .foregroundStyle(.blue)
+                .foregroundStyle(DesignTokens.accentPrimary)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Whispree")
                     .font(.title2.bold())
@@ -122,10 +123,10 @@ struct MainDashboardView: View {
     }
 
     private var statusColor: Color {
-        if appState.isRecording { return .red }
-        if appState.transcriptionState.isActive { return .orange }
-        if appState.whisperModelState == .ready { return .green }
-        return .secondary
+        if appState.isRecording { return DesignTokens.textColor(for: .danger) }
+        if appState.transcriptionState.isActive { return DesignTokens.textColor(for: .warning) }
+        if appState.whisperModelState == .ready { return DesignTokens.textColor(for: .success) }
+        return DesignTokens.textColor(for: .secondary)
     }
 
     private var statusBadge: some View {
@@ -145,19 +146,19 @@ struct MainDashboardView: View {
 
                 Text("Listening... (ESC to cancel)")
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
             } else if appState.transcriptionState == .transcribing {
                 ProgressView()
                     .scaleEffect(0.8)
                 Text("Transcribing your speech...")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
             } else if appState.transcriptionState == .correcting {
                 ProgressView()
                     .scaleEffect(0.8)
                 Text("Applying LLM correction...")
                     .font(.caption)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(DesignTokens.accentPrimary)
             } else {
                 Image(systemName: "mic.circle")
                     .font(.system(size: 36))
@@ -168,11 +169,9 @@ struct MainDashboardView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 80)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(appState.isRecording ? Color.red.opacity(0.08) : Color.secondary.opacity(0.05))
-        )
+        .frame(height: 92)
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous))
     }
 
     // MARK: - Accessibility Warning
@@ -180,7 +179,7 @@ struct MainDashboardView: View {
     private var accessibilityWarningSection: some View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
+                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Accessibility 권한 필요")
                     .font(.caption.bold())
@@ -197,10 +196,7 @@ struct MainDashboardView: View {
             .controlSize(.small)
         }
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.yellow.opacity(0.1))
-        )
+        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 18))
     }
 
     // MARK: - Transcription
@@ -237,7 +233,7 @@ struct MainDashboardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("STT Result")
                         .font(.caption2)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignTokens.textColor(for: .tertiary))
                     Text(appState.finalText)
                         .font(.body)
                         .textSelection(.enabled)
@@ -250,7 +246,7 @@ struct MainDashboardView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("LLM Corrected")
                             .font(.caption2)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignTokens.textColor(for: .accent))
                         Text(appState.correctedText)
                             .font(.body)
                             .textSelection(.enabled)
@@ -261,10 +257,7 @@ struct MainDashboardView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
-        )
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
     }
 
     // MARK: - Screenshot Strip
@@ -273,7 +266,7 @@ struct MainDashboardView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "camera.viewfinder")
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(DesignTokens.accentPrimary)
                 Text("스크린 컨텍스트")
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
@@ -292,10 +285,7 @@ struct MainDashboardView: View {
             }
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.purple.opacity(0.05))
-        )
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
     }
 
     private func screenshotThumbnail(_ screenshot: CapturedScreenshot) -> some View {
@@ -332,81 +322,81 @@ struct MainDashboardView: View {
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
 
-            // STT Provider with picker
-            HStack {
-                Image(systemName: "mic.fill")
-                    .frame(width: 20)
-                Text("STT")
-                    .font(.subheadline)
-                Spacer()
-                Picker("", selection: sttProviderBinding) {
-                    ForEach(STTProviderType.allCases, id: \.self) { type in
-                        Text(type.displayName).tag(type)
+            VStack(spacing: 0) {
+                // STT
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "mic.fill")
+                            .frame(width: 20)
+                        Text("STT")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Picker("", selection: sttProviderBinding) {
+                            ForEach(STTProviderType.allCases, id: \.self) { type in
+                                Text(type.displayName).tag(type)
+                            }
+                        }
+                        .frame(width: 180)
+                        providerStateBadge(appState.whisperModelState)
+                    }
+
+                    if appState.settings.sttProviderType == .groq, appState.settings.groqApiKey.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                                .font(.caption2)
+                            Text("STT 설정에서 Groq API Key를 입력하세요")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                .frame(width: 180)
-                providerStateBadge(appState.whisperModelState)
-            }
+                .padding(14)
 
-            // Groq API key warning
-            if appState.settings.sttProviderType == .groq, appState.settings.groqApiKey.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.yellow)
-                        .font(.caption2)
-                    Text("STT 설정에서 Groq API Key를 입력하세요")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.leading, 28)
-            }
+                Divider().padding(.horizontal, 14)
 
-            Divider()
-
-            // LLM Provider with picker
-            HStack {
-                Image(systemName: llmProviderIcon)
-                    .frame(width: 20)
-                Text("LLM")
-                    .font(.subheadline)
-                Spacer()
-                Picker("", selection: llmProviderBinding) {
-                    ForEach(LLMProviderType.allCases, id: \.self) { type in
-                        Text(type.rawValue).tag(type)
+                // LLM
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: llmProviderIcon)
+                            .frame(width: 20)
+                        Text("LLM")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Picker("", selection: llmProviderBinding) {
+                            ForEach(LLMProviderType.allCases, id: \.self) { type in
+                                Text(type.rawValue).tag(type)
+                            }
+                        }
+                        .frame(width: 180)
+                        if appState.settings.llmProviderType != .none {
+                            providerStateBadge(appState.llmModelState)
+                        }
                     }
-                }
-                .frame(width: 180)
-                if appState.settings.llmProviderType != .none {
-                    providerStateBadge(appState.llmModelState)
-                }
-            }
 
-            // Model info
-            if appState.settings.llmProviderType == .openai {
-                Text(appState.settings.openaiModel.displayName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 28)
-            } else if appState.settings.llmProviderType == .local {
-                let spec = LocalModelSpec.find(appState.settings.llmModelId)
-                HStack(spacing: 4) {
-                    Text(spec?.displayName ?? appState.settings.llmModelId)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    if spec?.capability == .vision {
-                        Image(systemName: "eye")
+                    if appState.settings.llmProviderType == .openai {
+                        Text(appState.settings.openaiModel.displayName)
                             .font(.caption2)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.secondary)
+                    } else if appState.settings.llmProviderType == .local {
+                        let spec = LocalModelSpec.find(appState.settings.llmModelId)
+                        HStack(spacing: 4) {
+                            Text(spec?.displayName ?? appState.settings.llmModelId)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            if spec?.capability == .vision {
+                                Image(systemName: "eye")
+                                    .font(.caption2)
+                                    .foregroundStyle(DesignTokens.accentPrimary)
+                            }
+                        }
                     }
                 }
-                .padding(.leading, 28)
+                .padding(14)
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.quaternary.opacity(0.5))
-        )
+        .padding(16)
+        .background(DesignTokens.surfaceBackgroundView(role: .card))
     }
 
     private var sttProviderBinding: Binding<STTProviderType> {
@@ -414,7 +404,6 @@ struct MainDashboardView: View {
             get: { appState.settings.sttProviderType },
             set: { newType in
                 appState.settings.sttProviderType = newType
-                appState.settings.save()
                 Task { await appState.switchSTTProvider(to: newType) }
             }
         )
@@ -426,7 +415,6 @@ struct MainDashboardView: View {
             set: { newType in
                 appState.settings.llmProviderType = newType
                 appState.settings.isLLMEnabled = (newType != .none)
-                appState.settings.save()
                 Task { await appState.switchLLMProvider(to: newType) }
             }
         )
@@ -448,11 +436,11 @@ struct MainDashboardView: View {
             case .ready:
                 Label("Ready", systemImage: "checkmark.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
             case .notDownloaded, .error:
                 Label("Not Ready", systemImage: "xmark.circle")
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
             case let .downloading(progress):
                 if progress > 0 {
                     HStack(spacing: 4) {

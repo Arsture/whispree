@@ -26,6 +26,16 @@ These files are automatically injected into the agent's context, so Claude Code 
 - Ensure the build passes before submitting
 - Use [conventional commits](#commit-convention) for commit messages
 
+## UI Palette Guidance
+
+When adjusting dashboard, settings, or shared SwiftUI surfaces:
+
+- Keep the sidebar's multi-color accent feel, but treat it as a navigation-specific exception.
+- Converge content surfaces on a constrained palette: neutral surfaces, one interaction accent, and semantic status colors.
+- Prefer `DesignTokens` and shared UI components over ad-hoc `Color.*` usage or one-off opacity mixes.
+- Use semantic color only for meaning-bearing states such as badges, compatibility, and health indicators.
+- If a new color is truly required, add it centrally in `Whispree/Views/Design/DesignTokens.swift` and update the relevant `AGENTS.md` guidance in the same change.
+
 ## Commit Convention
 
 | Prefix | Use |

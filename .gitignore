@@ -70,3 +70,4 @@ mlx_models/
 
 # Docs (internal planning/handoff)
 docs/
+.omx/
