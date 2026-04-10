@@ -6,7 +6,7 @@ enum DesignTokens {
     static let outerPadding: CGFloat = 24 // ScrollView 외부 패딩
     static let sectionSpacing: CGFloat = 20 // 섹션 간 간격
     static let cardPadding: CGFloat = 12 // 카드 내부 패딩
-    static let cardRadius: CGFloat = 16 // 카드 코너 반경
+    static let cardRadius: CGFloat = 18 // 카드 코너 반경
 
     /// Component Spacing
     enum Spacing {
@@ -22,6 +22,8 @@ enum DesignTokens {
         static let sm: CGFloat = 4
         static let md: CGFloat = 8
         static let lg: CGFloat = 16
+        static let xl: CGFloat = 22
+        static let xxl: CGFloat = 30
     }
 
     enum Palette {
@@ -91,6 +93,8 @@ enum DesignTokens {
         case card
         /// Inset wells / shortcuts / small grouped controls.
         case inset
+        /// Editing shells / larger configuration surfaces.
+        case editor
         /// Floating shells / selection surfaces that need slightly stronger separation.
         case overlay
     }
@@ -143,25 +147,33 @@ enum DesignTokens {
         case .card:
             SurfaceStyle(
                 material: .regularMaterial,
-                tint: Color.white.opacity(0.05),
+                tint: Color.white.opacity(0.055),
                 border: Color.white.opacity(0.22),
-                highlight: Color.white.opacity(0.24),
-                shadow: Color.black.opacity(0.12)
+                highlight: Color.white.opacity(0.30),
+                shadow: Color.black.opacity(0.14)
             )
         case .inset:
             SurfaceStyle(
                 material: .ultraThinMaterial,
-                tint: Color.white.opacity(0.03),
-                border: Color.white.opacity(0.14),
-                highlight: Color.white.opacity(0.16),
-                shadow: Color.black.opacity(0.04)
+                tint: Color.white.opacity(0.035),
+                border: Color.white.opacity(0.16),
+                highlight: Color.white.opacity(0.18),
+                shadow: Color.black.opacity(0.05)
+            )
+        case .editor:
+            SurfaceStyle(
+                material: .regularMaterial,
+                tint: Color.white.opacity(0.045),
+                border: Color.white.opacity(0.24),
+                highlight: Color.white.opacity(0.32),
+                shadow: Color.black.opacity(0.14)
             )
         case .overlay:
             SurfaceStyle(
                 material: .regularMaterial,
-                tint: Color.white.opacity(0.07),
-                border: Color.white.opacity(0.26),
-                highlight: Color.white.opacity(0.30),
+                tint: Color.white.opacity(0.075),
+                border: Color.white.opacity(0.28),
+                highlight: Color.white.opacity(0.34),
                 shadow: Color.black.opacity(0.18)
             )
         }
@@ -180,6 +192,8 @@ enum DesignTokens {
         cornerRadius: CGFloat = cardRadius
     ) -> some View {
         let surface = surfaceStyle(for: role)
+        let shadowRadius: CGFloat = (role == .overlay || role == .editor) ? 14 : 8
+        let shadowYOffset: CGFloat = (role == .overlay || role == .editor) ? 6 : 3
         RoundedRectangle(cornerRadius: cornerRadius)
             .fill(surface.material)
             .overlay {
@@ -190,18 +204,33 @@ enum DesignTokens {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(
                         LinearGradient(
-                            colors: [surface.highlight, .clear, .clear],
+                            colors: [surface.highlight, Color.white.opacity(0.05), .clear, .clear],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .blendMode(.screen)
             }
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(role == .inset ? 0.18 : 0.24), .clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                    )
+                    .frame(height: max(18, cornerRadius + 4))
+                    .clipShape(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    )
+                    .allowsHitTesting(false)
+            }
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(surface.border, lineWidth: 1)
             }
-            .shadow(color: surface.shadow, radius: role == .overlay ? 14 : 8, y: role == .overlay ? 6 : 3)
+            .shadow(color: surface.shadow, radius: shadowRadius, y: shadowYOffset)
     }
 
     // Backwards-compatible aliases for shared components that still consume the simple tokens.

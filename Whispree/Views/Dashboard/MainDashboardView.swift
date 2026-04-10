@@ -36,6 +36,18 @@ struct MainDashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color.white.opacity(0.03),
+                    .clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        }
         .overlay {
             if let screenshot = selectedScreenshot, let image = screenshot.image {
                 screenshotOverlay(screenshot: screenshot, image: image)
@@ -168,12 +180,12 @@ struct MainDashboardView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 80)
-        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 12))
+        .frame(height: 92)
+        .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: DesignTokens.Radius.xl))
         .overlay {
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.xl)
                 .stroke(
-                    appState.isRecording ? DesignTokens.Border.emphasized : .clear,
+                    appState.isRecording ? DesignTokens.interactionColors(for: .selection).border : .clear,
                     lineWidth: 1
                 )
         }
@@ -201,18 +213,7 @@ struct MainDashboardView: View {
             .controlSize(.small)
         }
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(DesignTokens.cardBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(DesignTokens.Surface.cardTint)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
-                }
-        )
+        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 18))
     }
 
     // MARK: - Transcription
@@ -360,89 +361,79 @@ struct MainDashboardView: View {
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
 
-            // STT Provider with picker
-            HStack {
-                Image(systemName: "mic.fill")
-                    .frame(width: 20)
-                Text("STT")
-                    .font(.subheadline)
-                Spacer()
-                Picker("", selection: sttProviderBinding) {
-                    ForEach(STTProviderType.allCases, id: \.self) { type in
-                        Text(type.displayName).tag(type)
+            VStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "mic.fill")
+                            .frame(width: 20)
+                        Text("STT")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Picker("", selection: sttProviderBinding) {
+                            ForEach(STTProviderType.allCases, id: \.self) { type in
+                                Text(type.displayName).tag(type)
+                            }
+                        }
+                        .frame(width: 180)
+                        providerStateBadge(appState.whisperModelState)
+                    }
+
+                    if appState.settings.sttProviderType == .groq, appState.settings.groqApiKey.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                                .font(.caption2)
+                            Text("STT 설정에서 Groq API Key를 입력하세요")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                .frame(width: 180)
-                providerStateBadge(appState.whisperModelState)
-            }
+                .padding(14)
+                .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
 
-            // Groq API key warning
-            if appState.settings.sttProviderType == .groq, appState.settings.groqApiKey.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
-                        .font(.caption2)
-                    Text("STT 설정에서 Groq API Key를 입력하세요")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.leading, 28)
-            }
-
-            Divider()
-
-            // LLM Provider with picker
-            HStack {
-                Image(systemName: llmProviderIcon)
-                    .frame(width: 20)
-                Text("LLM")
-                    .font(.subheadline)
-                Spacer()
-                Picker("", selection: llmProviderBinding) {
-                    ForEach(LLMProviderType.allCases, id: \.self) { type in
-                        Text(type.rawValue).tag(type)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: llmProviderIcon)
+                            .frame(width: 20)
+                        Text("LLM")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Picker("", selection: llmProviderBinding) {
+                            ForEach(LLMProviderType.allCases, id: \.self) { type in
+                                Text(type.rawValue).tag(type)
+                            }
+                        }
+                        .frame(width: 180)
+                        if appState.settings.llmProviderType != .none {
+                            providerStateBadge(appState.llmModelState)
+                        }
                     }
-                }
-                .frame(width: 180)
-                if appState.settings.llmProviderType != .none {
-                    providerStateBadge(appState.llmModelState)
-                }
-            }
 
-            // Model info
-            if appState.settings.llmProviderType == .openai {
-                Text(appState.settings.openaiModel.displayName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 28)
-            } else if appState.settings.llmProviderType == .local {
-                let spec = LocalModelSpec.find(appState.settings.llmModelId)
-                HStack(spacing: 4) {
-                    Text(spec?.displayName ?? appState.settings.llmModelId)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    if spec?.capability == .vision {
-                        Image(systemName: "eye")
+                    if appState.settings.llmProviderType == .openai {
+                        Text(appState.settings.openaiModel.displayName)
                             .font(.caption2)
-                            .foregroundStyle(DesignTokens.accentPrimary)
+                            .foregroundStyle(.secondary)
+                    } else if appState.settings.llmProviderType == .local {
+                        let spec = LocalModelSpec.find(appState.settings.llmModelId)
+                        HStack(spacing: 4) {
+                            Text(spec?.displayName ?? appState.settings.llmModelId)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            if spec?.capability == .vision {
+                                Image(systemName: "eye")
+                                    .font(.caption2)
+                                    .foregroundStyle(DesignTokens.accentPrimary)
+                            }
+                        }
                     }
                 }
-                .padding(.leading, 28)
+                .padding(14)
+                .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(DesignTokens.cardBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(DesignTokens.Surface.cardTint)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(DesignTokens.Border.subtle, lineWidth: 1)
-                }
-        )
+        .padding(18)
+        .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: DesignTokens.Radius.xxl))
     }
 
     private var sttProviderBinding: Binding<STTProviderType> {

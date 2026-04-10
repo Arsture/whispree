@@ -45,6 +45,18 @@ struct OnboardingView: View {
             Spacer()
         }
         .frame(width: 480, height: 640)
+        .background {
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color.white.opacity(0.04),
+                    .clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        }
     }
 
     // MARK: - Step 0: Welcome
@@ -169,8 +181,7 @@ struct OnboardingView: View {
                     .padding(.bottom, 8)
                     .padding(.top, -4)
             }
-            .background(cardBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(cardBackground(cornerRadius: 28))
 
             Spacer()
 
@@ -310,8 +321,7 @@ struct OnboardingView: View {
                 }
                 .padding(16)
             }
-            .background(cardBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(cardBackground(cornerRadius: 28))
 
             Spacer()
 
@@ -357,8 +367,7 @@ struct OnboardingView: View {
                     description: "한 번 눌러 시작, 다시 눌러 중지"
                 )
             }
-            .background(cardBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(cardBackground(cornerRadius: 28))
 
             // Test area
             recordingTestSection
@@ -391,8 +400,7 @@ struct OnboardingView: View {
                     .font(.system(.body))
                     .frame(height: 50)
                     .scrollContentBackground(.hidden)
-                    .background(DesignTokens.Surface.subdued)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .background(insetBackground())
                     .overlay(alignment: .topLeading) {
                         if demoText.isEmpty, appState.transcriptionState == .idle {
                             Text("여기에 전사 결과가 나타납니다")
@@ -420,8 +428,7 @@ struct OnboardingView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(DesignTokens.Surface.subdued)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .background(insetBackground())
 
             } else {
                 VStack(spacing: 4) {
@@ -433,10 +440,11 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(DesignTokens.Surface.subdued)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .background(insetBackground())
             }
         }
+        .padding(16)
+        .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: 28))
     }
 
     @ViewBuilder
@@ -502,8 +510,7 @@ struct OnboardingView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(cardBackground(cornerRadius: 28))
 
             // Test area
             VStack(spacing: 6) {
@@ -519,9 +526,10 @@ struct OnboardingView: View {
                     .font(.system(.body))
                     .frame(height: 50)
                     .scrollContentBackground(.hidden)
-                    .background(DesignTokens.Surface.subdued)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .background(insetBackground())
             }
+            .padding(16)
+            .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: 28))
 
             Spacer()
 
@@ -569,9 +577,13 @@ struct OnboardingView: View {
     ) -> some View {
         HStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                Circle()
+                    .fill(iconColor.opacity(0.12))
+                    .frame(width: 40, height: 40)
+                    .overlay {
+                        Circle()
+                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    }
                 Image(systemName: icon)
                     .foregroundStyle(iconColor)
             }
@@ -600,6 +612,7 @@ struct OnboardingView: View {
             }
         }
         .padding(14)
+        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 18))
         .contentShape(Rectangle())
     }
 
@@ -609,13 +622,22 @@ struct OnboardingView: View {
         } label: {
             HStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    Circle()
                         .fill(
                             appState.settings.recordingMode == mode
-                                ? DesignTokens.semanticColors(for: .accent).background
-                                : DesignTokens.Surface.subdued
+                                ? DesignTokens.interactionColors(for: .selection).background
+                                : Color.white.opacity(0.08)
                         )
-                        .frame(width: 36, height: 36)
+                        .frame(width: 40, height: 40)
+                        .overlay {
+                            Circle()
+                                .stroke(
+                                    appState.settings.recordingMode == mode
+                                        ? DesignTokens.interactionColors(for: .selection).border
+                                        : Color.white.opacity(0.12),
+                                    lineWidth: 1
+                                )
+                        }
                     Image(systemName: icon)
                         .foregroundStyle(appState.settings.recordingMode == mode ? DesignTokens.accentPrimary : .secondary)
                 }
@@ -634,6 +656,7 @@ struct OnboardingView: View {
                     .font(.title3)
             }
             .padding(14)
+            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 18))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -657,21 +680,15 @@ struct OnboardingView: View {
             .font(.system(.caption, design: .rounded).bold())
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(DesignTokens.Surface.subdued)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 10))
     }
 
-    private func cardBackground(cornerRadius: CGFloat = 12) -> some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(DesignTokens.cardBackground)
-            .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(DesignTokens.Surface.cardTint)
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(DesignTokens.Border.subtle, lineWidth: 1)
-            }
+    private func cardBackground(cornerRadius: CGFloat = DesignTokens.Radius.xxl) -> some View {
+        DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: cornerRadius)
+    }
+
+    private func insetBackground(cornerRadius: CGFloat = 18) -> some View {
+        DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: cornerRadius)
     }
 
     private func shortcutText(for name: KeyboardShortcuts.Name) -> String {

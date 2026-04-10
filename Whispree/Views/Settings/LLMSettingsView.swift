@@ -30,7 +30,7 @@ struct LLMSettingsView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
+                .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: 28))
 
                 // Local Model Picker
                 if appState.settings.llmProviderType == .local {
@@ -113,7 +113,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
+                    .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: 28))
 
                     // Screenshot Context Section (Local vision model)
                     if appState.llmProvider?.supportsVision == true {
@@ -163,7 +163,7 @@ struct LLMSettingsView: View {
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
+                        .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: 28))
                     }
                 }
 
@@ -217,7 +217,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
+                    .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: 28))
 
                     // Screenshot Context Section (OpenAI — always vision-capable)
                     VStack(alignment: .leading, spacing: 8) {
@@ -266,7 +266,7 @@ struct LLMSettingsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
+                    .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: 28))
 
                     // OpenAI Auth Section
                     VStack(alignment: .leading, spacing: 8) {
@@ -401,48 +401,50 @@ struct LLMSettingsView: View {
                             .font(.caption.bold())
                             .foregroundStyle(.secondary)
 
-                        Picker("Mode", selection: Binding(
-                            get: { appState.settings.correctionMode },
-                            set: {
-                                appState.settings.correctionMode = $0
-                                loadPromptForMode($0)
-                            }
-                        )) {
+                        Text("모드 선택 자체가 하나의 액션 카드처럼 느껴지도록 정리했습니다.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+
+                        VStack(spacing: 10) {
                             ForEach(CorrectionMode.allCases, id: \.self) { mode in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(mode.displayName)
-                                    Text(mode.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .tag(mode)
+                                correctionModeRow(mode)
                             }
                         }
-                        .pickerStyle(.radioGroup)
                     }
-                    .padding(16)
+                    .padding(18)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        DesignTokens.surfaceBackgroundView(cornerRadius: 28)
-                    )
+                    .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: 32))
 
                     // System Prompt Section
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("System Prompt")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
+                        HStack {
+                            Text("System Prompt")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            StatusBadge(appState.settings.correctionMode.displayName, style: .neutral)
+                        }
 
                         if appState.settings.correctionMode == .custom {
-                            TextEditor(text: $customPrompt)
-                                .font(.system(.body, design: .monospaced))
-                                .frame(minHeight: 120)
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Custom 모드에서는 직접 시스템 프롬프트를 편집합니다.")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
 
-                            HStack {
-                                Spacer()
-                                Button("Save Prompt") {
-                                    appState.settings.customLLMPrompt = customPrompt
+                                TextEditor(text: $customPrompt)
+                                    .font(.system(.body, design: .monospaced))
+                                    .frame(minHeight: 140)
+                                    .scrollContentBackground(.hidden)
+                                    .padding(12)
+                                    .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: 20))
+
+                                HStack {
+                                    Spacer()
+                                    Button("Save Prompt") {
+                                        appState.settings.customLLMPrompt = customPrompt
+                                    }
+                                    .buttonStyle(.borderedProminent)
                                 }
-                                .buttonStyle(.borderedProminent)
                             }
                         } else {
                             ScrollView {
@@ -450,24 +452,35 @@ struct LLMSettingsView: View {
                                     .font(.system(.caption, design: .monospaced))
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                                    .padding(4)
+                                    .padding(14)
                                     .textSelection(.enabled)
                             }
-                            .frame(height: 200)
-                            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 10))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .frame(height: 210)
+                            .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: 20))
 
                             Text("Switch to \"Custom\" mode to edit the prompt.")
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
                     }
-                    .padding(16)
+                    .padding(18)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
+                    .background(DesignTokens.surfaceBackgroundView(role: .editor, cornerRadius: 32))
                 }
             }
             .padding(24)
+        }
+        .background {
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color.white.opacity(0.04),
+                    .clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
         }
         .onAppear {
             customPrompt = appState.settings.customLLMPrompt
@@ -489,5 +502,40 @@ struct LLMSettingsView: View {
             customPrompt = appState.settings.customLLMPrompt
                 ?? CorrectionPrompts.defaultSystemPrompt
         }
+    }
+
+    private func correctionModeRow(_ mode: CorrectionMode) -> some View {
+        let isSelected = appState.settings.correctionMode == mode
+
+        return Button {
+            appState.settings.correctionMode = mode
+            loadPromptForMode(mode)
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? DesignTokens.accentPrimary : .secondary)
+                    .font(.title3)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(mode.displayName)
+                        .font(.headline)
+                    Text(mode.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+            .padding(14)
+            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        isSelected ? DesignTokens.interactionColors(for: .selection).border : Color.white.opacity(0.10),
+                        lineWidth: 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
