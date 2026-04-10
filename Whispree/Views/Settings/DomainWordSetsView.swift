@@ -173,7 +173,7 @@ private struct WordSetRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header — Toggle label covers name area so full row is tappable
+            // Header — entire text area toggles, chevron expands
             HStack(spacing: 12) {
                 Toggle(isOn: Binding(
                     get: { wordSet.isEnabled },
@@ -182,6 +182,14 @@ private struct WordSetRow: View {
                         onToggle()
                     }
                 )) {
+                    EmptyView()
+                }
+                .toggleStyle(.switch)
+                .labelsHidden()
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
+                } label: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(wordSet.name)
                             .font(.headline)
@@ -198,8 +206,9 @@ private struct WordSetRow: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                .toggleStyle(.switch)
+                .buttonStyle(.plain)
 
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
