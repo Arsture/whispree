@@ -20,7 +20,7 @@ struct ModelSettingsView: View {
                 .foregroundStyle(.secondary)
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                 // STT Models Section (로컬 다운로드 가능한 모델만)
                 VStack(alignment: .leading, spacing: 8) {
@@ -64,7 +64,7 @@ struct ModelSettingsView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                 // LLM Models Section (로컬만 — OpenAI는 다운로드 대상 아님)
                 VStack(alignment: .leading, spacing: 8) {
@@ -116,7 +116,7 @@ struct ModelSettingsView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                 // Storage Section
                 VStack(alignment: .leading, spacing: 8) {
@@ -137,7 +137,7 @@ struct ModelSettingsView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
             }
             .padding(24)
         }
@@ -160,7 +160,7 @@ struct ModelSettingsView: View {
         Label(text, systemImage: systemImage)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 14))
+            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 16))
     }
 }
 
@@ -243,17 +243,17 @@ struct DownloadableModelRow: View {
                 }
             }
         }
-        .padding(14)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
+        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 22))
         .overlay {
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 22)
                 .strokeBorder(
-                    isSelected ? DesignTokens.accentPrimary.opacity(0.28) : Color.white.opacity(0.08),
+                    isSelected ? DesignTokens.accentPrimary.opacity(0.24) : Color.white.opacity(0.10),
                     lineWidth: 1
                 )
         }
-        .shadow(color: Color.black.opacity(isSelected ? 0.10 : 0.06), radius: isSelected ? 14 : 10, y: isSelected ? 6 : 4)
+        .shadow(color: Color.black.opacity(isSelected ? 0.12 : 0.07), radius: isSelected ? 16 : 12, y: isSelected ? 7 : 5)
     }
 
     @ViewBuilder

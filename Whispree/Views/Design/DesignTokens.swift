@@ -6,7 +6,7 @@ enum DesignTokens {
     static let outerPadding: CGFloat = 24 // ScrollView 외부 패딩
     static let sectionSpacing: CGFloat = 20 // 섹션 간 간격
     static let cardPadding: CGFloat = 12 // 카드 내부 패딩
-    static let cardRadius: CGFloat = 12 // 카드 코너 반경
+    static let cardRadius: CGFloat = 16 // 카드 코너 반경
 
     /// Component Spacing
     enum Spacing {
@@ -21,7 +21,7 @@ enum DesignTokens {
     enum Radius {
         static let sm: CGFloat = 4
         static let md: CGFloat = 8
-        static let lg: CGFloat = 12
+        static let lg: CGFloat = 16
     }
 
     enum Palette {

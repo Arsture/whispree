@@ -70,7 +70,7 @@ struct STTSettingsView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                 // Groq API Key Section
                 if appState.settings.sttProviderType == .groq {
@@ -85,7 +85,7 @@ struct STTSettingsView: View {
                         ))
                         .textFieldStyle(.roundedBorder)
                         .padding(10)
-                        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 16))
+                        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 18))
 
                         if appState.settings.groqApiKey.isEmpty {
                             Label("console.groq.com에서 무료 API Key를 발급받으세요", systemImage: "info.circle")
@@ -99,7 +99,7 @@ struct STTSettingsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
                 }
 
                 // Cold Start Warning
@@ -117,7 +117,7 @@ struct STTSettingsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
                 }
 
                 // Model Download Notice
@@ -132,7 +132,7 @@ struct STTSettingsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
                 }
 
                 // VAD 설정 — 무음 자동 스킵 + pause UX를 함께 제어
@@ -177,7 +177,7 @@ struct STTSettingsView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 24))
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
             }
             .padding(24)
         }
@@ -242,19 +242,19 @@ struct STTProviderRow: View {
                     .padding(.leading, 32)
                 }
             }
-            .padding(14)
-            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 20))
+            .padding(16)
+            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 22))
             .overlay {
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 22)
                     .strokeBorder(
-                        isSelected ? DesignTokens.accentPrimary.opacity(0.28) : Color.white.opacity(0.08),
+                        isSelected ? DesignTokens.accentPrimary.opacity(0.24) : Color.white.opacity(0.10),
                         lineWidth: 1
                     )
             }
-            .shadow(color: Color.black.opacity(isSelected ? 0.10 : 0.05), radius: isSelected ? 14 : 10, y: isSelected ? 6 : 4)
+            .shadow(color: Color.black.opacity(isSelected ? 0.12 : 0.06), radius: isSelected ? 16 : 12, y: isSelected ? 7 : 5)
         }
         .buttonStyle(.plain)
-        .contentShape(RoundedRectangle(cornerRadius: 20))
+        .contentShape(RoundedRectangle(cornerRadius: 22))
     }
 
     @ViewBuilder

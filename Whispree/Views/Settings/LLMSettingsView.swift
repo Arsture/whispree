@@ -28,9 +28,9 @@ struct LLMSettingsView: View {
                     }
                     .labelsHidden()
                 }
-                .padding(12)
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(DesignTokens.surfaceBackgroundView())
+                .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                 // Local Model Picker
                 if appState.settings.llmProviderType == .local {
@@ -93,11 +93,11 @@ struct LLMSettingsView: View {
                                             grade: compat.grade
                                         )
                                     }
-                                    .padding(8)
-                                    .background(DesignTokens.surfaceBackgroundView(role: .inset))
+                                    .padding(16)
+                                    .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 22))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: 22)
+                                            .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.24) : Color.white.opacity(0.10), lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -111,9 +111,9 @@ struct LLMSettingsView: View {
                                 .foregroundStyle(DesignTokens.accentPrimary)
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                     // Screenshot Context Section (Local vision model)
                     if appState.llmProvider?.supportsVision == true {
@@ -161,9 +161,9 @@ struct LLMSettingsView: View {
                                 }
                             }
                         }
-                        .padding(12)
+                        .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(DesignTokens.surfaceBackgroundView())
+                        .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
                     }
                 }
 
@@ -204,20 +204,20 @@ struct LLMSettingsView: View {
                                             grade: .runsGreat
                                         )
                                     }
-                                    .padding(8)
-                                    .background(DesignTokens.surfaceBackgroundView(role: .inset))
+                                    .padding(16)
+                                    .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 22))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.35) : .clear, lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: 22)
+                                            .strokeBorder(isSelected ? DesignTokens.accentPrimary.opacity(0.24) : Color.white.opacity(0.10), lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                     // Screenshot Context Section (OpenAI — always vision-capable)
                     VStack(alignment: .leading, spacing: 8) {
@@ -264,9 +264,9 @@ struct LLMSettingsView: View {
                             }
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
 
                     // OpenAI Auth Section
                     VStack(alignment: .leading, spacing: 8) {
@@ -347,9 +347,9 @@ struct LLMSettingsView: View {
                             .font(.caption)
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
                 }
 
                 // Model Status Notice
@@ -389,9 +389,9 @@ struct LLMSettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
                 }
 
                 // Correction Mode Section
@@ -420,11 +420,10 @@ struct LLMSettingsView: View {
                         }
                         .pickerStyle(.radioGroup)
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.quaternary.opacity(0.5))
+                        DesignTokens.surfaceBackgroundView(cornerRadius: 28)
                     )
 
                     // System Prompt Section
@@ -455,17 +454,17 @@ struct LLMSettingsView: View {
                                     .textSelection(.enabled)
                             }
                             .frame(height: 200)
-                            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 4))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 10))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
 
                             Text("Switch to \"Custom\" mode to edit the prompt.")
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DesignTokens.surfaceBackgroundView())
+                    .background(DesignTokens.surfaceBackgroundView(cornerRadius: 28))
                 }
             }
             .padding(24)
