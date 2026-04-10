@@ -26,7 +26,7 @@ final class AudioService: ObservableObject {
     /// 실제 VAD trim보다 높게 잡아 아주 작은 숨소리/배경 잡음은 "계속 말하는 중"으로 보지 않음.
     private let thinkingPauseHoldRMSThreshold: Float = 0.014
     /// 이 이상 무음이 지속되면 thinking pause 상태로 전환 (초)
-    private let thinkingPauseDelay: TimeInterval = 1.0
+    private let thinkingPauseDelay: TimeInterval = 2.0
     /// 첫 발화 판정을 위한 threshold (약간 높게 — 진짜 발화만 카운트)
     private let firstSpeechRMSThreshold: Float = 0.015
     private var lastVoiceTime: Date?
