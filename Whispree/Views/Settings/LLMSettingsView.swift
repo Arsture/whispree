@@ -132,7 +132,10 @@ struct LLMSettingsView: View {
                                 Spacer()
                                 Toggle("", isOn: Binding(
                                     get: { appState.settings.isScreenshotContextEnabled },
-                                    set: { appState.settings.isScreenshotContextEnabled = $0 }
+                                    set: {
+                                        appState.settings.isScreenshotContextEnabled = $0
+                                        if !$0 { appState.settings.isScreenshotPasteEnabled = false }
+                                    }
                                 ))
                                 .toggleStyle(.switch)
                                 .labelsHidden()
@@ -232,7 +235,10 @@ struct LLMSettingsView: View {
                             Spacer()
                             Toggle("", isOn: Binding(
                                 get: { appState.settings.isScreenshotContextEnabled },
-                                set: { appState.settings.isScreenshotContextEnabled = $0 }
+                                set: {
+                                    appState.settings.isScreenshotContextEnabled = $0
+                                    if !$0 { appState.settings.isScreenshotPasteEnabled = false }
+                                }
                             ))
                             .toggleStyle(.switch)
                             .labelsHidden()

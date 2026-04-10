@@ -71,9 +71,11 @@ enum DesignTokens {
     }
 
     struct SurfaceStyle {
-        let fill: Color
+        let material: Material
         let tint: Color
         let border: Color
+        let highlight: Color
+        let shadow: Color
     }
 
     enum SemanticTone {
@@ -140,21 +142,27 @@ enum DesignTokens {
         switch role {
         case .card:
             SurfaceStyle(
-                fill: cardBackground,
-                tint: Surface.cardTint,
-                border: Border.subtle
+                material: .ultraThinMaterial,
+                tint: Palette.accent.opacity(0.035),
+                border: Color.white.opacity(0.18),
+                highlight: Color.white.opacity(0.18),
+                shadow: Color.black.opacity(0.10)
             )
         case .inset:
             SurfaceStyle(
-                fill: Surface.subdued,
-                tint: .clear,
-                border: .clear
+                material: .thinMaterial,
+                tint: Color.white.opacity(0.025),
+                border: Color.white.opacity(0.10),
+                highlight: Color.white.opacity(0.12),
+                shadow: Color.black.opacity(0.04)
             )
         case .overlay:
             SurfaceStyle(
-                fill: Surface.overlay,
-                tint: Surface.cardTint,
-                border: Border.emphasized
+                material: .regularMaterial,
+                tint: Palette.accent.opacity(0.045),
+                border: Color.white.opacity(0.22),
+                highlight: Color.white.opacity(0.24),
+                shadow: Color.black.opacity(0.16)
             )
         }
     }
@@ -173,15 +181,27 @@ enum DesignTokens {
     ) -> some View {
         let surface = surfaceStyle(for: role)
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(surface.fill)
+            .fill(surface.material)
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(surface.tint)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(surface.border, lineWidth: surface.border == .clear ? 0 : 1)
+                    .fill(
+                        LinearGradient(
+                            colors: [surface.highlight, .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .blendMode(.screen)
             }
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(surface.border, lineWidth: 1)
+            }
+            .shadow(color: surface.shadow, radius: role == .overlay ? 14 : 8, y: role == .overlay ? 6 : 3)
     }
 
     // Backwards-compatible aliases for shared components that still consume the simple tokens.

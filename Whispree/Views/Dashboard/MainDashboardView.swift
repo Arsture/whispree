@@ -169,17 +169,14 @@ struct MainDashboardView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 80)
-        .background(
+        .background(DesignTokens.surfaceBackgroundView(role: .inset, cornerRadius: 12))
+        .overlay {
             RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.surfaceStyle(for: .inset).fill)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(
-                            appState.isRecording ? DesignTokens.Border.emphasized : .clear,
-                            lineWidth: 1
-                        )
-                }
-        )
+                .stroke(
+                    appState.isRecording ? DesignTokens.Border.emphasized : .clear,
+                    lineWidth: 1
+                )
+        }
     }
 
     // MARK: - Accessibility Warning
