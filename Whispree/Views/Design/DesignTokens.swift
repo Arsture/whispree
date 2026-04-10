@@ -6,7 +6,7 @@ enum DesignTokens {
     static let outerPadding: CGFloat = 24 // ScrollView 외부 패딩
     static let sectionSpacing: CGFloat = 20 // 섹션 간 간격
     static let cardPadding: CGFloat = 12 // 카드 내부 패딩
-    static let cardRadius: CGFloat = 8 // 카드 코너 반경
+    static let cardRadius: CGFloat = 12 // 카드 코너 반경
 
     /// Component Spacing
     enum Spacing {
@@ -142,27 +142,27 @@ enum DesignTokens {
         switch role {
         case .card:
             SurfaceStyle(
-                material: .ultraThinMaterial,
-                tint: Palette.accent.opacity(0.035),
-                border: Color.white.opacity(0.18),
-                highlight: Color.white.opacity(0.18),
-                shadow: Color.black.opacity(0.10)
+                material: .regularMaterial,
+                tint: Color.white.opacity(0.05),
+                border: Color.white.opacity(0.22),
+                highlight: Color.white.opacity(0.24),
+                shadow: Color.black.opacity(0.12)
             )
         case .inset:
             SurfaceStyle(
-                material: .thinMaterial,
-                tint: Color.white.opacity(0.025),
-                border: Color.white.opacity(0.10),
-                highlight: Color.white.opacity(0.12),
+                material: .ultraThinMaterial,
+                tint: Color.white.opacity(0.03),
+                border: Color.white.opacity(0.14),
+                highlight: Color.white.opacity(0.16),
                 shadow: Color.black.opacity(0.04)
             )
         case .overlay:
             SurfaceStyle(
                 material: .regularMaterial,
-                tint: Palette.accent.opacity(0.045),
-                border: Color.white.opacity(0.22),
-                highlight: Color.white.opacity(0.24),
-                shadow: Color.black.opacity(0.16)
+                tint: Color.white.opacity(0.07),
+                border: Color.white.opacity(0.26),
+                highlight: Color.white.opacity(0.30),
+                shadow: Color.black.opacity(0.18)
             )
         }
     }
@@ -190,7 +190,7 @@ enum DesignTokens {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(
                         LinearGradient(
-                            colors: [surface.highlight, .clear],
+                            colors: [surface.highlight, .clear, .clear],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
