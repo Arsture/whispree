@@ -281,9 +281,8 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.llmProviderType, .openai)
         XCTAssertEqual(settings.openaiModel, .gpt54mini)
         XCTAssertTrue(settings.isScreenshotContextEnabled)
-        // runFieldMigrations: isScreenshotContextEnabled=true + isScreenshotPasteEnabled=false →
-        // isScreenshotPasteEnabled는 true로 강제됨
-        XCTAssertTrue(settings.isScreenshotPasteEnabled)
+        // 활성화 ON + 전달 OFF → 독립 토글이므로 값 유지
+        XCTAssertFalse(settings.isScreenshotPasteEnabled)
         XCTAssertEqual(settings.groqApiKey, "gsk_legacy")
         XCTAssertEqual(settings.audioInputChannel, 3)
         XCTAssertFalse(settings.vadEnabled)

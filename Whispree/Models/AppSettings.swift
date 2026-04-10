@@ -131,9 +131,9 @@ final class AppSettings: ObservableObject {
         if llmModelId.contains("Qwen2.5") {
             llmModelId = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
         }
-        // 스크린샷 에이전트 전달 기본값 ON (컨텍스트 활성 + 전달 비활성인 구 유저)
-        if isScreenshotContextEnabled, !isScreenshotPasteEnabled {
-            isScreenshotPasteEnabled = true
+        // 스크린샷 활성화 OFF인데 전달만 ON인 상태 정리
+        if !isScreenshotContextEnabled, isScreenshotPasteEnabled {
+            isScreenshotPasteEnabled = false
         }
     }
 
