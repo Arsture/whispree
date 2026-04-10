@@ -13,17 +13,42 @@ p { margin: 6px 0; }
 </style>
 </head>
 <body>
-<h3>merge</h3>
+<h3>omx</h3>
 <ul>
-<li>dev → main — #4 audio channel selection + #5 URL scheme</li>
+<li>auto-checkpoint worker-1 [unknown]</li>
+</ul>
+<ul>
+<li>merge worker-1</li>
+</ul>
+<ul>
+<li>auto-checkpoint worker-2 [unknown]</li>
+</ul>
+<ul>
+<li>auto-checkpoint worker-3 [unknown]</li>
+</ul>
+<ul>
+<li>auto-checkpoint worker-3 [unknown]</li>
+</ul>
+<h3>♻️ 리팩토링</h3>
+<ul>
+<li>AppSettings를 @UserDefault property wrapper 패턴으로 전환</li>
 </ul>
 <h3>✨ 새 기능</h3>
 <ul>
-<li>URL 스킴 지원 — whispree://toggle/push/release (#5)</li>
+<li>VAD 무음 자동 제거 + thinking pause UX</li>
 </ul>
 <h3>🐛 버그 수정</h3>
 <ul>
-<li>외장 오디오 인터페이스 채널 선택 지원 (#4)</li>
+<li>AppSettings 필드 추가 시 기존 설정 리셋되는 문제</li>
+</ul>
+<ul>
+<li>thinking pause 감지 딜레이 1.0초 → 2.0초로 조정</li>
+</ul>
+<ul>
+<li>파이프라인 중 메인 윈도우가 포커스를 가로채는 문제 해결</li>
+</ul>
+<ul>
+<li>단어 사전 row body 클릭으로 펼치기/접기 동작하도록 수정</li>
 </ul>
 </body>
 </html>
