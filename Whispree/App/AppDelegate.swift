@@ -474,6 +474,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.title = "스크린샷 선택"
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
+        panel.becomesKeyOnlyIfNeeded = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         // 오버레이와 같은 화면에 표시
@@ -492,11 +493,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.makeKeyAndOrderFront(nil)
         selectionPanel = panel
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            guard let self, self.selectionPanel === panel else { return }
             NSApp.activate(ignoringOtherApps: true)
             panel.makeKeyAndOrderFront(nil)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            guard let self, self.selectionPanel === panel else { return }
             panel.makeKeyAndOrderFront(nil)
         }
 
@@ -528,6 +531,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appState.previewRequestCallback = { [weak self] screenshot in
             self?.showPreviewPanel(screenshot)
         }
+
+        // 뷰에서 직접 패널 dismiss 요청 시
+        appState.dismissSelectionPanel = { [weak self] in
+            self?.hideSelectionPanel()
+        }
     }
 
     private func hideSelectionPanel() {
@@ -539,6 +547,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         selectionPanel?.orderOut(nil)
         selectionPanel = nil
         appState.previewRequestCallback = nil
+        appState.dismissSelectionPanel = nil
 
         // 대기 중인 continuation을 resume시켜 leak 방지
         let pendingCallback = appState.screenshotSelectionCallback
