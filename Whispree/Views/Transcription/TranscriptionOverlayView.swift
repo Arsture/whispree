@@ -131,6 +131,7 @@ struct TranscriptionOverlayView: View {
 
 struct NeonWaveformView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.colorScheme) private var colorScheme
     private let bandCount = 48
     private let halfCount = 24
     @State private var smoothed: [Float] = Array(repeating: 0, count: 48)
@@ -151,6 +152,7 @@ struct NeonWaveformView: View {
     }()
 
     var body: some View {
+        let isDark = colorScheme == .dark
         Canvas { context, size in
             let midY = size.height / 2
             let totalWidth = size.width * 0.88
@@ -170,7 +172,7 @@ struct NeonWaveformView: View {
 
                 let center = Float(bandCount - 1) / 2.0
                 let distFromCenter = CGFloat(abs(Float(i) - center) / center)
-                let color = barColor(dist: distFromCenter, intensity: Float(level))
+                let color = barColor(dist: distFromCenter, intensity: Float(level), isDark: isDark)
 
                 context.fill(Path(roundedRect: topRect, cornerRadius: cornerR), with: .color(color))
                 context.fill(Path(roundedRect: botRect, cornerRadius: cornerR), with: .color(color))
@@ -179,7 +181,8 @@ struct NeonWaveformView: View {
             var centerLine = Path()
             centerLine.move(to: CGPoint(x: offsetX, y: midY))
             centerLine.addLine(to: CGPoint(x: offsetX + totalWidth, y: midY))
-            context.stroke(centerLine, with: .color(.white.opacity(0.08)), lineWidth: 0.5)
+            let lineColor: Color = isDark ? .white.opacity(0.08) : .black.opacity(0.08)
+            context.stroke(centerLine, with: .color(lineColor), lineWidth: 0.5)
         }
         .onReceive(timer) { _ in
             let bands = appState.frequencyBands
@@ -203,12 +206,21 @@ struct NeonWaveformView: View {
         }
     }
 
-    private func barColor(dist: CGFloat, intensity: Float) -> Color {
+    private func barColor(dist: CGFloat, intensity: Float, isDark: Bool) -> Color {
         let alpha = 0.5 + Double(min(intensity, 1.0)) * 0.5
-        let r = 0.55 + dist * 0.25
-        let g = 0.82 - dist * 0.15
-        let b = 0.95
-        return Color(red: r, green: g, blue: b).opacity(alpha)
+        if isDark {
+            // 다크 모드: 연한 네온 블루 (어두운 material 위에서 잘 보임)
+            let r = 0.55 + dist * 0.25
+            let g = 0.82 - dist * 0.15
+            let b = 0.95
+            return Color(red: r, green: g, blue: b).opacity(alpha)
+        } else {
+            // 라이트 모드: 진한 블루 (밝은 material 위에서 대비 확보)
+            let r = 0.15 + dist * 0.15
+            let g = 0.42 - dist * 0.10
+            let b = 0.88
+            return Color(red: r, green: g, blue: b).opacity(alpha)
+        }
     }
 }
 
