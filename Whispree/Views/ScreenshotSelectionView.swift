@@ -260,11 +260,16 @@ struct ScreenshotSelectionView: View {
             guard idx < appState.capturedScreenshots.count else { return nil }
             return appState.capturedScreenshots[idx].imageData
         }
-        appState.screenshotSelectionCallback?(selected)
+        // nil 후 호출 — hideSelectionPanel()과의 이중 resume 방지
+        let callback = appState.screenshotSelectionCallback
+        appState.screenshotSelectionCallback = nil
+        callback?(selected)
     }
 
     private func skip() {
-        appState.screenshotSelectionCallback?([])
+        let callback = appState.screenshotSelectionCallback
+        appState.screenshotSelectionCallback = nil
+        callback?([])
     }
 
     private func showPreview() {

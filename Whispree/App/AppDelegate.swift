@@ -500,6 +500,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             panel.makeKeyAndOrderFront(nil)
         }
 
+        // 패널이 key가 되면 앱 재활성화 — 로컬 키 모니터가 동작하려면 앱이 active여야 함
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: panel,
+            queue: .main
+        ) { _ in
+            if !NSApp.isActive {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
+
         // 로컬 키보드 모니터 — ESC 제외 키 이벤트 소비 (ESC는 EventTap이 전담)
         selectionKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, self.appState.transcriptionState == .selectingScreenshots else { return event }
@@ -528,6 +539,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         selectionPanel?.orderOut(nil)
         selectionPanel = nil
         appState.previewRequestCallback = nil
+
+        // 대기 중인 continuation을 resume시켜 leak 방지
+        let pendingCallback = appState.screenshotSelectionCallback
+        appState.screenshotSelectionCallback = nil
+        pendingCallback?([])
     }
 
     // MARK: - Preview Panel (Quick Look 스타일)
