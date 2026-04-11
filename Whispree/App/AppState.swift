@@ -30,6 +30,8 @@ final class AppState: ObservableObject {
     @Published var selectionKeyEvent: NSEvent?
     /// 미리보기 요청 콜백 → AppDelegate가 Quick Look 스타일 패널 표시
     var previewRequestCallback: ((CapturedScreenshot) -> Void)?
+    /// 스크린샷 선택 뷰에서 직접 패널 dismiss 요청
+    var dismissSelectionPanel: (() -> Void)?
 
     // MARK: - Model State
 

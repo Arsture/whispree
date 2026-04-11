@@ -264,12 +264,14 @@ struct ScreenshotSelectionView: View {
         let callback = appState.screenshotSelectionCallback
         appState.screenshotSelectionCallback = nil
         callback?(selected)
+        appState.dismissSelectionPanel?()
     }
 
     private func skip() {
         let callback = appState.screenshotSelectionCallback
         appState.screenshotSelectionCallback = nil
         callback?([])
+        appState.dismissSelectionPanel?()
     }
 
     private func showPreview() {
