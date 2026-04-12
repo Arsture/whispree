@@ -118,11 +118,37 @@ final class AppSettings: ObservableObject {
     @CodableUserDefault(key: "whispree.domainWordSets", defaultValue: [])
     var domainWordSets: [DomainWordSet]
 
+    @UserDefault(key: "whispree.sharedDictionaryEnabled", defaultValue: false)
+    var sharedDictionaryEnabled: Bool
+
+    @UserDefault(key: "whispree.sharedDictionaryPath", defaultValue: nil)
+    var sharedDictionaryPath: String?
+
     // MARK: - Init
 
     init() {
         Self.migrateLegacyBlobIfNeeded()
         runFieldMigrations()
+        importSharedDictionaryIfNeeded()
+    }
+
+
+    var sharedDictionaryConfig: SharedDictionaryConfig {
+        SharedDictionaryConfig(customURL: sharedDictionaryPath.flatMap { path in
+            guard !path.isEmpty else { return nil }
+            return URL(fileURLWithPath: path)
+        })
+    }
+
+    func syncSharedDictionaryIfNeeded() {
+        guard sharedDictionaryEnabled, let url = sharedDictionaryConfig.resolvedFileURL else { return }
+        try? SharedDictionaryStore.save(domainWordSets, to: url)
+    }
+
+    func importSharedDictionaryIfNeeded() {
+        guard sharedDictionaryEnabled, let url = sharedDictionaryConfig.resolvedFileURL else { return }
+        guard let imported = try? SharedDictionaryStore.load(from: url) else { return }
+        domainWordSets = imported
     }
 
     /// 필드별 후처리 마이그레이션 — 기존 default 마이그레이션 로직 보존.

@@ -116,6 +116,65 @@ struct GeneralSettingsView: View {
                     }
                 }
 
+                // Dictionary Sync
+                SettingsCard(title: "Dictionary Sync") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Enable shared dictionary")
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.sharedDictionaryEnabled },
+                                set: {
+                                    appState.settings.sharedDictionaryEnabled = $0
+                                    if $0 {
+                                        appState.settings.importSharedDictionaryIfNeeded()
+                                        appState.settings.syncSharedDictionaryIfNeeded()
+                                    }
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
+
+                        Text("Sync Quick Fix and domain word sets using iCloud Drive by default, or point to a Dropbox folder with a custom file path.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        HStack {
+                            Text("Custom file path")
+                            Spacer()
+                        }
+
+                        TextField("~/Library/Mobile Documents/com~apple~CloudDocs/Whispree/domain-word-sets.json", text: Binding(
+                            get: { appState.settings.sharedDictionaryPath ?? "" },
+                            set: { appState.settings.sharedDictionaryPath = $0.isEmpty ? nil : $0 }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+
+                        if let url = appState.settings.sharedDictionaryConfig.resolvedFileURL {
+                            Text("Current target: \(url.path)")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .textSelection(.enabled)
+                        }
+
+                        HStack(spacing: 8) {
+                            Button("Import Now") {
+                                appState.settings.importSharedDictionaryIfNeeded()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Button("Export Now") {
+                                appState.settings.syncSharedDictionaryIfNeeded()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                }
+
                 // General Settings
                 SettingsCard(title: "General") {
                     VStack(spacing: 8) {

@@ -95,6 +95,12 @@ SPM dependencies are resolved automatically on first build.
 
 If a word keeps getting misheard, register it with `Ctrl+Shift+D`. Build domain word sets (programming, medical, etc.) to improve recognition for specific terminology.
 
+### Shared Dictionary Sync
+
+Quick Fix words and domain word sets can be shared across Macs. Turn on *Settings > General > Dictionary Sync* to mirror them to iCloud Drive automatically, or set a custom JSON path inside Dropbox, Syncthing, or another synced folder.
+
+The shared file stores the same `[DomainWordSet]` JSON used internally, so it is easy to back up or inspect.
+
 ### Settings
 
 Access from the menu bar icon:
