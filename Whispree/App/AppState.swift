@@ -77,6 +77,7 @@ final class AppState: ObservableObject {
         // (SwiftUI가 중첩 ObservableObject 변경을 자동 감지하지 않으므로)
         settings.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
+            self?.settings.syncSharedDictionaryIfNeeded()
         }.store(in: &authCancellables)
 
         authService.objectWillChange.sink { [weak self] _ in
