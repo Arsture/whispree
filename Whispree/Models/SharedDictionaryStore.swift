@@ -7,17 +7,17 @@ struct SharedDictionaryConfig {
         if let customURL {
             return customURL.standardizedFileURL
         }
-        return FileManager.default.url(forUbiquityContainerIdentifier: nil)?
-            .appendingPathComponent("Documents", isDirectory: true)
+        // iCloud Drive Documents에 직접 접근 (iCloud 컨테이너 엔타이틀먼트 불필요)
+        let iCloudDocs = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
+        guard FileManager.default.fileExists(atPath: iCloudDocs.path) else { return nil }
+        return iCloudDocs
             .appendingPathComponent("Whispree", isDirectory: true)
             .appendingPathComponent("domain-word-sets.json", isDirectory: false)
     }
 
     var statusText: String {
-        if customURL != nil {
-            return "Custom sync file"
-        }
-        return "iCloud Drive"
+        customURL != nil ? "Custom sync file" : "iCloud Drive"
     }
 }
 

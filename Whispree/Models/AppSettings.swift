@@ -129,9 +129,9 @@ final class AppSettings: ObservableObject {
     init() {
         Self.migrateLegacyBlobIfNeeded()
         runFieldMigrations()
-        importSharedDictionaryIfNeeded()
     }
 
+    // MARK: - Shared Dictionary
 
     var sharedDictionaryConfig: SharedDictionaryConfig {
         SharedDictionaryConfig(customURL: sharedDictionaryPath.flatMap { path in
@@ -140,15 +140,23 @@ final class AppSettings: ObservableObject {
         })
     }
 
-    func syncSharedDictionaryIfNeeded() {
+    /// domainWordSets를 공유 파일로 내보내기. 백그라운드 스레드에서 실행.
+    func exportSharedDictionary() {
         guard sharedDictionaryEnabled, let url = sharedDictionaryConfig.resolvedFileURL else { return }
-        try? SharedDictionaryStore.save(domainWordSets, to: url)
+        let snapshot = domainWordSets
+        Task.detached {
+            try? SharedDictionaryStore.save(snapshot, to: url)
+        }
     }
 
-    func importSharedDictionaryIfNeeded() {
-        guard sharedDictionaryEnabled, let url = sharedDictionaryConfig.resolvedFileURL else { return }
-        guard let imported = try? SharedDictionaryStore.load(from: url) else { return }
+    /// 공유 파일에서 domainWordSets를 가져오기. 파일이 없거나 비어있으면 무시.
+    @discardableResult
+    func importSharedDictionary() -> Bool {
+        guard sharedDictionaryEnabled, let url = sharedDictionaryConfig.resolvedFileURL else { return false }
+        guard FileManager.default.fileExists(atPath: url.path) else { return false }
+        guard let imported = try? SharedDictionaryStore.load(from: url), !imported.isEmpty else { return false }
         domainWordSets = imported
+        return true
     }
 
     /// 필드별 후처리 마이그레이션 — 기존 default 마이그레이션 로직 보존.

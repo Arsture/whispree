@@ -120,15 +120,15 @@ struct GeneralSettingsView: View {
                 SettingsCard(title: "Dictionary Sync") {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("Enable shared dictionary")
+                            Text("사전 동기화")
                             Spacer()
                             Toggle("", isOn: Binding(
                                 get: { appState.settings.sharedDictionaryEnabled },
                                 set: {
                                     appState.settings.sharedDictionaryEnabled = $0
                                     if $0 {
-                                        appState.settings.importSharedDictionaryIfNeeded()
-                                        appState.settings.syncSharedDictionaryIfNeeded()
+                                        appState.settings.importSharedDictionary()
+                                        appState.settings.exportSharedDictionary()
                                     }
                                 }
                             ))
@@ -136,42 +136,49 @@ struct GeneralSettingsView: View {
                             .labelsHidden()
                         }
 
-                        Text("Sync Quick Fix and domain word sets using iCloud Drive by default, or point to a Dropbox folder with a custom file path.")
+                        Text("Quick Fix 단어와 도메인 단어 세트를 iCloud Drive로 자동 동기화합니다. Dropbox 등 다른 동기화 폴더를 사용하려면 사용자 정의 경로를 지정하세요.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
-                        HStack {
-                            Text("Custom file path")
-                            Spacer()
-                        }
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("사용자 정의 경로")
+                                .foregroundStyle(appState.settings.sharedDictionaryEnabled ? .primary : .secondary)
 
-                        TextField("~/Library/Mobile Documents/com~apple~CloudDocs/Whispree/domain-word-sets.json", text: Binding(
-                            get: { appState.settings.sharedDictionaryPath ?? "" },
-                            set: { appState.settings.sharedDictionaryPath = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(.roundedBorder)
+                            TextField("비워두면 iCloud Drive 사용", text: Binding(
+                                get: { appState.settings.sharedDictionaryPath ?? "" },
+                                set: { appState.settings.sharedDictionaryPath = $0.isEmpty ? nil : $0 }
+                            ))
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(!appState.settings.sharedDictionaryEnabled)
 
-                        if let url = appState.settings.sharedDictionaryConfig.resolvedFileURL {
-                            Text("Current target: \(url.path)")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                                .textSelection(.enabled)
+                            if appState.settings.sharedDictionaryEnabled,
+                               let url = appState.settings.sharedDictionaryConfig.resolvedFileURL {
+                                Text(url.path)
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                                    .textSelection(.enabled)
+                            } else if appState.settings.sharedDictionaryEnabled {
+                                Text("iCloud Drive를 사용할 수 없습니다. 사용자 정의 경로를 지정하세요.")
+                                    .font(.caption2)
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                            }
                         }
 
                         HStack(spacing: 8) {
-                            Button("Import Now") {
-                                appState.settings.importSharedDictionaryIfNeeded()
+                            Button("지금 가져오기") {
+                                appState.settings.importSharedDictionary()
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
 
-                            Button("Export Now") {
-                                appState.settings.syncSharedDictionaryIfNeeded()
+                            Button("지금 내보내기") {
+                                appState.settings.exportSharedDictionary()
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
                         }
+                        .disabled(!appState.settings.sharedDictionaryEnabled)
                     }
                 }
 

@@ -58,6 +58,18 @@ final class AppState: ObservableObject {
     /// `@Published`가 아닌 `let`으로 보유하고, 변경은 아래 `init()`에서 forwarding.
     let settings: AppSettings
 
+    // MARK: - Shared Dictionary Sync
+
+    private var lastSyncedDomainWordSetsHash: Int = 0
+
+    private func exportDomainWordSetsIfChanged() {
+        guard settings.sharedDictionaryEnabled else { return }
+        let currentHash = settings.domainWordSets.hashValue
+        guard currentHash != lastSyncedDomainWordSetsHash else { return }
+        lastSyncedDomainWordSetsHash = currentHash
+        settings.exportSharedDictionary()
+    }
+
     // MARK: - History
 
     @Published var transcriptionHistory: [TranscriptionRecord] = [] {
@@ -77,8 +89,17 @@ final class AppState: ObservableObject {
         // (SwiftUI가 중첩 ObservableObject 변경을 자동 감지하지 않으므로)
         settings.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
-            self?.settings.syncSharedDictionaryIfNeeded()
         }.store(in: &authCancellables)
+
+        // domainWordSets 변경 시 공유 사전 자동 export (debounced, hash 비교)
+        // objectWillChange는 값 변경 전에 발행되므로, UserDefaults 알림을 통해
+        // 값이 실제 저장된 후 export한다.
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.exportDomainWordSetsIfChanged()
+            }
+            .store(in: &authCancellables)
 
         authService.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
@@ -87,6 +108,10 @@ final class AppState: ObservableObject {
         oauthService.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }.store(in: &authCancellables)
+
+        // 공유 사전 import (앱 시작 시 1회)
+        settings.importSharedDictionary()
+        lastSyncedDomainWordSetsHash = settings.domainWordSets.hashValue
 
         loadHistory()
     }
