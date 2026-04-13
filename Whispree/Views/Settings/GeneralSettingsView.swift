@@ -12,6 +12,7 @@ struct GeneralSettingsView: View {
     @State private var recordingConflict: ShortcutConflict?
     @State private var quickFixConflict: ShortcutConflict?
     @State private var inputChannelCount: Int = 1
+    @State private var syncStatusMessage: String?
 
     var body: some View {
         ScrollView {
@@ -167,16 +168,25 @@ struct GeneralSettingsView: View {
 
                         HStack(spacing: 8) {
                             Button("지금 가져오기") {
-                                appState.settings.importSharedDictionary()
+                                let success = appState.settings.importSharedDictionary()
+                                showSyncStatus(success ? "가져오기 완료" : "가져올 파일이 없습니다")
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
 
                             Button("지금 내보내기") {
                                 appState.settings.exportSharedDictionary()
+                                showSyncStatus("내보내기 완료")
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
+
+                            if let message = syncStatusMessage {
+                                Text(message)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .transition(.opacity)
+                            }
                         }
                         .disabled(!appState.settings.sharedDictionaryEnabled)
                     }
@@ -317,6 +327,14 @@ struct GeneralSettingsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, 4)
+    }
+
+    private func showSyncStatus(_ message: String) {
+        withAnimation { syncStatusMessage = message }
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation { syncStatusMessage = nil }
+        }
     }
 
     private func refreshPermissions() {
