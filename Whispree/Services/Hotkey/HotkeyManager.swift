@@ -13,6 +13,8 @@ final class HotkeyManager: ObservableObject {
     var onRecordingToggle: ((Bool) -> Void)?
     var onCancel: (() -> Void)?
     var onQuickFix: (() -> Void)?
+    /// 녹음 중 Option 단독 long-press 시 호출 — 스크린샷 전달 토글.
+    var onOptionLongPress: (() -> Void)?
 
     private let appState: AppState
     let eventTapService = EventTapHotkeyService.shared
@@ -25,6 +27,20 @@ final class HotkeyManager: ObservableObject {
         eventTap.start()
         setupHotkeys()
         setupEscCancel()
+        setupOptionLongPress()
+    }
+
+    private func setupOptionLongPress() {
+        eventTap.onOptionLongPress = { [weak self] in
+            self?.onOptionLongPress?()
+        }
+        // 녹음 중일 때만 long-press 감지 활성
+        appState.$isRecording
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isRecording in
+                self?.eventTap.isOptionLongPressEnabled = isRecording
+            }
+            .store(in: &stateCancellable)
     }
 
     private func setupHotkeys() {

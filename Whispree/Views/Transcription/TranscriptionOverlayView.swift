@@ -11,6 +11,16 @@ struct TranscriptionOverlayView: View {
             appState.isThinkingPause
     }
 
+    /// 스크린샷 전달 토글 플래시 표시 중?
+    private var isHandoffFlashActive: Bool {
+        appState.handoffToggleFlash != nil
+    }
+
+    /// 현재 VLM 지원 프로바이더? — 하단 안내 표시 조건.
+    private var supportsVisionHandoff: Bool {
+        appState.llmProvider?.supportsVision == true
+    }
+
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 6) {
@@ -20,6 +30,7 @@ struct TranscriptionOverlayView: View {
                     .foregroundStyle(.secondary)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.35), value: isThinkingPauseActive)
+                    .animation(.easeInOut(duration: 0.35), value: isHandoffFlashActive)
                 Spacer(minLength: 0)
                 if appState.transcriptionState == .transcribing || appState.transcriptionState == .correcting {
                     ProgressView()
@@ -36,29 +47,14 @@ struct TranscriptionOverlayView: View {
             if appState.isRecording {
                 HStack(spacing: 12) {
                     Spacer()
-                    HStack(spacing: 4) {
-                        Text("Stop")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text(shortcutLabel)
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(DesignTokens.Surface.subdued)
-                            .clipShape(RoundedRectangle(cornerRadius: 3))
-                    }
-                    HStack(spacing: 4) {
-                        Text("Cancel")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text("esc")
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(DesignTokens.Surface.subdued)
-                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                    hotkeyBadge(label: "Stop", keys: shortcutLabel)
+                    hotkeyBadge(label: "Cancel", keys: "esc")
+                    if supportsVisionHandoff {
+                        hotkeyBadge(
+                            label: "Img Attach",
+                            keys: "⌥",
+                            active: appState.settings.isScreenshotPasteEnabled
+                        )
                     }
                     Spacer()
                 }
@@ -70,6 +66,23 @@ struct TranscriptionOverlayView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
+    @ViewBuilder
+    private func hotkeyBadge(label: String, keys: String, active: Bool = false) -> some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(active ? DesignTokens.accentPrimary : .secondary)
+                .animation(.easeInOut(duration: 0.25), value: active)
+            Text(keys)
+                .font(.caption2.monospaced())
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(DesignTokens.Surface.subdued)
+                .clipShape(RoundedRectangle(cornerRadius: 3))
+        }
+    }
+
     private var shortcutLabel: String {
         if let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) {
             return shortcut.description
@@ -78,6 +91,9 @@ struct TranscriptionOverlayView: View {
     }
 
     private var statusText: String {
+        if let handoff = appState.handoffToggleFlash {
+            return handoff ? String(localized: "Img Attach ON") : String(localized: "Img Attach OFF")
+        }
         if isThinkingPauseActive {
             return String(localized: "무음 스킵 중")
         }
@@ -92,7 +108,11 @@ struct TranscriptionOverlayView: View {
     @ViewBuilder
     private var statusIcon: some View {
         Group {
-            if isThinkingPauseActive {
+            if let handoff = appState.handoffToggleFlash {
+                // 스크린샷 전달 토글 플래시
+                Image(systemName: handoff ? "photo.fill.on.rectangle.fill" : "photo.on.rectangle")
+                    .foregroundStyle(handoff ? DesignTokens.accentPrimary : .secondary)
+            } else if isThinkingPauseActive {
                 // Thinking pause: "무음 스킵 중" — waveform.slash (secondary), gentle pulse
                 Image(systemName: "waveform.slash")
                     .foregroundStyle(.secondary)

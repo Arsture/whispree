@@ -190,6 +190,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.onQuickFix = { [weak self] in
             self?.handleQuickFix()
         }
+
+        hotkeyManager.onOptionLongPress = { [weak self] in
+            guard let self else { return }
+            // VLM(vision) 지원 프로바이더일 때만 토글 — 아니면 의미 없음.
+            guard appState.llmProvider?.supportsVision == true else { return }
+            let newValue = !appState.settings.isScreenshotPasteEnabled
+            appState.settings.isScreenshotPasteEnabled = newValue
+            appState.flashHandoffToggle(newValue)
+        }
     }
 
     // MARK: - Status Item
