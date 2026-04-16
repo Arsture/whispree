@@ -21,6 +21,23 @@ final class AppState: ObservableObject {
     /// "무음 스킵 중" 인디케이터로 전환하기 위해 사용.
     @Published var isThinkingPause: Bool = false
 
+    /// 녹음 중 Option 길게 눌러 스크린샷 전달을 토글한 직후,
+    /// 오버레이에 잠시 표시되는 플래시 인디케이터 (nil이면 표시 안함).
+    /// on=true일 때 "스크린샷 전달 ON", false일 때 "OFF"로 표시.
+    @Published var handoffToggleFlash: Bool?
+    private var handoffFlashTask: Task<Void, Never>?
+
+    /// 스크린샷 전달 토글 UI 피드백 — 1.2초간 플래시 표시 후 nil로 복귀.
+    func flashHandoffToggle(_ enabled: Bool) {
+        handoffFlashTask?.cancel()
+        handoffToggleFlash = enabled
+        handoffFlashTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { self?.handoffToggleFlash = nil }
+        }
+    }
+
     // MARK: - Screenshots
 
     @Published var capturedScreenshots: [CapturedScreenshot] = []

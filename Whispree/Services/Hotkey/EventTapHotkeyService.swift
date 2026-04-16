@@ -36,6 +36,19 @@ final class EventTapHotkeyService {
     var isSelectionActive: Bool = false
     var isPipelineActive: Bool = false
 
+    // MARK: - Option Long-Press (recording-only)
+
+    /// 녹음 중 Option 단독 long-press 감지 활성 여부. HotkeyManager가 `isRecording` 변화에 맞춰 토글.
+    var isOptionLongPressEnabled: Bool = false
+    /// Option 단독 long-press 감지 시 호출 (main queue).
+    var onOptionLongPress: (() -> Void)?
+    /// long-press 지속 시간 (초).
+    private let optionLongPressDuration: TimeInterval = 0.5
+    /// Option down 타임스탬프 — long-press 판정용.
+    private var optionDownAt: Date?
+    /// 스케줄된 long-press trigger work item — Option 떼거나 다른 키 누르면 취소.
+    private var optionLongPressWorkItem: DispatchWorkItem?
+
     private let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
 
     private init() {}
@@ -139,6 +152,56 @@ final class EventTapHotkeyService {
 
     // MARK: - CGEvent Callback
 
+    // MARK: - Option Long-Press Tracking
+
+    /// Option 단독 long-press 감지. flagsChanged로 Option 상태 추적,
+    /// keyDown/keyUp 시 다른 키 입력이 있으면 modifier 사용으로 간주해 취소.
+    private func handleOptionLongPressTracking(
+        type: CGEventType,
+        keyCode: Int,
+        mods: NSEvent.ModifierFlags
+    ) {
+        // 다른 키 입력 — Option이 modifier로 사용된 것이므로 long-press 취소
+        if type == .keyDown || type == .keyUp {
+            if optionDownAt != nil {
+                cancelOptionLongPress()
+            }
+            return
+        }
+
+        guard type == .flagsChanged else { return }
+
+        let isOptionAlone = (mods == .option)
+
+        if isOptionAlone, optionDownAt == nil {
+            // Option 단독 누름 시작 — long-press 타이머 예약
+            optionDownAt = Date()
+            let work = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                // 트리거 시점에 여전히 Option만 눌려있고 이 work item이 유효한지 확인
+                guard self.optionDownAt != nil else { return }
+                self.onOptionLongPress?()
+                // 한 번 트리거된 후엔 Option 뗄 때까지 재트리거 방지
+                self.optionDownAt = nil
+                self.optionLongPressWorkItem = nil
+            }
+            optionLongPressWorkItem = work
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + optionLongPressDuration,
+                execute: work
+            )
+        } else if !isOptionAlone {
+            // Option을 떼거나 다른 modifier가 추가됨 — 취소
+            cancelOptionLongPress()
+        }
+    }
+
+    private func cancelOptionLongPress() {
+        optionLongPressWorkItem?.cancel()
+        optionLongPressWorkItem = nil
+        optionDownAt = nil
+    }
+
     private static let tapCallback: CGEventTapCallBack = { _, type, event, userInfo in
         guard let userInfo else { return Unmanaged.passUnretained(event) }
         let service = Unmanaged<EventTapHotkeyService>.fromOpaque(userInfo).takeUnretainedValue()
@@ -155,6 +218,12 @@ final class EventTapHotkeyService {
         let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
         let eventMods = NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue))
             .intersection(relevantModifiers)
+
+        // -- Option long-press (녹음 중 단독 Option 0.5s hold) --
+        // isRecording은 단축키 녹화 모드 플래그 — 단축키 녹화 중엔 long-press 감지 비활성.
+        if isOptionLongPressEnabled, !isRecording {
+            handleOptionLongPressTracking(type: type, keyCode: keyCode, mods: eventMods)
+        }
 
         // -- Recording mode --
         if isRecording {
