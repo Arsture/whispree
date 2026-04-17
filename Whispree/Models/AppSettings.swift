@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import KeyboardShortcuts
 
 /// 앱 전역 설정.
 ///
@@ -124,11 +125,49 @@ final class AppSettings: ObservableObject {
     @UserDefault(key: "whispree.sharedDictionaryPath", defaultValue: nil)
     var sharedDictionaryPath: String?
 
+    // MARK: - Hotkeys (WhispreeShortcut — combo + modifier-only 지원)
+
+    @CodableUserDefault(
+        key: "whispree.toggleRecordingShortcut",
+        defaultValue: WhispreeShortcut.defaultToggleRecording
+    )
+    var toggleRecordingShortcut: WhispreeShortcut
+
+    @CodableUserDefault(
+        key: "whispree.quickFixShortcut",
+        defaultValue: WhispreeShortcut.defaultQuickFix
+    )
+    var quickFixShortcut: WhispreeShortcut
+
     // MARK: - Init
 
     init() {
         Self.migrateLegacyBlobIfNeeded()
+        migrateHotkeysIfNeeded()
         runFieldMigrations()
+    }
+
+    /// KeyboardShortcuts 라이브러리 저장소 → AppSettings.toggleRecordingShortcut/quickFixShortcut로 1회성 마이그레이션.
+    /// 유저가 기존에 커스텀 단축키를 설정했다면 그 값을 가져오고, 아니면 default 유지.
+    private func migrateHotkeysIfNeeded() {
+        let defaults = UserDefaults.standard
+        let flagKey = "whispree.hotkeyMigrationDone"
+        guard !defaults.bool(forKey: flagKey) else { return }
+
+        if defaults.data(forKey: "whispree.toggleRecordingShortcut") == nil,
+           let stored = KeyboardShortcuts.getShortcut(for: .toggleRecording) {
+            toggleRecordingShortcut = WhispreeShortcut(combo: stored)
+        }
+        if defaults.data(forKey: "whispree.quickFixShortcut") == nil,
+           let stored = KeyboardShortcuts.getShortcut(for: .quickFix) {
+            quickFixShortcut = WhispreeShortcut(combo: stored)
+        }
+
+        // 이후엔 AppSettings만 단축키 소유. 라이브러리 저장소는 정리.
+        KeyboardShortcuts.setShortcut(nil, for: .toggleRecording)
+        KeyboardShortcuts.setShortcut(nil, for: .quickFix)
+
+        defaults.set(true, forKey: flagKey)
     }
 
     // MARK: - Shared Dictionary

@@ -2,13 +2,33 @@ import AppKit
 import KeyboardShortcuts
 import SwiftUI
 
+/// AppSettings의 어떤 단축키 필드를 녹화할지 지정.
+enum WhispreeShortcutKind {
+    case toggleRecording
+    case quickFix
+
+    var displayTitle: String {
+        switch self {
+            case .toggleRecording: "Recording"
+            case .quickFix: "Quick Fix"
+        }
+    }
+}
+
 struct ShortcutRecorderButton: View {
-    let name: KeyboardShortcuts.Name
+    let kind: WhispreeShortcutKind
     @Binding var conflict: ShortcutConflict?
 
+    @EnvironmentObject var appState: AppState
     @EnvironmentObject var hotkeyManager: HotkeyManager
     @StateObject private var recorder = RecorderModel()
-    @State private var currentShortcut: KeyboardShortcuts.Shortcut?
+
+    private var currentShortcut: WhispreeShortcut {
+        switch kind {
+            case .toggleRecording: appState.settings.toggleRecordingShortcut
+            case .quickFix: appState.settings.quickFixShortcut
+        }
+    }
 
     var body: some View {
         Button(action: beginRecording) {
@@ -19,26 +39,18 @@ struct ShortcutRecorderButton: View {
             popoverBody
                 .onDisappear(perform: handleDismiss)
         }
-        .onAppear(perform: syncCurrent)
+        .onAppear(perform: syncConflict)
     }
 
     // MARK: - Badge
 
     private var badge: some View {
-        Group {
-            if let s = currentShortcut {
-                Text(verbatim: "\(s)")
-                    .font(.system(.body, design: .rounded).weight(.medium))
-            } else {
-                Text("단축키 설정")
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.separator, lineWidth: 0.5))
+        Text(verbatim: currentShortcut.displayLabel)
+            .font(.system(.body, design: .rounded).weight(.medium))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary))
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.separator, lineWidth: 0.5))
     }
 
     // MARK: - Popover
@@ -74,27 +86,30 @@ struct ShortcutRecorderButton: View {
                     .frame(height: 28)
             }
 
+            Text("modifier 하나만 누르고 떼면 단독 키 바인딩 (예: R⌥)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+
             HStack(spacing: 8) {
-                if currentShortcut != nil {
-                    Button("초기화") { clearShortcut() }
-                        .font(.caption)
-                }
+                Button("기본값") { resetToDefault() }
+                    .font(.caption)
                 Button("취소") { cancelRecording() }
                     .font(.caption)
                     .buttonStyle(.bordered)
             }
         }
         .padding()
-        .frame(width: 240)
+        .frame(width: 260)
     }
 
-    private func conflictContent(shortcut: KeyboardShortcuts.Shortcut, conflict: ShortcutConflict) -> some View {
+    private func conflictContent(shortcut: WhispreeShortcut, conflict: ShortcutConflict) -> some View {
         VStack(spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
                     .font(.title3)
-                Text(verbatim: "\(shortcut)")
+                Text(verbatim: shortcut.displayLabel)
                     .font(.system(.title3, design: .rounded).bold())
             }
 
@@ -132,7 +147,6 @@ struct ShortcutRecorderButton: View {
             return
         }
 
-        recorder.savedShortcut = KeyboardShortcuts.getShortcut(for: name)
         recorder.pendingShortcut = nil
         recorder.pendingConflict = nil
         recorder.liveModifiers = ""
@@ -155,7 +169,7 @@ struct ShortcutRecorderButton: View {
         )
     }
 
-    private func handleCaptured(_ shortcut: KeyboardShortcuts.Shortcut) {
+    private func handleCaptured(_ shortcut: WhispreeShortcut) {
         if let detectedConflict = ShortcutConflictDetector.checkConflict(for: shortcut) {
             recorder.pendingShortcut = shortcut
             recorder.pendingConflict = detectedConflict
@@ -165,21 +179,30 @@ struct ShortcutRecorderButton: View {
         }
     }
 
-    private func applyShortcut(_ shortcut: KeyboardShortcuts.Shortcut) {
+    private func applyShortcut(_ shortcut: WhispreeShortcut) {
         EventTapHotkeyService.shared.stopRecording()
-        KeyboardShortcuts.setShortcut(shortcut, for: name)
-        currentShortcut = shortcut
+        writeShortcut(shortcut)
         recorder.showPopover = false
         hotkeyManager.reloadHotkeys()
     }
 
-    private func clearShortcut() {
+    private func resetToDefault() {
         EventTapHotkeyService.shared.stopRecording()
-        KeyboardShortcuts.setShortcut(nil, for: name)
-        currentShortcut = nil
-        conflict = nil
+        let defaultShortcut: WhispreeShortcut = switch kind {
+            case .toggleRecording: .defaultToggleRecording
+            case .quickFix: .defaultQuickFix
+        }
+        writeShortcut(defaultShortcut)
+        conflict = ShortcutConflictDetector.checkConflict(for: defaultShortcut)
         recorder.showPopover = false
         hotkeyManager.reloadHotkeys()
+    }
+
+    private func writeShortcut(_ shortcut: WhispreeShortcut) {
+        switch kind {
+            case .toggleRecording: appState.settings.toggleRecordingShortcut = shortcut
+            case .quickFix: appState.settings.quickFixShortcut = shortcut
+        }
     }
 
     private func cancelRecording() {
@@ -189,16 +212,11 @@ struct ShortcutRecorderButton: View {
 
     private func handleDismiss() {
         EventTapHotkeyService.shared.stopRecording()
-        syncCurrent()
+        syncConflict()
     }
 
-    private func syncCurrent() {
-        currentShortcut = KeyboardShortcuts.getShortcut(for: name)
-        if let s = currentShortcut {
-            conflict = ShortcutConflictDetector.checkConflict(for: s)
-        } else {
-            conflict = nil
-        }
+    private func syncConflict() {
+        conflict = ShortcutConflictDetector.checkConflict(for: currentShortcut)
     }
 
     private func formatModifiers(_ flags: NSEvent.ModifierFlags) -> String {
@@ -216,7 +234,6 @@ struct ShortcutRecorderButton: View {
 private final class RecorderModel: ObservableObject {
     @Published var showPopover = false
     @Published var liveModifiers = ""
-    @Published var pendingShortcut: KeyboardShortcuts.Shortcut?
+    @Published var pendingShortcut: WhispreeShortcut?
     @Published var pendingConflict: ShortcutConflict?
-    var savedShortcut: KeyboardShortcuts.Shortcut?
 }

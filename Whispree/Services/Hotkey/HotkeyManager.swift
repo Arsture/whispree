@@ -3,6 +3,8 @@ import Combine
 import Foundation
 import KeyboardShortcuts
 
+/// KeyboardShortcuts.Name 정의 — 마이그레이션 참조용으로만 유지.
+/// 런타임 단축키 저장소는 AppSettings.toggleRecordingShortcut / quickFixShortcut.
 extension KeyboardShortcuts.Name {
     static let toggleRecording = Self("toggleRecording", default: .init(.r, modifiers: [.control, .shift]))
     static let quickFix = Self("quickFix", default: .init(.d, modifiers: [.control, .shift]))
@@ -66,9 +68,9 @@ final class HotkeyManager: ObservableObject {
     }
 
     private func setupPushToTalk() {
-        guard let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) else { return }
+        let shortcut = appState.settings.toggleRecordingShortcut
         eventTap.register(
-            shortcut: shortcut,
+            whispreeShortcut: shortcut,
             keyDown: { [weak self] in
                 guard let self, !self.isKeyDown else { return }
                 isKeyDown = true
@@ -83,9 +85,9 @@ final class HotkeyManager: ObservableObject {
     }
 
     private func setupToggleMode() {
-        guard let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) else { return }
+        let shortcut = appState.settings.toggleRecordingShortcut
         eventTap.register(
-            shortcut: shortcut,
+            whispreeShortcut: shortcut,
             keyDown: { [weak self] in
                 guard let self else { return }
                 let shouldRecord = appState.transcriptionState == .idle
@@ -95,9 +97,9 @@ final class HotkeyManager: ObservableObject {
     }
 
     private func setupQuickFixHotkey() {
-        guard let shortcut = KeyboardShortcuts.getShortcut(for: .quickFix) else { return }
+        let shortcut = appState.settings.quickFixShortcut
         eventTap.register(
-            shortcut: shortcut,
+            whispreeShortcut: shortcut,
             keyDown: { [weak self] in
                 self?.onQuickFix?()
             }
