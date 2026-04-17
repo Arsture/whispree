@@ -377,7 +377,7 @@ struct OnboardingView: View {
                 HStack {
                     recordingStatusIndicator
                     Spacer()
-                    shortcutBadge(shortcutText(for: .toggleRecording))
+                    shortcutBadge(appState.settings.toggleRecordingShortcut.displayLabel)
                 }
 
                 TextEditor(text: $demoText)
@@ -485,7 +485,7 @@ struct OnboardingView: View {
             // How-to steps
             VStack(alignment: .leading, spacing: 10) {
                 quickFixStepRow(number: 1, text: "교정할 텍스트를 드래그하여 선택")
-                quickFixStepRow(number: 2, text: "\(shortcutText(for: .quickFix))을 눌러 Quick Fix 호출")
+                quickFixStepRow(number: 2, text: "\(appState.settings.quickFixShortcut.displayLabel)을 눌러 Quick Fix 호출")
                 quickFixStepRow(number: 3, text: "올바른 단어를 입력하고 저장")
                 quickFixStepRow(number: 4, text: "사전에 등록 → 다음부터 자동 교정")
             }
@@ -500,7 +500,7 @@ struct OnboardingView: View {
                         .font(.caption)
                         .foregroundStyle(DesignTokens.accentPrimary)
                     Spacer()
-                    shortcutBadge(shortcutText(for: .quickFix))
+                    shortcutBadge(appState.settings.quickFixShortcut.displayLabel)
                 }
 
                 TextEditor(text: $quickFixDemoText)
@@ -638,15 +638,6 @@ struct OnboardingView: View {
             .padding(.vertical, 3)
             .background(Color.primary.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-    }
-
-    private func shortcutText(for name: KeyboardShortcuts.Name) -> String {
-        if let shortcut = KeyboardShortcuts.getShortcut(for: name) {
-            return "\(shortcut)"
-        }
-        if name == .toggleRecording { return "⌃⇧R" }
-        if name == .quickFix { return "⌃⇧D" }
-        return "?"
     }
 
     private func startAccessibilityCheck() {

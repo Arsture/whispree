@@ -24,7 +24,7 @@ struct GeneralSettingsView: View {
                             Text("Recording shortcut:")
                             Spacer()
                             ShortcutRecorderButton(
-                                name: .toggleRecording,
+                                kind: .toggleRecording,
                                 conflict: $recordingConflict
                             )
                         }
@@ -36,7 +36,7 @@ struct GeneralSettingsView: View {
                             Text("Quick Fix shortcut:")
                             Spacer()
                             ShortcutRecorderButton(
-                                name: .quickFix,
+                                kind: .quickFix,
                                 conflict: $quickFixConflict
                             )
                         }

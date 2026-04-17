@@ -84,10 +84,7 @@ struct TranscriptionOverlayView: View {
     }
 
     private var shortcutLabel: String {
-        if let shortcut = KeyboardShortcuts.getShortcut(for: .toggleRecording) {
-            return shortcut.description
-        }
-        return "⌃⇧R"
+        appState.settings.toggleRecordingShortcut.displayLabel
     }
 
     private var statusText: String {

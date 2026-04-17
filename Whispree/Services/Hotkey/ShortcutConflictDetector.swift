@@ -54,6 +54,19 @@ enum ShortcutConflictDetector {
 
     private static let relevantFlags: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
 
+    /// WhispreeShortcut 버전 — modifier-only는 유저가 의도적으로 선택한 거라 충돌 검사 스킵.
+    static func checkConflict(for shortcut: WhispreeShortcut) -> ShortcutConflict? {
+        switch shortcut {
+            case let .combo(keyCode, modifiersRaw):
+                let key = KeyboardShortcuts.Key(rawValue: keyCode)
+                let mods = NSEvent.ModifierFlags(rawValue: modifiersRaw)
+                let ks = KeyboardShortcuts.Shortcut(key, modifiers: mods)
+                return checkConflict(for: ks)
+            case .modifierOnly:
+                return nil
+        }
+    }
+
     /// Check if a shortcut conflicts with known macOS system shortcuts
     static func checkConflict(for shortcut: KeyboardShortcuts.Shortcut) -> ShortcutConflict? {
         let key = shortcut.key
