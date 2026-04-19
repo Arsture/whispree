@@ -121,6 +121,11 @@ final class AppSettings: ObservableObject {
     @UserDefault(key: "whispree.pauseMediaDuringRecording", defaultValue: true)
     var pauseMediaDuringRecording: Bool
 
+    // MARK: - Browser
+
+    @UserDefault(key: "whispree.restoreBrowserTab", defaultValue: true)
+    var restoreBrowserTab: Bool
+
     // MARK: - Domain words
 
     @CodableUserDefault(key: "whispree.domainWordSets", defaultValue: [])
