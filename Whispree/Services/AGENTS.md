@@ -19,6 +19,7 @@
 | `QuickFix/` | 선택 텍스트 교정 + 도메인 사전 등록 (see `QuickFix/AGENTS.md`) |
 | `ScreenCapture/` | 녹음 중 스크린샷 캡처 — 단일 캡처 + 디바운스 연속 캡처 (see `ScreenCapture/AGENTS.md`) |
 | `STT/` | Speech-to-Text — WhisperKit/Groq/MLX Audio (see `STT/AGENTS.md`) |
+| `TerminalContext/` | iTerm2 pane(session UUID) + tmux window/pane 캡처/복원 (see `TerminalContext/AGENTS.md`) |
 | `TextInsertion/` | 클립보드 + CGEvent 붙여넣기 (see `TextInsertion/AGENTS.md`) |
 
 ## For AI Agents
