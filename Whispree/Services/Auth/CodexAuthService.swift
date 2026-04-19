@@ -93,9 +93,25 @@ final class CodexAuthService: ObservableObject {
         try data.write(to: codexAuthPath)
     }
 
-    /// 인증 상태 확인
+    /// 인증 상태 확인 (동기, main thread blocking)
     func checkAuth() {
         _ = loadTokens()
+    }
+
+    /// 인증 상태 확인 (비동기, 파일 I/O + JSON 디코드를 background로 오프로드)
+    /// 뷰 진입 시 UI 스레드 stutter 방지용.
+    func checkAuthAsync() async {
+        let path = codexAuthPath
+        let result: (loggedIn: Bool, accountId: String?) = await Task.detached {
+            guard FileManager.default.fileExists(atPath: path.path),
+                  let data = try? Data(contentsOf: path),
+                  let auth = try? JSONDecoder().decode(CodexAuth.self, from: data),
+                  let tokens = auth.tokens
+            else { return (false, nil) }
+            return (true, tokens.account_id)
+        }.value
+        isLoggedIn = result.loggedIn
+        currentAccountId = result.accountId
     }
 }
 

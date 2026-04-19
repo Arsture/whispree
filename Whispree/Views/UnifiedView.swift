@@ -42,6 +42,9 @@ struct UnifiedView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedSection: SidebarSection = .home
     @State private var isSidebarExpanded: Bool = true
+    // 방문한 탭만 mount해서 launch-time cost는 피하되, 한 번 방문한 뒤에는
+    // 계속 유지해 .task/body 재실행 없이 즉시 전환되도록. 스크롤 위치/입력 state도 보존됨.
+    @State private var visitedSections: Set<SidebarSection> = [.home]
 
     private var sidebarWidth: CGFloat {
         isSidebarExpanded ? 220 : 80
@@ -105,7 +108,7 @@ struct UnifiedView: View {
                     isSelected: selectedSection == section,
                     isExpanded: isSidebarExpanded
                 ) {
-                    selectedSection = section
+                    selectSection(section)
                 }
             }
             Spacer()
@@ -114,25 +117,59 @@ struct UnifiedView: View {
         .padding(.horizontal, isSidebarExpanded ? 14 : 8)
     }
 
+    // MARK: - Section selection
+
+    private func selectSection(_ section: SidebarSection) {
+        guard selectedSection != section else { return }
+        // mount은 애니메이션 밖 — 뷰가 트리에 즉시 들어가야 fade-in이 자연스러움
+        visitedSections.insert(section)
+        // easeOut: 초반 빠르게 반응하고 끝에서 부드럽게 정착 — 클릭 → 전환의 체감 지연이 최소화됨
+        withAnimation(.easeOut(duration: 0.22)) {
+            selectedSection = section
+        }
+    }
+
     // MARK: - Detail
 
-    @ViewBuilder
+    /// ZStack에 방문한 탭들을 유지하고 opacity + hit-testing만 토글.
+    /// switch-based destroy/recreate로 인한 body/.task 재실행 렉을 제거.
     private var detailView: some View {
-        switch selectedSection {
-            case .home:
+        ZStack {
+            if visitedSections.contains(.home) {
                 MainDashboardView()
-            case .general:
+                    .opacity(selectedSection == .home ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .home)
+            }
+            if visitedSections.contains(.general) {
                 GeneralSettingsView()
-            case .stt:
+                    .opacity(selectedSection == .general ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .general)
+            }
+            if visitedSections.contains(.stt) {
                 STTSettingsView()
-            case .llm:
+                    .opacity(selectedSection == .stt ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .stt)
+            }
+            if visitedSections.contains(.llm) {
                 LLMSettingsView()
-            case .models:
+                    .opacity(selectedSection == .llm ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .llm)
+            }
+            if visitedSections.contains(.models) {
                 ModelSettingsView()
-            case .wordSets:
+                    .opacity(selectedSection == .models ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .models)
+            }
+            if visitedSections.contains(.wordSets) {
                 DomainWordSetsView()
-            case .history:
+                    .opacity(selectedSection == .wordSets ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .wordSets)
+            }
+            if visitedSections.contains(.history) {
                 TranscriptionHistoryView()
+                    .opacity(selectedSection == .history ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .history)
+            }
         }
     }
 }
@@ -145,38 +182,54 @@ private struct SidebarRow: View {
     let isExpanded: Bool
     let action: () -> Void
 
+    /// mouseDown 시 한 번만 action을 발사하기 위한 래치.
+    /// onEnded에서 리셋해 다음 클릭에 다시 발사.
+    @State private var hasFiredThisPress = false
+
     var body: some View {
-        Button(action: action) {
-            Group {
-                if isExpanded {
-                    HStack(spacing: 12) {
-                        iconBadge
-                        Text(section.rawValue)
-                            .font(.system(size: 15))
-                        Spacer()
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                } else {
-                    HStack {
-                        Spacer()
-                        iconBadge
-                        Spacer()
-                    }
-                    .padding(.vertical, 6)
-                }
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? Color.accentColor : Color.clear)
-            )
+        rowContent
             .contentShape(Rectangle())
+            .simultaneousGesture(
+                // Finder/Mail 사이드바처럼 mouseDown 즉시 전환.
+                // mouseUp 대기로 생기던 "누르고 있는 동안의 회색 플래시 → release 후 crossfade"
+                // 2단계 느낌 제거. minimumDistance:0 이라 제스처는 터치 즉시 onChanged 발화.
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !hasFiredThisPress else { return }
+                        hasFiredThisPress = true
+                        action()
+                    }
+                    .onEnded { _ in hasFiredThisPress = false }
+            )
+            .padding(.vertical, 2)
+            .help(isExpanded ? "" : section.rawValue)
+    }
+
+    private var rowContent: some View {
+        Group {
+            if isExpanded {
+                HStack(spacing: 12) {
+                    iconBadge
+                    Text(section.rawValue)
+                        .font(.system(size: 15))
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+            } else {
+                HStack {
+                    Spacer()
+                    iconBadge
+                    Spacer()
+                }
+                .padding(.vertical, 6)
+            }
         }
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(isSelected ? Color.accentColor : Color.clear)
+        )
         .foregroundStyle(isSelected ? .white : .primary)
-        .buttonStyle(.plain)
-        .focusEffectDisabled()
-        .padding(.vertical, 2)
-        .help(isExpanded ? "" : section.rawValue)
     }
 
     private var iconBadge: some View {

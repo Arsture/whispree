@@ -12,12 +12,16 @@
 |-----------|---------|
 | `Audio/` | 마이크 녹음 + FFT 시각화 (see `Audio/AGENTS.md`) |
 | `Auth/` | Codex CLI 토큰 재사용 + OAuth PKCE 인증 (see `Auth/AGENTS.md`) |
+| `BrowserContext/` | Chrome 탭 + input element 캡처/복원 (see `BrowserContext/AGENTS.md`) |
 | `Hotkey/` | 전역 단축키 + CGEventTap + 충돌 감지 (see `Hotkey/AGENTS.md`) |
 | `LLM/` | LLM 텍스트/비전 교정 — None/LocalText/LocalVision/OpenAI (see `LLM/AGENTS.md`) |
+| `MediaPlayback/` | 녹음 중 음악/영상 자동 일시정지 — MediaRemote private API (see `MediaPlayback/AGENTS.md`) |
 | `ModelManagement/` | ML 모델 다운로드/캐시 (see `ModelManagement/AGENTS.md`) |
+| `Permissions/` | 앱 전역 권한 상태 중앙 관리 — Microphone/Accessibility/ScreenRecording/Automation (see `Permissions/AGENTS.md`) |
 | `QuickFix/` | 선택 텍스트 교정 + 도메인 사전 등록 (see `QuickFix/AGENTS.md`) |
 | `ScreenCapture/` | 녹음 중 스크린샷 캡처 — 단일 캡처 + 디바운스 연속 캡처 (see `ScreenCapture/AGENTS.md`) |
 | `STT/` | Speech-to-Text — WhisperKit/Groq/MLX Audio (see `STT/AGENTS.md`) |
+| `TerminalContext/` | iTerm2 pane(session UUID) + tmux window/pane 캡처/복원 (see `TerminalContext/AGENTS.md`) |
 | `TextInsertion/` | 클립보드 + CGEvent 붙여넣기 (see `TextInsertion/AGENTS.md`) |
 
 ## For AI Agents

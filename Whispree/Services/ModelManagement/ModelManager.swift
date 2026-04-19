@@ -99,9 +99,9 @@ final class ModelManager: ObservableObject {
     /// 전체 지원 모델의 캐시 상태를 확인 (OR: 한번 true면 삭제 전까지 유지)
     func refreshAllCacheStates() {
         // STT 모델
-        modelCacheStates[Self.whisperKitRepoId] = whisperKitDownloaded || isModelCached(repoId: Self.whisperKitRepoId)
+        modelCacheStates[Self.whisperKitRepoId] = whisperKitDownloaded || Self.isModelCached(repoId: Self.whisperKitRepoId)
         let mlxId = appState.settings.mlxAudioModelId
-        modelCacheStates[mlxId] = mlxAudioDownloaded || isModelCached(repoId: mlxId)
+        modelCacheStates[mlxId] = mlxAudioDownloaded || Self.isModelCached(repoId: mlxId)
 
         if mlxAudioDownloaded, mlxAudioDownloadState == .notDownloaded {
             mlxAudioDownloadState = .ready
@@ -109,15 +109,36 @@ final class ModelManager: ObservableObject {
 
         // LLM 모델
         for spec in LocalModelSpec.supported {
-            modelCacheStates[spec.id] = (modelCacheStates[spec.id] ?? false) || isModelCached(repoId: spec.id)
+            modelCacheStates[spec.id] = (modelCacheStates[spec.id] ?? false) || Self.isModelCached(repoId: spec.id)
+        }
+    }
+
+    /// 비동기 캐시 상태 갱신 — FileManager stat 호출을 background로 오프로드.
+    /// 뷰 onAppear/task에서 호출해도 main thread가 block되지 않음.
+    func refreshAllCacheStatesAsync() async {
+        let mlxId = appState.settings.mlxAudioModelId
+        let idsToCheck = [Self.whisperKitRepoId, mlxId] + LocalModelSpec.supported.map(\.id)
+        let fresh: [String: Bool] = await Task.detached {
+            var out: [String: Bool] = [:]
+            for id in idsToCheck {
+                out[id] = Self.isModelCached(repoId: id)
+            }
+            return out
+        }.value
+        // OR merge: 한번 다운로드된 것으로 기록된 건 유지
+        for (id, exists) in fresh {
+            modelCacheStates[id] = (modelCacheStates[id] ?? false) || exists
+        }
+        if mlxAudioDownloaded, mlxAudioDownloadState == .notDownloaded {
+            mlxAudioDownloadState = .ready
         }
     }
 
     func isLLMModelCached(_ modelId: String) -> Bool {
-        modelCacheStates[modelId] ?? isModelCached(repoId: modelId)
+        modelCacheStates[modelId] ?? Self.isModelCached(repoId: modelId)
     }
 
-    private func isModelCached(repoId: String) -> Bool {
+    nonisolated private static func isModelCached(repoId: String) -> Bool {
         let fm = FileManager.default
         // MLX Swift는 ~/Library/Caches/models/{org}/{name}/ 에 캐시
         let mlxCacheDir = fm.homeDirectoryForCurrentUser

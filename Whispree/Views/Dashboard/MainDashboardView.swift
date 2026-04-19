@@ -3,6 +3,7 @@ import SwiftUI
 struct MainDashboardView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var modelManager: ModelManager
+    @ObservedObject private var permissions = PermissionManager.shared
     @State private var modelDownloadError: String?
     @State private var selectedScreenshot: CapturedScreenshot?
 
@@ -25,7 +26,7 @@ struct MainDashboardView: View {
                     }
 
                     // Accessibility warning
-                    if !TextInsertionService.isAccessibilityEnabled() {
+                    if permissions.accessibility != .granted {
                         accessibilityWarningSection
                     }
 
@@ -189,7 +190,7 @@ struct MainDashboardView: View {
             }
             Spacer()
             Button("허용") {
-                TextInsertionService.requestAccessibilityPermission()
+                PermissionManager.shared.requestAccessibility()
             }
             .font(.caption)
             .buttonStyle(.borderedProminent)

@@ -207,7 +207,8 @@ final class TextInsertionService {
     }
 
     static func requestAccessibilityPermission() {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true]
-        AXIsProcessTrustedWithOptions(options)
+        Task { @MainActor in
+            PermissionManager.shared.requestAccessibility()
+        }
     }
 }

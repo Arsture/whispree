@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import OSLog
 
 @MainActor
 final class RecordingCoordinator: ObservableObject {
@@ -15,7 +16,11 @@ final class RecordingCoordinator: ObservableObject {
     private var workspaceObserver: AnyCancellable?
     private var previousApp: NSRunningApplication?
     private var lastExternalApp: NSRunningApplication?
+    private var capturedContext: ExternalContext?
     private let continuousCapture = ContinuousScreenCaptureService()
+    private let mediaPlayback = MediaPlaybackService()
+    private let browserContext = BrowserContextService()
+    private let terminalContext = TerminalContextService()
 
     init(
         appState: AppState,
@@ -85,6 +90,26 @@ final class RecordingCoordinator: ObservableObject {
             previousApp = frontmost
         }
 
+        // Chrome/iTerm2 컨텍스트 동기 캡처 (MainActor — TCC 프롬프트 조건).
+        // NSAppleScript는 background thread에서 호출 시 Automation 프롬프트가 안 뜨고 -1743 조용히 실패.
+        let restoreBrowser = appState.settings.restoreBrowserTab
+        let restoreTerminal = appState.settings.restoreTerminalContext
+        let targetBundle = previousApp?.bundleIdentifier ?? "nil"
+        let isChromeTarget = previousApp.map(BrowserContextService.isChrome) ?? false
+        let isITerm2Target = previousApp.map(TerminalContextService.isITerm2) ?? false
+        BrowserContextService.logger.info(
+            "startRecording: previousApp=\(targetBundle, privacy: .public) restoreBrowser=\(restoreBrowser) isChrome=\(isChromeTarget) restoreTerminal=\(restoreTerminal) isITerm2=\(isITerm2Target)"
+        )
+        if let target = previousApp, restoreBrowser, isChromeTarget {
+            capturedContext = browserContext.captureChrome(app: target)
+        } else if let target = previousApp, restoreTerminal, isITerm2Target {
+            capturedContext = terminalContext.captureITerm2(app: target)
+        } else if let target = previousApp {
+            capturedContext = .app(target)
+        } else {
+            capturedContext = nil
+        }
+
         // 연속 스크린샷 캡처 시작 (Vision 지원 프로바이더 + 토글 ON일 때)
         if appState.settings.isScreenshotContextEnabled,
            appState.llmProvider?.supportsVision == true
@@ -103,6 +128,11 @@ final class RecordingCoordinator: ObservableObject {
             appState.partialText = ""
             appState.finalText = ""
             appState.correctedText = ""
+
+            // 재생 중인 음악/영상 일시정지 (Apple Music, Spotify, YouTube 등)
+            if appState.settings.pauseMediaDuringRecording {
+                mediaPlayback.pauseIfPlaying()
+            }
         } catch {
             appState.currentError = .sttError("Failed to start recording: \(error.localizedDescription)")
         }
@@ -116,6 +146,9 @@ final class RecordingCoordinator: ObservableObject {
 
         let audioBuffer = audioService.stopRecording()
         appState.isRecording = false
+
+        // 일시정지했던 음악/영상 재개 (LLM 후처리 중에 다시 들리도록 녹음 종료 즉시)
+        Task { await mediaPlayback.resumeIfPaused() }
 
         // Check for empty audio
         guard !audioBuffer.isEmpty else {
@@ -138,10 +171,12 @@ final class RecordingCoordinator: ObservableObject {
     func cancel() {
         currentTask?.cancel()
         currentTask = nil
+        capturedContext = nil
         continuousCapture.reset()
         if audioService.isRecording {
             _ = audioService.stopRecording()
         }
+        Task { await mediaPlayback.resumeIfPaused() }
         appState.transcriptionState = .idle
         appState.isRecording = false
     }
@@ -271,7 +306,21 @@ final class RecordingCoordinator: ObservableObject {
             if appState.settings.hasCompletedOnboarding {
                 appState.transcriptionState = .inserting
 
-                let success = await textInsertionService.insertText(textToInsert, targetApp: previousApp)
+                // 캡처된 컨텍스트 종류별 복원 (탭/pane 먼저 → 그 다음 텍스트 붙여넣기)
+                let resolvedContext = capturedContext
+                let targetApp = resolvedContext?.app ?? previousApp
+                if let ctx = resolvedContext {
+                    switch ctx {
+                        case .chromeTab:
+                            _ = browserContext.restoreChrome(ctx)
+                        case .iTerm2Session:
+                            _ = terminalContext.restoreITerm2(ctx)
+                        case .app:
+                            break
+                    }
+                }
+
+                let success = await textInsertionService.insertText(textToInsert, targetApp: targetApp)
                 if !success {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(textToInsert, forType: .string)
@@ -279,7 +328,7 @@ final class RecordingCoordinator: ObservableObject {
 
                 // Step 5: 선택된 이미지 붙여넣기
                 if !selectedImages.isEmpty, !Task.isCancelled {
-                    await textInsertionService.insertImages(selectedImages, targetApp: previousApp)
+                    await textInsertionService.insertImages(selectedImages, targetApp: targetApp)
                 }
             }
 

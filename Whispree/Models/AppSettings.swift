@@ -114,6 +114,25 @@ final class AppSettings: ObservableObject {
     @UserDefault(key: "whispree.vadEnabled", defaultValue: true)
     var vadEnabled: Bool
 
+    // MARK: - Media playback
+
+    /// 녹음 시작 시 재생 중인 음악/영상을 자동 일시정지, 녹음 종료 시 재개.
+    /// Apple Music, Spotify, YouTube 등 Now Playing 시스템에 등록된 모든 소스에 적용.
+    @UserDefault(key: "whispree.pauseMediaDuringRecording", defaultValue: true)
+    var pauseMediaDuringRecording: Bool
+
+    // MARK: - Browser
+
+    @UserDefault(key: "whispree.restoreBrowserTab", defaultValue: true)
+    var restoreBrowserTab: Bool
+
+    // MARK: - Terminal
+
+    /// iTerm2 session(pane) + tmux window/pane 위치 복원.
+    /// 녹음 전 포커스된 iTerm2 pane(+ 그 안에서 tmux 돌고 있으면 attached window/pane까지) 기억 → 붙여넣기 직전 동일 pane으로 복귀.
+    @UserDefault(key: "whispree.restoreTerminalContext", defaultValue: true)
+    var restoreTerminalContext: Bool
+
     // MARK: - Domain words
 
     @CodableUserDefault(key: "whispree.domainWordSets", defaultValue: [])
