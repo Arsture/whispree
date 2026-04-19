@@ -111,8 +111,8 @@ struct ModelSettingsView: View {
             .padding(24)
         }
         .liquidBackground()
-        .onAppear {
-            modelManager.refreshAllCacheStates()
+        .task {
+            await modelManager.refreshAllCacheStatesAsync()
         }
     }
 

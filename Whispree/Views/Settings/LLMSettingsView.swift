@@ -60,8 +60,10 @@ struct LLMSettingsView: View {
         .onAppear {
             customPrompt = appState.settings.customLLMPrompt
                 ?? CorrectionPrompts.defaultSystemPrompt
-            appState.authService.checkAuth()
-            appState.oauthService.checkAuth()
+        }
+        .task {
+            await appState.authService.checkAuthAsync()
+            await appState.oauthService.checkAuthAsync()
         }
     }
 

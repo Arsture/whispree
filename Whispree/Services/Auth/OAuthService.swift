@@ -52,6 +52,20 @@ final class OAuthService: ObservableObject {
         _ = loadTokens()
     }
 
+    /// 비동기 인증 확인 — 파일 I/O + JSON 디코드를 background로 오프로드.
+    /// 뷰 진입 시 UI 스레드 stutter 방지용.
+    func checkAuthAsync() async {
+        let path = tokenPath
+        let loggedIn = await Task.detached {
+            guard FileManager.default.fileExists(atPath: path.path),
+                  let data = try? Data(contentsOf: path),
+                  (try? JSONDecoder().decode(OAuthTokens.self, from: data)) != nil
+            else { return false }
+            return true
+        }.value
+        isLoggedIn = loggedIn
+    }
+
     /// JWT에서 chatgpt_account_id 추출
     func extractAccountId(from accessToken: String) -> String? {
         let parts = accessToken.split(separator: ".")

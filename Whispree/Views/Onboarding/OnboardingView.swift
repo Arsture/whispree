@@ -312,9 +312,9 @@ struct OnboardingView: View {
             navigationButtons(backStep: 1, nextStep: 3, nextLabel: "Continue")
         }
         .padding(24)
-        .onAppear {
-            appState.authService.checkAuth()
-            appState.oauthService.checkAuth()
+        .task {
+            await appState.authService.checkAuthAsync()
+            await appState.oauthService.checkAuthAsync()
         }
     }
 
