@@ -179,11 +179,15 @@ final class ModelManager: ObservableObject {
 
         // .safetensors로 끝나는 파일 중 10MB 이상인 것이 하나라도 있으면 OK
         // (정상 모델의 가장 작은 shard도 수백 MB 이상이므로 10MB 기준은 충분히 관대)
+        // HF hub 캐시는 snapshots/<hash>/의 symlink → blobs/의 실제 파일 구조.
+        // URL.fileSizeKey는 symlink 자체 크기(76B)를 반환하므로, resolvingSymlinksInPath()로 타겟 크기를 읽는다.
         for url in contents {
             let n = url.lastPathComponent
             guard n.hasSuffix(".safetensors") else { continue }
-            if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
-               size >= 10_000_000
+            let resolved = url.resolvingSymlinksInPath()
+            if let attrs = try? fm.attributesOfItem(atPath: resolved.path),
+               let size = attrs[.size] as? NSNumber,
+               size.int64Value >= 10_000_000
             {
                 return true
             }
