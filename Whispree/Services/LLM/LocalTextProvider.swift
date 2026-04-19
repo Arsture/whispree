@@ -1,6 +1,9 @@
 import Foundation
 import MLXLLM
 import MLXLMCommon
+import MLXHuggingFace
+import HuggingFace
+import Tokenizers
 
 @MainActor
 final class LocalTextProvider: LLMProvider {
@@ -22,7 +25,11 @@ final class LocalTextProvider: LLMProvider {
 
     func setup() async throws {
         let config = ModelConfiguration(id: modelId)
-        modelContainer = try await LLMModelFactory.shared.loadContainer(configuration: config) { _ in }
+        modelContainer = try await LLMModelFactory.shared.loadContainer(
+            from: #hubDownloader(),
+            using: #huggingFaceTokenizerLoader(),
+            configuration: config
+        ) { _ in }
     }
 
     func teardown() async {

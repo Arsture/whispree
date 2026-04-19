@@ -62,6 +62,7 @@ struct LLMSettingsView: View {
                 ?? CorrectionPrompts.defaultSystemPrompt
             appState.authService.checkAuth()
             appState.oauthService.checkAuth()
+            modelManager.refreshAllCacheStates()
         }
     }
 
@@ -106,46 +107,130 @@ struct LLMSettingsView: View {
     private func localModelCard(_ spec: LocalModelSpec, sttOverhead: Int64) -> some View {
         let compat = spec.compatibility(otherModelSizeBytes: sttOverhead)
         let isSelected = appState.settings.llmModelId == spec.id
+        let isCached = modelManager.modelCacheStates[spec.id] ?? false
+        let isDownloading = modelManager.downloadingModelIds.contains(spec.id)
+        let errorMsg = modelManager.modelErrors[spec.id]
 
-        return Button {
-            appState.settings.llmModelId = spec.id
-            Task { await appState.switchLLMProvider(to: .local) }
-        } label: {
-            HStack(alignment: .center) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? DesignTokens.accentPrimary : DesignTokens.textTertiary)
-                    .font(.body)
+        let state: ModelState = {
+            if isCached { return .ready }
+            if isDownloading { return .loading }
+            if let err = errorMsg { return .error(err) }
+            return .notDownloaded
+        }()
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(spec.displayName)
-                            .font(.subheadline.weight(.medium))
-                        if spec.capability == .vision {
-                            Image(systemName: "eye")
-                                .font(.caption2)
-                                .foregroundStyle(DesignTokens.accentPrimary)
+        return VStack(alignment: .leading, spacing: 8) {
+            Button {
+                appState.settings.llmModelId = spec.id
+                if isCached {
+                    Task { await appState.switchLLMProvider(to: .local) }
+                }
+            } label: {
+                HStack(alignment: .center) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? DesignTokens.accentPrimary : DesignTokens.textTertiary)
+                        .font(.body)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(spec.displayName)
+                                .font(.subheadline.weight(.medium))
+                            if spec.capability == .vision {
+                                Image(systemName: "eye")
+                                    .font(.caption2)
+                                    .foregroundStyle(DesignTokens.accentPrimary)
+                            }
+                            if !isCached && !isDownloading {
+                                Text("다운로드 필요")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                            }
+                        }
+                        Text(spec.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    ModelMetricsView(
+                        sizeText: spec.sizeDescription,
+                        ramPercent: compat.ramUsagePercent,
+                        tokPerSec: compat.estimatedTokPerSec,
+                        latencyMs: nil,
+                        qualityScore: spec.qualityScore,
+                        grade: compat.grade
+                    )
+                }
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .disabled(isDownloading)
+
+            if isSelected {
+                modelStateControls(spec: spec, state: state)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func modelStateControls(spec: LocalModelSpec, state: ModelState) -> some View {
+        switch state {
+        case .notDownloaded:
+            HStack {
+                Spacer()
+                Button {
+                    Task {
+                        await modelManager.downloadLLMModel(modelId: spec.id)
+                        if modelManager.modelCacheStates[spec.id] == true {
+                            await appState.switchLLMProvider(to: .local)
                         }
                     }
-                    Text(spec.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                } label: {
+                    Label("다운로드 (\(spec.sizeDescription))", systemImage: "arrow.down.circle")
                 }
-
-                Spacer()
-
-                ModelMetricsView(
-                    sizeText: spec.sizeDescription,
-                    ramPercent: compat.ramUsagePercent,
-                    tokPerSec: compat.estimatedTokPerSec,
-                    latencyMs: nil,
-                    qualityScore: spec.qualityScore,
-                    grade: compat.grade
-                )
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
             }
-            .padding(.vertical, 10)
+            .padding(.leading, 28)
+
+        case .loading:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("다운로드 중... (네트워크 속도에 따라 수 분 소요)")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.leading, 28)
+
+        case .ready:
+            HStack {
+                Label("다운로드됨", systemImage: "checkmark.circle.fill")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("삭제", role: .destructive) {
+                    modelManager.deleteLLMModel(modelId: spec.id)
+                }
+                .font(.caption).controlSize(.small)
+            }
+            .padding(.leading, 28)
+
+        case let .error(msg):
+            HStack(spacing: 8) {
+                Label(msg, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
+                    .font(.caption).lineLimit(2)
+                Spacer()
+                Button("재시도") {
+                    Task { await modelManager.downloadLLMModel(modelId: spec.id) }
+                }
+                .font(.caption).controlSize(.small)
+            }
+            .padding(.leading, 28)
+
+        case .downloading:
+            EmptyView()
         }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
     }
 
     // MARK: - OpenAI Model

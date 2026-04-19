@@ -1,6 +1,9 @@
 import Foundation
 import MLXVLM
 import MLXLMCommon
+import MLXHuggingFace
+import HuggingFace
+import Tokenizers
 
 @MainActor
 final class LocalVisionProvider: LLMProvider {
@@ -22,7 +25,11 @@ final class LocalVisionProvider: LLMProvider {
 
     func setup() async throws {
         let config = ModelConfiguration(id: modelId)
-        modelContainer = try await VLMModelFactory.shared.loadContainer(configuration: config) { _ in }
+        modelContainer = try await VLMModelFactory.shared.loadContainer(
+            from: #hubDownloader(),
+            using: #huggingFaceTokenizerLoader(),
+            configuration: config
+        ) { _ in }
     }
 
     func teardown() async {

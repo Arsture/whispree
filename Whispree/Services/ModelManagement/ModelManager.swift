@@ -3,6 +3,9 @@ import Foundation
 import MLXLLM
 import MLXVLM
 import MLXLMCommon
+import MLXHuggingFace
+import HuggingFace
+import Tokenizers
 
 @MainActor
 final class ModelManager: ObservableObject {
@@ -96,38 +99,96 @@ final class ModelManager: ObservableObject {
 
     // MARK: - 캐시 상태 확인
 
-    /// 전체 지원 모델의 캐시 상태를 확인 (OR: 한번 true면 삭제 전까지 유지)
+    /// 디스크를 진실의 원천(SSOT)으로 취급. 다운로드 진행 중인 모델은 건너뛰어 false flash 방지.
     func refreshAllCacheStates() {
-        // STT 모델
-        modelCacheStates[Self.whisperKitRepoId] = whisperKitDownloaded || isModelCached(repoId: Self.whisperKitRepoId)
-        let mlxId = appState.settings.mlxAudioModelId
-        modelCacheStates[mlxId] = mlxAudioDownloaded || isModelCached(repoId: mlxId)
+        // STT: WhisperKit
+        if !isWhisperKitDownloading {
+            modelCacheStates[Self.whisperKitRepoId] = isWhisperKitCached()
+        }
 
-        if mlxAudioDownloaded, mlxAudioDownloadState == .notDownloaded {
-            mlxAudioDownloadState = .ready
+        // STT: MLX Audio
+        let mlxId = appState.settings.mlxAudioModelId
+        if !isMLXAudioDownloading {
+            let cached = isModelCached(repoId: mlxId)
+            modelCacheStates[mlxId] = cached
+            if cached, mlxAudioDownloadState == .notDownloaded {
+                mlxAudioDownloadState = .ready
+            } else if !cached, mlxAudioDownloadState == .ready {
+                mlxAudioDownloadState = .notDownloaded
+            }
         }
 
         // LLM 모델
         for spec in LocalModelSpec.supported {
-            modelCacheStates[spec.id] = (modelCacheStates[spec.id] ?? false) || isModelCached(repoId: spec.id)
+            guard !downloadingModelIds.contains(spec.id) else { continue }
+            modelCacheStates[spec.id] = isModelCached(repoId: spec.id)
         }
     }
 
     func isLLMModelCached(_ modelId: String) -> Bool {
-        modelCacheStates[modelId] ?? isModelCached(repoId: modelId)
+        isModelCached(repoId: modelId)
     }
 
+    /// 무결성 기반 캐시 판정: config.json + (model.safetensors 또는 sharded index + 최소 1개 shard)
     private func isModelCached(repoId: String) -> Bool {
         let fm = FileManager.default
-        // MLX Swift는 ~/Library/Caches/models/{org}/{name}/ 에 캐시
-        let mlxCacheDir = fm.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Caches/models/\(repoId)")
-        if fm.fileExists(atPath: mlxCacheDir.path) { return true }
-        // HuggingFace 표준 캐시도 체크 (fallback)
-        let hfCacheDir = fm.homeDirectoryForCurrentUser
-            .appendingPathComponent(".cache/huggingface/hub")
-        let hfModelDir = hfCacheDir.appendingPathComponent("models--" + repoId.replacingOccurrences(of: "/", with: "--"))
-        return fm.fileExists(atPath: hfModelDir.path)
+        let candidates = [
+            fm.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/models/\(repoId)"),
+            fm.homeDirectoryForCurrentUser.appendingPathComponent(".cache/huggingface/hub/models--" + repoId.replacingOccurrences(of: "/", with: "--"))
+        ]
+        return candidates.contains { dir in directoryHasCompleteMLXModel(at: dir) }
+    }
+
+    private func directoryHasCompleteMLXModel(at dir: URL) -> Bool {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: dir.path) else { return false }
+        guard let contents = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey], options: [.skipsHiddenFiles]) else {
+            return false
+        }
+        let names = Set(contents.map { $0.lastPathComponent })
+
+        // HuggingFace 표준 캐시는 snapshots/ 하위에 실제 파일이 있음 — 재귀로 snapshot 디렉토리 탐색
+        if names.contains("snapshots") {
+            let snapshotsDir = dir.appendingPathComponent("snapshots")
+            if let snapshots = try? fm.contentsOfDirectory(at: snapshotsDir, includingPropertiesForKeys: nil) {
+                return snapshots.contains { directoryHasCompleteMLXModel(at: $0) }
+            }
+            return false
+        }
+
+        // 필수: config.json
+        guard names.contains("config.json") else { return false }
+
+        // 모델 가중치: 단일 safetensors 또는 sharded
+        let hasSingle = names.contains("model.safetensors")
+        let hasShardedIndex = names.contains("model.safetensors.index.json")
+        let hasShardFile = names.contains { $0.hasPrefix("model-") && $0.hasSuffix(".safetensors") }
+        let hasShards = hasShardedIndex && hasShardFile
+
+        // 최소 파일 크기 체크로 부분 다운로드 탐지 (1MB 미만이면 placeholder일 가능성 높음)
+        let weightsFile = contents.first { url in
+            let n = url.lastPathComponent
+            return n == "model.safetensors" || (n.hasPrefix("model-") && n.hasSuffix(".safetensors"))
+        }
+        if let wf = weightsFile,
+           let size = try? wf.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+           size < 1_000_000
+        {
+            return false
+        }
+
+        return hasSingle || hasShards
+    }
+
+    /// WhisperKit 모델 캐시 판정 — 자체 포맷 사용 (config.json/safetensors 아님)
+    private func isWhisperKitCached() -> Bool {
+        let fm = FileManager.default
+        let hfDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/huggingface/models--" + Self.whisperKitRepoId.replacingOccurrences(of: "/", with: "--"))
+        if fm.fileExists(atPath: hfDir.path) { return true }
+        let altDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents/huggingface/models/" + Self.whisperKitRepoId)
+        return fm.fileExists(atPath: altDir.path)
     }
 
     private func modelCachePaths(repoId: String) -> [URL] {
@@ -159,9 +220,17 @@ final class ModelManager: ObservableObject {
             let spec = LocalModelSpec.find(modelId)
 
             if spec?.capability == .vision {
-                let _ = try await VLMModelFactory.shared.loadContainer(configuration: config) { _ in }
+                let _ = try await VLMModelFactory.shared.loadContainer(
+                    from: #hubDownloader(),
+                    using: #huggingFaceTokenizerLoader(),
+                    configuration: config
+                ) { _ in }
             } else {
-                let _ = try await LLMModelFactory.shared.loadContainer(configuration: config) { _ in }
+                let _ = try await LLMModelFactory.shared.loadContainer(
+                    from: #hubDownloader(),
+                    using: #huggingFaceTokenizerLoader(),
+                    configuration: config
+                ) { _ in }
             }
             modelCacheStates[modelId] = true
         } catch {
