@@ -179,7 +179,7 @@ struct OnboardingView: View {
         .padding(.horizontal, 24)
         .padding(.top, 16)
         .onAppear {
-            PermissionManager.shared.refreshAll()
+            PermissionManager.shared.refreshSystemPermissionsOnly()
         }
     }
 

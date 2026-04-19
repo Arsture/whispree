@@ -1,6 +1,7 @@
 import Accelerate
 import AVFoundation
 import Combine
+import CoreAudio
 
 @MainActor
 final class AudioService: ObservableObject {
@@ -379,5 +380,48 @@ final class AudioService: ObservableObject {
 
         // 안전장치: 트림 결과가 비었거나 극단적으로 짧으면 원본 반환 (false positive 방지)
         return result.count >= frameSize ? result : audio
+    }
+
+    /// 기본 입력 장치의 채널 수를 CoreAudio HAL로 비침습적 조회.
+    /// `AVAudioEngine()` 인스턴스화는 오디오 스택을 reconfig시켜 재생 중인 다른 앱(YouTube/Music)에 hitch를 유발.
+    /// 이 경로는 HAL 쿼리만 수행하므로 재생에 영향 없음.
+    nonisolated static func defaultInputChannelCount() -> Int {
+        var deviceID = AudioDeviceID(0)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        guard AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address, 0, nil, &size, &deviceID
+        ) == noErr, deviceID != 0 else { return 1 }
+
+        address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyStreamConfiguration,
+            mScope: kAudioDevicePropertyScopeInput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var dataSize: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(deviceID, &address, 0, nil, &dataSize) == noErr,
+              dataSize > 0 else { return 1 }
+
+        let buffer = UnsafeMutableRawPointer.allocate(
+            byteCount: Int(dataSize),
+            alignment: MemoryLayout<AudioBufferList>.alignment
+        )
+        defer { buffer.deallocate() }
+        let bufferListPtr = buffer.assumingMemoryBound(to: AudioBufferList.self)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &dataSize, bufferListPtr) == noErr else {
+            return 1
+        }
+
+        let abl = UnsafeMutableAudioBufferListPointer(bufferListPtr)
+        var total = 0
+        for ab in abl {
+            total += Int(ab.mNumberChannels)
+        }
+        return max(1, total)
     }
 }

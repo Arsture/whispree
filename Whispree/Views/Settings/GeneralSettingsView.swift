@@ -1,4 +1,3 @@
-import AVFoundation
 import KeyboardShortcuts
 import SwiftUI
 
@@ -425,9 +424,8 @@ struct GeneralSettingsView: View {
             .padding(DesignTokens.outerPadding)
         }
         .onAppear {
-            PermissionManager.shared.refreshAll()
-            let engine = AVAudioEngine()
-            inputChannelCount = max(1, Int(engine.inputNode.outputFormat(forBus: 0).channelCount))
+            PermissionManager.shared.refreshSystemPermissionsOnly()
+            inputChannelCount = AudioService.defaultInputChannelCount()
         }
     }
 

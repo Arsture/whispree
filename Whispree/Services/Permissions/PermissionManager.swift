@@ -39,10 +39,33 @@ final class PermissionManager: ObservableObject {
 
     private var refreshTimer: Timer?
 
+    /// Automation granted 캐시. requestAutomation 성공 시 저장, init 시 로드.
+    /// 대상 앱이 실행 중이 아니거나 AEDetermine API가 jitter를 일으켜도
+    /// 사용자 체감상 "한 번 허용했으면 영구 유지"가 되도록.
+    private static let automationCacheKey = "whispree.permissionManager.automationGrantedBundleIDs"
+
+    private static func loadCachedAutomationGrants() -> Set<String> {
+        let arr = UserDefaults.standard.stringArray(forKey: automationCacheKey) ?? []
+        return Set(arr)
+    }
+
+    private static func updateAutomationCache(_ bundleID: String, granted: Bool) {
+        var set = loadCachedAutomationGrants()
+        if granted { set.insert(bundleID) } else { set.remove(bundleID) }
+        UserDefaults.standard.set(Array(set), forKey: automationCacheKey)
+    }
+
     private init() {
+        // 캐시된 granted 상태 먼저 적용 — refresh jitter 방지 로직이 이걸 보존함
+        for bundleID in Self.loadCachedAutomationGrants() {
+            automation[bundleID] = .granted
+        }
         refreshAll()
+        // 타이머는 시스템 권한(Microphone/Accessibility/ScreenRecording)만 polling.
+        // Automation 권한은 요청 시점 + 뷰 진입 시 명시 갱신(requestAutomation / refresh 호출)만으로 충분.
+        // 주기 AE 이벤트가 재생 중인 Music/Spotify에 미세한 hitch를 유발하는 것을 방지.
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.refreshAll() }
+            Task { @MainActor [weak self] in self?.refreshSystemPermissionsOnly() }
         }
     }
 
@@ -55,6 +78,14 @@ final class PermissionManager: ObservableObject {
         for bundleID in Self.knownAutomationTargets {
             refresh(.automation(bundleID: bundleID))
         }
+    }
+
+    /// Automation 대상을 건드리지 않고 마이크/접근성/화면 녹화만 갱신.
+    /// 뷰 onAppear에서 호출해도 재생 중인 Music/Spotify에 AE 이벤트가 가지 않도록.
+    func refreshSystemPermissionsOnly() {
+        refresh(.microphone)
+        refresh(.accessibility)
+        refresh(.screenRecording)
     }
 
     func refresh(_ kind: PermissionKind) {
@@ -82,6 +113,11 @@ final class PermissionManager: ObservableObject {
                     // 기존 확정 상태 유지
                 } else {
                     automation[bundleID] = fresh
+                    if fresh == .granted {
+                        Self.updateAutomationCache(bundleID, granted: true)
+                    } else if fresh == .denied {
+                        Self.updateAutomationCache(bundleID, granted: false)
+                    }
                 }
             }
         }
@@ -141,6 +177,11 @@ final class PermissionManager: ObservableObject {
         }
 
         automation[bundleID] = status
+        if status == .granted {
+            Self.updateAutomationCache(bundleID, granted: true)
+        } else if status == .denied {
+            Self.updateAutomationCache(bundleID, granted: false)
+        }
         NSLog("[PermissionManager] requestAutomation \(bundleID) → \(status)")
         NSApp.activate(ignoringOtherApps: true)
         return status
