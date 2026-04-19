@@ -53,21 +53,42 @@ struct GeneralSettingsView: View {
 
                 // Recording Mode Section
                 SettingsCard(title: "Recording Mode") {
-                    Picker("Mode", selection: Binding(
-                        get: { appState.settings.recordingMode },
-                        set: { hotkeyManager.updateMode($0) }
-                    )) {
-                        ForEach(RecordingMode.allCases, id: \.self) { mode in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Picker("Mode", selection: Binding(
+                            get: { appState.settings.recordingMode },
+                            set: { hotkeyManager.updateMode($0) }
+                        )) {
+                            ForEach(RecordingMode.allCases, id: \.self) { mode in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(mode.displayName)
+                                    Text(mode.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .tag(mode)
+                            }
+                        }
+                        .pickerStyle(.radioGroup)
+
+                        Divider()
+
+                        HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(mode.displayName)
-                                Text(mode.description)
+                                Text("녹음 중 음악 일시정지")
+                                Text("Apple Music, Spotify, YouTube 등 재생 중인 미디어를 녹음 시작 시 자동으로 일시정지하고 종료 시 재개합니다.")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
-                            .tag(mode)
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.pauseMediaDuringRecording },
+                                set: { appState.settings.pauseMediaDuringRecording = $0 }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
                         }
                     }
-                    .pickerStyle(.radioGroup)
                 }
 
                 // Audio Input Channel Section (다채널 장치일 때만 표시)

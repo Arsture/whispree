@@ -14,6 +14,7 @@
 | `Auth/` | Codex CLI 토큰 재사용 + OAuth PKCE 인증 (see `Auth/AGENTS.md`) |
 | `Hotkey/` | 전역 단축키 + CGEventTap + 충돌 감지 (see `Hotkey/AGENTS.md`) |
 | `LLM/` | LLM 텍스트/비전 교정 — None/LocalText/LocalVision/OpenAI (see `LLM/AGENTS.md`) |
+| `MediaPlayback/` | 녹음 중 음악/영상 자동 일시정지 — MediaRemote private API (see `MediaPlayback/AGENTS.md`) |
 | `ModelManagement/` | ML 모델 다운로드/캐시 (see `ModelManagement/AGENTS.md`) |
 | `QuickFix/` | 선택 텍스트 교정 + 도메인 사전 등록 (see `QuickFix/AGENTS.md`) |
 | `ScreenCapture/` | 녹음 중 스크린샷 캡처 — 단일 캡처 + 디바운스 연속 캡처 (see `ScreenCapture/AGENTS.md`) |
