@@ -32,7 +32,10 @@ final class LocalTextProvider: LLMProvider {
     func correct(text: String, systemPrompt: String, glossary: [String]?, screenshots: [Data] = []) async throws -> String {
         guard let modelContainer else { throw LLMError.modelNotLoaded }
 
-        var fullPrompt = systemPrompt + "\n/no_think"
+        var fullPrompt = systemPrompt
+        if modelId.contains("Qwen3") {
+            fullPrompt += "\n/no_think"
+        }
         if let glossary, !glossary.isEmpty {
             fullPrompt += "\n\n용어 사전 (반드시 이 형태로 보존):\n" + glossary.joined(separator: ", ")
         }
