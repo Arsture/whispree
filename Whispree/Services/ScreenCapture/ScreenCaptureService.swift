@@ -9,7 +9,9 @@ final class ScreenCaptureService {
 
     /// Screen Recording 권한 요청
     static func requestScreenRecordingPermission() {
-        CGRequestScreenCaptureAccess()
+        Task { @MainActor in
+            await PermissionManager.shared.requestScreenRecording()
+        }
     }
 
     /// 앱의 최상위(frontmost) 윈도우를 캡처하여 JPEG Data로 반환

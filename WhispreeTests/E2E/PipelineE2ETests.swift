@@ -160,7 +160,7 @@ final class PipelineE2ETests: XCTestCase {
     // MARK: - US-003: Word Edit Distance
 
     func testWordEditDistanceAllowsValidCorrection() {
-        let ratio = LLMService.testWordEditDistance(
+        let ratio = LocalTextProvider.wordEditDistance(
             "이거 L&M 모델이 되개 잘하거든",
             "이거 LLM 모델이 되게 잘하거든"
         )
@@ -168,7 +168,7 @@ final class PipelineE2ETests: XCTestCase {
     }
 
     func testWordEditDistanceRejectsHallucination() {
-        let ratio = LLMService.testWordEditDistance(
+        let ratio = LocalTextProvider.wordEditDistance(
             "오늘 날씨가 좋습니다",
             "내일은 비가 올 수도 있겠습니다"
         )

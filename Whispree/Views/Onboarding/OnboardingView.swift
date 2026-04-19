@@ -1,5 +1,3 @@
-import AVFoundation
-import CoreGraphics
 import KeyboardShortcuts
 import SwiftUI
 
@@ -9,10 +7,7 @@ struct OnboardingView: View {
     let onComplete: () -> Void
 
     @State private var currentStep = 0
-    @State private var micGranted = false
-    @State private var axGranted = false
-    @State private var screenRecordingGranted = false
-    @State private var axCheckTimer: Timer?
+    @ObservedObject private var permissions = PermissionManager.shared
     @State private var demoText = ""
     @State private var quickFixDemoText = "밸리데이션을 체크해서 컨트롤러의 로직을 리팩토링합니다"
 
@@ -79,108 +74,112 @@ struct OnboardingView: View {
     // MARK: - Step 1: Permissions
 
     private var permissionStep: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: "lock.shield")
-                .font(.system(size: 60))
-                .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+        VStack(spacing: 16) {
+            ScrollView {
+                VStack(spacing: 16) {
+                    Image(systemName: "lock.shield")
+                        .font(.system(size: 50))
+                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
 
-            Text("Permissions")
-                .font(.title.bold())
+                    Text("Permissions")
+                        .font(.title.bold())
 
-            Text("각 항목을 클릭하여 권한을 허용하세요.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                    Text("각 항목을 클릭하여 권한을 허용하세요.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
 
-            VStack(spacing: 0) {
-                // Microphone
-                Button {
-                    Task {
-                        micGranted = await AVCaptureDevice.requestAccess(for: .audio)
-                        NSApp.activate(ignoringOtherApps: true)
+                    VStack(spacing: 0) {
+                        PermissionRow(
+                            icon: "mic.fill",
+                            title: "마이크",
+                            subtitle: "음성 녹음에 필요합니다",
+                            status: permissions.microphone
+                        ) {
+                            Task {
+                                _ = await PermissionManager.shared.requestMicrophone()
+                                NSApp.activate(ignoringOtherApps: true)
+                            }
+                        }
+
+                        Divider().padding(.horizontal, 16)
+
+                        PermissionRow(
+                            icon: "hand.raised.fill",
+                            title: "손쉬운 사용",
+                            subtitle: "다른 앱에 텍스트를 붙여넣기 위해 필요합니다",
+                            status: permissions.accessibility
+                        ) {
+                            PermissionManager.shared.requestAccessibility()
+                        }
+
+                        Divider().padding(.horizontal, 16)
+
+                        PermissionRow(
+                            icon: "camera.viewfinder",
+                            title: "화면 녹화",
+                            subtitle: "다른 앱 화면을 캡처하여 AI 교정의 맥락을 제공합니다",
+                            status: permissions.screenRecording
+                        ) {
+                            Task { _ = await PermissionManager.shared.requestScreenRecording() }
+                        }
+
+                        Divider().padding(.horizontal, 16)
+
+                        PermissionRow(
+                            icon: "arrow.triangle.2.circlepath",
+                            title: "앱 관리",
+                            subtitle: "자동 업데이트에 필요합니다 (선택)",
+                            status: .notDetermined,
+                            actionLabel: "설정 열기"
+                        ) {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AppBundles") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+
+                        Divider().padding(.horizontal, 16)
+
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Automation (선택)")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 14)
+                                .padding(.top, 10)
+                                .padding(.bottom, 4)
+
+                            ForEach(Array(AutomationTarget.all.enumerated()), id: \.element.bundleID) { index, target in
+                                let status = permissions.automation[target.bundleID] ?? .notDetermined
+                                PermissionRow(
+                                    icon: target.icon,
+                                    title: target.name,
+                                    subtitle: target.description,
+                                    status: status
+                                ) {
+                                    if status == .denied {
+                                        PermissionManager.shared.openSystemSettings(for: .automation(bundleID: target.bundleID))
+                                    } else {
+                                        Task { _ = await PermissionManager.shared.requestAutomation(bundleID: target.bundleID) }
+                                    }
+                                }
+                                if index < AutomationTarget.all.count - 1 {
+                                    Divider().padding(.horizontal, 16)
+                                }
+                            }
+                        }
                     }
-                } label: {
-                    permissionRow(
-                        icon: "mic.fill",
-                        title: "마이크",
-                        description: "음성 녹음에 필요합니다",
-                        isGranted: micGranted
-                    )
+                    .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: 28))
                 }
-                .buttonStyle(.plain)
-
-                Divider().padding(.horizontal, 16)
-
-                // Accessibility
-                Button {
-                    TextInsertionService.requestAccessibilityPermission()
-                    startAccessibilityCheck()
-                } label: {
-                    permissionRow(
-                        icon: "hand.raised.fill",
-                        title: "손쉬운 사용",
-                        description: "다른 앱에 텍스트를 붙여넣기 위해 필요합니다",
-                        isGranted: axGranted
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Divider().padding(.horizontal, 16)
-
-                // Screen Recording
-                Button {
-                    CGRequestScreenCaptureAccess()
-                    screenRecordingGranted = CGPreflightScreenCaptureAccess()
-                } label: {
-                    permissionRow(
-                        icon: "camera.viewfinder",
-                        title: "화면 녹화",
-                        description: "다른 앱 화면을 캡처하여 AI 교정의 맥락을 제공합니다",
-                        isGranted: screenRecordingGranted
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Divider().padding(.horizontal, 16)
-
-                // App Management
-                Button {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AppBundles") {
-                        NSWorkspace.shared.open(url)
-                    }
-                } label: {
-                    permissionRow(
-                        icon: "arrow.triangle.2.circlepath",
-                        title: "앱 관리",
-                        description: "자동 업데이트에 필요합니다 (선택)",
-                        isGranted: false,
-                        actionLabel: "설정 열기"
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Text("설정에서 Whispree를 허용한 후에도 여기에 체크 표시가 나타나지 않습니다")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                    .padding(.top, -4)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
             }
-            .background(DesignTokens.surfaceBackgroundView(role: .card, cornerRadius: 28))
-
-            Spacer()
+            .scrollIndicators(.hidden)
 
             navigationButtons(backStep: 0, nextStep: 2, nextLabel: "Continue")
         }
-        .padding(24)
+        .padding(.horizontal, 24)
+        .padding(.top, 16)
         .onAppear {
-            micGranted = AudioService().checkPermission()
-            axGranted = TextInsertionService.isAccessibilityEnabled()
-            screenRecordingGranted = CGPreflightScreenCaptureAccess()
-        }
-        .onDisappear {
-            axCheckTimer?.invalidate()
-            axCheckTimer = nil
+            PermissionManager.shared.refreshAll()
         }
     }
 
@@ -547,46 +546,6 @@ struct OnboardingView: View {
         .padding(.bottom, 40)
     }
 
-    private func permissionRow(
-        icon: String,
-        title: String,
-        description: String,
-        isGranted: Bool,
-        actionLabel: String = "허용하기"
-    ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(DesignTokens.accentPrimary)
-                .frame(width: 28)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.headline)
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if isGranted {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(DesignTokens.semanticColors(for: .success).foreground)
-            } else {
-                Text(actionLabel)
-                    .font(.caption.bold())
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(DesignTokens.accentPrimary)
-                    .clipShape(Capsule())
-            }
-        }
-        .padding(14)
-        .contentShape(Rectangle())
-    }
-
     private func modeRow(mode: RecordingMode, icon: String, title: String, description: String) -> some View {
         let isSelected = appState.settings.recordingMode == mode
 
@@ -638,21 +597,6 @@ struct OnboardingView: View {
             .padding(.vertical, 3)
             .background(Color.primary.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-    }
-
-    private func startAccessibilityCheck() {
-        axCheckTimer?.invalidate()
-        axCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            Task { @MainActor in
-                let granted = TextInsertionService.isAccessibilityEnabled()
-                if granted {
-                    axGranted = true
-                    axCheckTimer?.invalidate()
-                    axCheckTimer = nil
-                    NSApp.activate(ignoringOtherApps: true)
-                }
-            }
-        }
     }
 
     private func initializeProviders() {

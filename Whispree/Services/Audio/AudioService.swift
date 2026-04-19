@@ -33,15 +33,11 @@ final class AudioService: ObservableObject {
     private var hasSpokenOnce = false
 
     func requestPermission() async -> Bool {
-        await withCheckedContinuation { continuation in
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
-                continuation.resume(returning: granted)
-            }
-        }
+        await PermissionManager.shared.requestMicrophone() == .granted
     }
 
     func checkPermission() -> Bool {
-        AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        PermissionManager.shared.microphone == .granted
     }
 
     func startRecording(channelSelection: Int = 0) throws {

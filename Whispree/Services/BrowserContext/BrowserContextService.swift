@@ -125,6 +125,10 @@ final class BrowserContextService {
     /// NSAppleScript 동기 실행. error 발생 시 nil 반환. MainActor에서만 호출 — TCC 프롬프트 조건.
     /// -1743: Automation 권한 거부. -1728/-1708 계열: JS 미허용 또는 실행 실패.
     private static func executeScript(_ source: String) -> String? {
+        guard PermissionManager.shared.automation[chromeBundleID] != .denied else {
+            logger.error("Chrome automation permission denied — skipping AppleScript")
+            return nil
+        }
         var errorInfo: NSDictionary?
         guard let script = NSAppleScript(source: source) else {
             logger.error("AppleScript init failed (source too long or invalid)")

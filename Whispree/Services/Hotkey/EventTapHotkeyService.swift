@@ -77,7 +77,7 @@ final class EventTapHotkeyService {
     func start() {
         guard eventTap == nil else { return }
         guard AXIsProcessTrusted() else {
-            print("[EventTap] Accessibility permission required")
+            Task { @MainActor in PermissionManager.shared.requestAccessibility() }
             return
         }
 

@@ -89,5 +89,7 @@ targets:
         GENERATE_INFOPLIST_FILE: "YES"
         BUNDLE_LOADER: "$(TEST_HOST)"
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Whispree.app/Contents/MacOS/Whispree"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: DRDT2F8525
     dependencies:
       - target: Whispree

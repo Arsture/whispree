@@ -142,13 +142,15 @@ final class MediaPlaybackService {
                 var music = false
                 var spotify = false
 
-                if isRunning(app: "Music"),
+                let musicPerm = PermissionManager.queryAutomationStatus(bundleID: "com.apple.Music", askIfNeeded: false)
+                if musicPerm != .denied, isRunning(app: "Music"),
                    applescriptBool("tell application \"Music\" to return (player state is playing)") {
                     _ = runAppleScriptSync("tell application \"Music\" to pause")
                     music = true
                     NSLog("[MediaPlayback] Music paused via AppleScript")
                 }
-                if isRunning(app: "Spotify"),
+                let spotifyPerm = PermissionManager.queryAutomationStatus(bundleID: "com.spotify.client", askIfNeeded: false)
+                if spotifyPerm != .denied, isRunning(app: "Spotify"),
                    applescriptBool("tell application \"Spotify\" to return (player state is playing)") {
                     _ = runAppleScriptSync("tell application \"Spotify\" to pause")
                     spotify = true

@@ -88,6 +88,10 @@ final class TerminalContextService {
     }
 
     private static func executeScript(_ source: String) -> String? {
+        guard PermissionManager.shared.automation[iTerm2BundleID] != .denied else {
+            logger.error("iTerm2 automation permission denied — skipping AppleScript")
+            return nil
+        }
         var errorInfo: NSDictionary?
         guard let script = NSAppleScript(source: source) else {
             logger.error("AppleScript init failed")
