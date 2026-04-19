@@ -5,62 +5,27 @@ import Foundation
 ///
 /// **전략 (layered)**:
 /// 1. Music / Spotify: AppleScript로 직접 pause/play (가장 안정적, 권한 불요)
-/// 2. 그 외 (YouTube/IINA/QuickTime 등): MediaRemote playing 감지 후
-///    `NX_KEYTYPE_PLAY` 미디어 키 post (`.cghidEventTap`). macOS 26 Tahoe에서
-///    `MRMediaRemoteSendCommand`가 non-Apple 프로세스에 대해 no-op이라 미디어 키
-///    시뮬레이션으로 우회.
-///
-/// **Playing 감지 이중화**: `MRMediaRemoteGetNowPlayingApplicationIsPlaying`는
-/// Chrome 같은 멀티프로세스 앱에서 main process 기준으로 false를 반환하고,
-/// 실제 재생은 helper process에서 일어남. 이 갭을 메우기 위해 `MRMediaRemoteGetNowPlayingInfo`의
-/// `kMRMediaRemoteNowPlayingInfoPlaybackRate`도 함께 조회 (> 0 이면 재생 중).
-///
-/// **중복 방지**: AppleScript로 Music/Spotify를 이미 pause한 경우 미디어 키를
-/// 발사하지 않음. 미디어 키는 토글이므로 방금 pause한 Music/Spotify를 다시
-/// 재생시킬 위험이 있기 때문.
+/// 2. 그 외 (YouTube/IINA/QuickTime 등): MediaRemote private framework을 통한 명시적
+///    `kMRPause` / `kMRPlay` 명령. macOS 15.4+에서 Apple이 non-Apple 프로세스의
+///    MediaRemote 접근을 차단했지만 `/usr/bin/perl` (번들 ID `com.apple.perl5`)은
+///    여전히 엔타이틀먼트를 보유하므로, 번들된 `MediaRemoteAdapter.framework` +
+///    `mediaremote-adapter.pl` subprocess로 우회. (출처: ungive/mediaremote-adapter)
+/// 3. Perl adapter 호출 실패 시 `NX_KEYTYPE_PLAY` 미디어 키 fallback.
 ///
 /// **재개 정책**: 경로별로 기억해 대칭적으로 재개 (AppleScript로 pause → AppleScript로 play,
-/// 미디어 키로 pause → 미디어 키로 resume). 사용자가 이미 정지 상태였던 앱은 건드리지 않음.
+/// adapter로 pause → adapter로 play, 미디어 키로 pause → 미디어 키로 resume).
+/// 사용자가 이미 정지 상태였던 앱은 건드리지 않음.
 ///
 /// **Race 방어**: 비동기 체크 중 `resumeIfPaused()`가 먼저 호출되는 케이스를
 /// 막기 위해 내부 `pendingPause` Task를 resume에서 await.
 @MainActor
 final class MediaPlaybackService {
 
-    private typealias GetIsPlaying = @convention(c) (
-        DispatchQueue, @escaping @convention(block) (Bool) -> Void
-    ) -> Void
-
-    private typealias GetNowPlayingInfo = @convention(c) (
-        DispatchQueue, @escaping @convention(block) (CFDictionary?) -> Void
-    ) -> Void
-
-    private let getIsPlaying: GetIsPlaying?
-    private let getNowPlayingInfo: GetNowPlayingInfo?
-
     private var pendingPause: Task<Void, Never>?
     private var pausedMusic = false
     private var pausedSpotify = false
+    private var pausedViaAdapter = false
     private var sentMediaKey = false
-
-    init() {
-        let url = URL(fileURLWithPath: "/System/Library/PrivateFrameworks/MediaRemote.framework")
-        guard let bundle = CFBundleCreate(kCFAllocatorDefault, url as CFURL) else {
-            NSLog("[MediaPlayback] MediaRemote bundle load failed")
-            self.getIsPlaying = nil
-            self.getNowPlayingInfo = nil
-            return
-        }
-        let playingPtr = CFBundleGetFunctionPointerForName(
-            bundle, "MRMediaRemoteGetNowPlayingApplicationIsPlaying" as CFString
-        )
-        let infoPtr = CFBundleGetFunctionPointerForName(
-            bundle, "MRMediaRemoteGetNowPlayingInfo" as CFString
-        )
-        self.getIsPlaying = playingPtr.map { unsafeBitCast($0, to: GetIsPlaying.self) }
-        self.getNowPlayingInfo = infoPtr.map { unsafeBitCast($0, to: GetNowPlayingInfo.self) }
-        NSLog("[MediaPlayback] ready (getIsPlaying=\(playingPtr != nil) getNowPlayingInfo=\(infoPtr != nil))")
-    }
 
     /// 재생 중인 미디어 일시정지. fire-and-forget.
     func pauseIfPlaying() {
@@ -68,38 +33,32 @@ final class MediaPlaybackService {
         pendingPause = Task { @MainActor [weak self] in
             guard let self else { return }
 
-            // 1. Music / Spotify: AppleScript 직접 pause (권한 없이 가장 안정적)
+            // 1. Music / Spotify: AppleScript 직접 pause
             let apple = await Self.pauseAppleScriptPlayers()
             self.pausedMusic = apple.music
             self.pausedSpotify = apple.spotify
             guard !Task.isCancelled else { return }
 
-            // 2. AppleScript로 pause한 것이 없을 때만 MediaRemote 체크 + 미디어 키
-            // (이미 Music/Spotify를 pause했는데 또 미디어 키를 쏘면 토글되어 다시 재생됨)
+            // 2. 그 외 앱: MediaRemote adapter로 명시적 pause
             if !apple.music, !apple.spotify {
-                let isPlayingAPI = await self.queryIsPlaying()
-                // Chrome 같은 multi-process 앱은 isPlaying API가 main process 기준으로
-                // false를 반환할 수 있으므로 playbackRate fallback 확인
-                let playbackRate = isPlayingAPI ? 1.0 : await self.queryPlaybackRate()
-                let playing = isPlayingAPI || playbackRate > 0
-                NSLog("[MediaPlayback] MediaRemote isPlaying=\(isPlayingAPI) playbackRate=\(playbackRate) → playing=\(playing)")
-                if playing {
-                    Self.sendPlayPauseMediaKey()
-                    self.sentMediaKey = true
-                    NSLog("[MediaPlayback] media key sent (pause)")
+                let info = await Self.adapterGetNowPlaying()
+                if let info, info.isPlaying {
+                    NSLog("[MediaPlayback] adapter detected playing app=\(info.bundleId ?? "?")")
+                    let ok = await Self.adapterSend(command: .pause)
+                    if ok {
+                        self.pausedViaAdapter = true
+                        NSLog("[MediaPlayback] pause command sent via adapter")
+                    } else {
+                        // adapter 명령 실패 → 미디어 키 fallback
+                        Self.sendPlayPauseMediaKey()
+                        self.sentMediaKey = true
+                        NSLog("[MediaPlayback] adapter send failed, fallback to media key")
+                    }
+                } else {
+                    NSLog("[MediaPlayback] adapter reports nothing playing (info=\(info != nil))")
                 }
             }
         }
-    }
-
-    private func queryIsPlaying() async -> Bool {
-        guard let fn = getIsPlaying else { return false }
-        return await Self.queryMediaRemote(fn)
-    }
-
-    private func queryPlaybackRate() async -> Double {
-        guard let fn = getNowPlayingInfo else { return 0 }
-        return await Self.queryPlaybackRate(fn)
     }
 
     /// 우리가 pause한 경우에만 재개. pendingPause Task 완료 대기 후 경로별 대칭 재개.
@@ -119,6 +78,11 @@ final class MediaPlaybackService {
             pausedSpotify = false
             NSLog("[MediaPlayback] Spotify resumed")
         }
+        if pausedViaAdapter {
+            _ = await Self.adapterSend(command: .play)
+            pausedViaAdapter = false
+            NSLog("[MediaPlayback] adapter play command sent")
+        }
         if sentMediaKey {
             Self.sendPlayPauseMediaKey()
             sentMediaKey = false
@@ -131,10 +95,11 @@ final class MediaPlaybackService {
         pendingPause = nil
         pausedMusic = false
         pausedSpotify = false
+        pausedViaAdapter = false
         sentMediaKey = false
     }
 
-    // MARK: - AppleScript path
+    // MARK: - AppleScript path (Music / Spotify)
 
     nonisolated private static func pauseAppleScriptPlayers() async -> (music: Bool, spotify: Bool) {
         await withCheckedContinuation { (cont: CheckedContinuation<(music: Bool, spotify: Bool), Never>) in
@@ -195,60 +160,102 @@ final class MediaPlaybackService {
         NSWorkspace.shared.runningApplications.contains { $0.localizedName == app }
     }
 
-    // MARK: - MediaRemote detection
+    // MARK: - MediaRemote adapter path (Perl subprocess)
 
-    private static func queryMediaRemote(_ fn: GetIsPlaying) async -> Bool {
-        await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
-            let lock = NSLock()
-            var resumed = false
-            fn(.main) { playing in
-                lock.lock()
-                defer { lock.unlock() }
-                if resumed { return }
-                resumed = true
-                cont.resume(returning: playing)
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                lock.lock()
-                defer { lock.unlock() }
-                if resumed { return }
-                resumed = true
-                NSLog("[MediaPlayback] MediaRemote isPlaying timeout")
-                cont.resume(returning: false)
-            }
-        }
+    /// MediaRemote 명령 ID. README 참조.
+    private enum AdapterCommand: Int {
+        case play = 0
+        case pause = 1
+        case togglePlayPause = 2
     }
 
-    /// MRMediaRemoteGetNowPlayingInfo로 kMRMediaRemoteNowPlayingInfoPlaybackRate 조회.
-    /// Chrome/Safari 같은 멀티프로세스 앱에서 isPlaying이 false를 반환할 때 fallback.
-    private static func queryPlaybackRate(_ fn: GetNowPlayingInfo) async -> Double {
-        await withCheckedContinuation { (cont: CheckedContinuation<Double, Never>) in
-            let lock = NSLock()
-            var resumed = false
-            fn(.main) { info in
-                lock.lock()
-                defer { lock.unlock() }
-                if resumed { return }
-                resumed = true
-                guard let info = info as? [String: Any] else {
-                    cont.resume(returning: 0)
+    struct NowPlayingInfo {
+        let bundleId: String?
+        let title: String?
+        let isPlaying: Bool
+    }
+
+    nonisolated private static func adapterResourcePath(_ name: String) -> String? {
+        guard let resourceDir = Bundle.main.resourcePath else { return nil }
+        let path = (resourceDir as NSString).appendingPathComponent("MediaRemoteAdapter/\(name)")
+        return FileManager.default.fileExists(atPath: path) ? path : nil
+    }
+
+    nonisolated private static func adapterGetNowPlaying() async -> NowPlayingInfo? {
+        guard let script = adapterResourcePath("mediaremote-adapter.pl"),
+              let framework = adapterResourcePath("MediaRemoteAdapter.framework") else {
+            NSLog("[MediaPlayback] adapter resources missing")
+            return nil
+        }
+
+        return await withCheckedContinuation { (cont: CheckedContinuation<NowPlayingInfo?, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let proc = Process()
+                proc.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
+                proc.arguments = [script, framework, "get"]
+                let outPipe = Pipe()
+                proc.standardOutput = outPipe
+                proc.standardError = FileHandle.nullDevice
+                do {
+                    try proc.run()
+                } catch {
+                    NSLog("[MediaPlayback] adapter launch failed: \(error)")
+                    cont.resume(returning: nil)
                     return
                 }
-                let rate = (info["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? NSNumber)?.doubleValue ?? 0
-                cont.resume(returning: rate)
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                lock.lock()
-                defer { lock.unlock() }
-                if resumed { return }
-                resumed = true
-                NSLog("[MediaPlayback] MediaRemote info timeout")
-                cont.resume(returning: 0)
+                // stdout을 EOF까지 읽어 파이프 드레인 (artwork base64로 200KB+).
+                // 읽기 전에 wait하면 파이프 버퍼 full 시 Perl이 block되어 hang 발생.
+                let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+                proc.waitUntilExit()
+
+                guard proc.terminationStatus == 0 else {
+                    NSLog("[MediaPlayback] adapter get exit=\(proc.terminationStatus)")
+                    cont.resume(returning: nil)
+                    return
+                }
+                guard let json = try? JSONSerialization.jsonObject(with: data),
+                      let dict = json as? [String: Any] else {
+                    // "null" 또는 빈 출력 = 현재 Now Playing 없음
+                    cont.resume(returning: nil)
+                    return
+                }
+                let info = NowPlayingInfo(
+                    bundleId: dict["bundleIdentifier"] as? String,
+                    title: dict["title"] as? String,
+                    isPlaying: (dict["playing"] as? Bool) ?? false
+                )
+                cont.resume(returning: info)
             }
         }
     }
 
-    // MARK: - Media Key Event
+    nonisolated private static func adapterSend(command: AdapterCommand) async -> Bool {
+        guard let script = adapterResourcePath("mediaremote-adapter.pl"),
+              let framework = adapterResourcePath("MediaRemoteAdapter.framework") else {
+            return false
+        }
+        return await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let proc = Process()
+                proc.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
+                proc.arguments = [script, framework, "send", String(command.rawValue)]
+                // send 커맨드는 출력이 거의 없지만 파이프 블로킹 방지 위해 /dev/null로 리다이렉트.
+                proc.standardOutput = FileHandle.nullDevice
+                proc.standardError = FileHandle.nullDevice
+                do {
+                    try proc.run()
+                } catch {
+                    NSLog("[MediaPlayback] adapter send launch failed: \(error)")
+                    cont.resume(returning: false)
+                    return
+                }
+                proc.waitUntilExit()
+                cont.resume(returning: proc.terminationStatus == 0)
+            }
+        }
+    }
+
+    // MARK: - Media Key Event (fallback)
 
     /// `NSEvent.systemDefined` subtype 8 (aux key) + NX_KEYTYPE_PLAY(16) 다운/업 페어.
     /// MediaKeyTap 등 오픈소스 라이브러리가 사용하는 표준 패턴. 시스템이 현재

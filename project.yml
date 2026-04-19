@@ -39,6 +39,7 @@ targets:
         excludes:
           - "**/.DS_Store"
           - "**/AGENTS.md"
+          - "Vendor/**"
     resources:
       - path: Whispree/Resources/Assets.xcassets
     postBuildScripts:
@@ -47,6 +48,16 @@ targets:
           cp "${SRCROOT}/mlx-worker/mlx_worker.py" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker/"
           cp "${SRCROOT}/mlx-worker/pyproject.toml" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker/"
         name: Copy mlx-worker to bundle
+      - script: |
+          DEST="${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/MediaRemoteAdapter"
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          cp -R "${SRCROOT}/Whispree/Vendor/MediaRemoteAdapter/MediaRemoteAdapter.framework" "$DEST/"
+          cp "${SRCROOT}/Whispree/Vendor/MediaRemoteAdapter/MediaRemoteAdapterTestClient" "$DEST/"
+          cp "${SRCROOT}/Whispree/Vendor/MediaRemoteAdapter/mediaremote-adapter.pl" "$DEST/"
+          cp "${SRCROOT}/Whispree/Vendor/MediaRemoteAdapter/LICENSE" "$DEST/LICENSE"
+          chmod +x "$DEST/MediaRemoteAdapterTestClient" "$DEST/mediaremote-adapter.pl"
+        name: Copy MediaRemoteAdapter to bundle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.whispree.app
