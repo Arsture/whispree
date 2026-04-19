@@ -423,9 +423,11 @@ struct GeneralSettingsView: View {
             }
             .padding(DesignTokens.outerPadding)
         }
-        .onAppear {
-            PermissionManager.shared.refreshSystemPermissionsOnly()
-            inputChannelCount = AudioService.defaultInputChannelCount()
+        .task {
+            // 권한 갱신은 PermissionManager가 5초 타이머 + app-active 훅으로 자동 처리.
+            // 탭 진입마다 동기 TCC syscall(AXIsProcessTrusted, CGPreflightScreenCaptureAccess)을 돌리면
+            // 체감 가능한 렉이 생기므로 여기서는 채널 탐지만 비동기로 로드.
+            inputChannelCount = await Task.detached { AudioService.defaultInputChannelCount() }.value
         }
     }
 

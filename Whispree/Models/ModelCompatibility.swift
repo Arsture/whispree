@@ -65,10 +65,51 @@ struct ModelCompatibilityResult {
 enum ModelCompatibility {
     private static let mlxEfficiency: Double = 0.55
 
+    // 결과 메모이제이션. 디바이스는 런타임 불변이라 사실상 영구 캐시.
+    // SwiftUI body에서 매 렌더마다 호출되던 비용 제거.
+    private struct CacheKey: Hashable {
+        let modelSizeBytes: Int64
+        let otherModelSizeBytes: Int64
+        let totalRAMGB: Int
+        let memoryBandwidthGBs: Int
+    }
+    private static let cacheLock = NSLock()
+    private static var cache: [CacheKey: ModelCompatibilityResult] = [:]
+
     static func evaluate(
         modelSizeBytes: Int64,
         otherModelSizeBytes: Int64 = 0,
         device: DeviceCapability = .current
+    ) -> ModelCompatibilityResult {
+        let key = CacheKey(
+            modelSizeBytes: modelSizeBytes,
+            otherModelSizeBytes: otherModelSizeBytes,
+            totalRAMGB: device.totalRAMGB,
+            memoryBandwidthGBs: device.memoryBandwidthGBs
+        )
+        cacheLock.lock()
+        if let hit = cache[key] {
+            cacheLock.unlock()
+            return hit
+        }
+        cacheLock.unlock()
+
+        let result = compute(
+            modelSizeBytes: modelSizeBytes,
+            otherModelSizeBytes: otherModelSizeBytes,
+            device: device
+        )
+
+        cacheLock.lock()
+        cache[key] = result
+        cacheLock.unlock()
+        return result
+    }
+
+    private static func compute(
+        modelSizeBytes: Int64,
+        otherModelSizeBytes: Int64,
+        device: DeviceCapability
     ) -> ModelCompatibilityResult {
         let modelSizeGB = Double(modelSizeBytes) / 1_000_000_000
         let otherSizeGB = Double(otherModelSizeBytes) / 1_000_000_000

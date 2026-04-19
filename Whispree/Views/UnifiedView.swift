@@ -42,6 +42,9 @@ struct UnifiedView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedSection: SidebarSection = .home
     @State private var isSidebarExpanded: Bool = true
+    // 방문한 탭만 mount해서 launch-time cost는 피하되, 한 번 방문한 뒤에는
+    // 계속 유지해 .task/body 재실행 없이 즉시 전환되도록. 스크롤 위치/입력 state도 보존됨.
+    @State private var visitedSections: Set<SidebarSection> = [.home]
 
     private var sidebarWidth: CGFloat {
         isSidebarExpanded ? 220 : 80
@@ -105,7 +108,7 @@ struct UnifiedView: View {
                     isSelected: selectedSection == section,
                     isExpanded: isSidebarExpanded
                 ) {
-                    selectedSection = section
+                    selectSection(section)
                 }
             }
             Spacer()
@@ -114,25 +117,58 @@ struct UnifiedView: View {
         .padding(.horizontal, isSidebarExpanded ? 14 : 8)
     }
 
+    // MARK: - Section selection
+
+    private func selectSection(_ section: SidebarSection) {
+        guard selectedSection != section else { return }
+        // mount은 애니메이션 밖 — 뷰가 트리에 즉시 들어가야 fade-in이 자연스러움
+        visitedSections.insert(section)
+        withAnimation(.easeInOut(duration: 0.18)) {
+            selectedSection = section
+        }
+    }
+
     // MARK: - Detail
 
-    @ViewBuilder
+    /// ZStack에 방문한 탭들을 유지하고 opacity + hit-testing만 토글.
+    /// switch-based destroy/recreate로 인한 body/.task 재실행 렉을 제거.
     private var detailView: some View {
-        switch selectedSection {
-            case .home:
+        ZStack {
+            if visitedSections.contains(.home) {
                 MainDashboardView()
-            case .general:
+                    .opacity(selectedSection == .home ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .home)
+            }
+            if visitedSections.contains(.general) {
                 GeneralSettingsView()
-            case .stt:
+                    .opacity(selectedSection == .general ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .general)
+            }
+            if visitedSections.contains(.stt) {
                 STTSettingsView()
-            case .llm:
+                    .opacity(selectedSection == .stt ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .stt)
+            }
+            if visitedSections.contains(.llm) {
                 LLMSettingsView()
-            case .models:
+                    .opacity(selectedSection == .llm ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .llm)
+            }
+            if visitedSections.contains(.models) {
                 ModelSettingsView()
-            case .wordSets:
+                    .opacity(selectedSection == .models ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .models)
+            }
+            if visitedSections.contains(.wordSets) {
                 DomainWordSetsView()
-            case .history:
+                    .opacity(selectedSection == .wordSets ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .wordSets)
+            }
+            if visitedSections.contains(.history) {
                 TranscriptionHistoryView()
+                    .opacity(selectedSection == .history ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .history)
+            }
         }
     }
 }

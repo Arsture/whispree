@@ -67,6 +67,14 @@ final class PermissionManager: ObservableObject {
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.refreshSystemPermissionsOnly() }
         }
+        // 앱 포커스 복귀 시 즉시 갱신 — 유저가 시스템 설정에서 권한을 바꾸고 돌아오는 전형 플로우 대응
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.refreshSystemPermissionsOnly() }
+        }
     }
 
     // MARK: - Refresh (non-prompting)
