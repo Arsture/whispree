@@ -60,7 +60,9 @@ struct ModelSettingsView: View {
 
                             let isCached = modelManager.modelCacheStates[spec.id] ?? false
                             let isDownloading = modelManager.downloadingModelIds.contains(spec.id)
-                            let isSelected = appState.settings.llmModelId == spec.id
+                            // "사용 중" 뱃지는 현재 provider가 local일 때만 — OpenAI 쓰는데 last-selected MLX가 "사용 중"으로 뜨는 버그 방지
+                            let isSelected = appState.settings.llmProviderType == .local
+                                && appState.settings.llmModelId == spec.id
                             let errorMsg = modelManager.modelErrors[spec.id]
                             let compat = spec.compatibility(otherModelSizeBytes: sttOverhead)
 

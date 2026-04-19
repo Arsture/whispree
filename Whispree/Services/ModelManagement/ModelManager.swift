@@ -55,7 +55,8 @@ final class ModelManager: ObservableObject {
         createModelsDirectoryIfNeeded()
         loadPersistedCacheStates()
         observeProviderStates()
-        refreshAllCacheStates()
+        // 앱 최초 시작 시 1회만 disk와 강제 동기화 — stale UserDefaults(예: Cmd+Q로 중단된 다운로드) 정리
+        reconcileWithDisk()
     }
 
     // MARK: - Persistence
@@ -99,28 +100,44 @@ final class ModelManager: ObservableObject {
 
     // MARK: - 캐시 상태 확인
 
-    /// 디스크를 진실의 원천(SSOT)으로 취급. 다운로드 진행 중인 모델은 건너뛰어 false flash 방지.
+    /// OR upgrade only — 디스크에서 확실히 발견하면 true로 갱신, 이미 true면 유지.
+    /// 다운로드 진행 중 또는 일시적 disk race로 인한 false flash를 방지.
+    /// 명시적 downgrade는 delete/download 실패 경로에서만 수행.
     func refreshAllCacheStates() {
         // STT: WhisperKit
-        if !isWhisperKitDownloading {
-            modelCacheStates[Self.whisperKitRepoId] = isWhisperKitCached()
+        if !isWhisperKitDownloading, isWhisperKitCached() {
+            modelCacheStates[Self.whisperKitRepoId] = true
         }
 
         // STT: MLX Audio
         let mlxId = appState.settings.mlxAudioModelId
-        if !isMLXAudioDownloading {
-            let cached = isModelCached(repoId: mlxId)
-            modelCacheStates[mlxId] = cached
-            if cached, mlxAudioDownloadState == .notDownloaded {
+        if !isMLXAudioDownloading, isModelCached(repoId: mlxId) {
+            modelCacheStates[mlxId] = true
+            if mlxAudioDownloadState == .notDownloaded {
                 mlxAudioDownloadState = .ready
-            } else if !cached, mlxAudioDownloadState == .ready {
-                mlxAudioDownloadState = .notDownloaded
             }
         }
 
-        // LLM 모델
+        // LLM 모델 — 다운로드 진행 중은 skip
         for spec in LocalModelSpec.supported {
             guard !downloadingModelIds.contains(spec.id) else { continue }
+            if isModelCached(repoId: spec.id) {
+                modelCacheStates[spec.id] = true
+            }
+        }
+    }
+
+    /// 앱 최초 시작 시 1회만 호출 — disk를 SSOT로 강제 동기화. stale UserDefaults 정리.
+    /// 이후 일반 리프레시는 OR upgrade only(`refreshAllCacheStates`)로 수행.
+    private func reconcileWithDisk() {
+        modelCacheStates[Self.whisperKitRepoId] = isWhisperKitCached()
+
+        let mlxId = appState.settings.mlxAudioModelId
+        let mlxCached = isModelCached(repoId: mlxId)
+        modelCacheStates[mlxId] = mlxCached
+        mlxAudioDownloadState = mlxCached ? .ready : .notDownloaded
+
+        for spec in LocalModelSpec.supported {
             modelCacheStates[spec.id] = isModelCached(repoId: spec.id)
         }
     }
@@ -129,17 +146,19 @@ final class ModelManager: ObservableObject {
         isModelCached(repoId: modelId)
     }
 
-    /// 무결성 기반 캐시 판정: config.json + (model.safetensors 또는 sharded index + 최소 1개 shard)
+    /// 캐시 판정 — 정상 다운 모델을 false로 잘못 판정하지 않도록 관대하게,
+    /// 단 부분 다운로드(디렉토리만 생기고 실제 파일 없음)는 걸러냄.
+    /// 조건: 디렉토리 존재 + `config.json` + 크기 10MB 이상인 `.safetensors` 최소 1개
     private func isModelCached(repoId: String) -> Bool {
         let fm = FileManager.default
         let candidates = [
             fm.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches/models/\(repoId)"),
             fm.homeDirectoryForCurrentUser.appendingPathComponent(".cache/huggingface/hub/models--" + repoId.replacingOccurrences(of: "/", with: "--"))
         ]
-        return candidates.contains { dir in directoryHasCompleteMLXModel(at: dir) }
+        return candidates.contains { dir in directoryHasUsableModel(at: dir) }
     }
 
-    private func directoryHasCompleteMLXModel(at dir: URL) -> Bool {
+    private func directoryHasUsableModel(at dir: URL) -> Bool {
         let fm = FileManager.default
         guard fm.fileExists(atPath: dir.path) else { return false }
         guard let contents = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey], options: [.skipsHiddenFiles]) else {
@@ -147,48 +166,41 @@ final class ModelManager: ObservableObject {
         }
         let names = Set(contents.map { $0.lastPathComponent })
 
-        // HuggingFace 표준 캐시는 snapshots/ 하위에 실제 파일이 있음 — 재귀로 snapshot 디렉토리 탐색
+        // HuggingFace 표준 캐시는 snapshots/ 하위에 실제 파일 있음
         if names.contains("snapshots") {
             let snapshotsDir = dir.appendingPathComponent("snapshots")
             if let snapshots = try? fm.contentsOfDirectory(at: snapshotsDir, includingPropertiesForKeys: nil) {
-                return snapshots.contains { directoryHasCompleteMLXModel(at: $0) }
+                return snapshots.contains { directoryHasUsableModel(at: $0) }
             }
             return false
         }
 
-        // 필수: config.json
         guard names.contains("config.json") else { return false }
 
-        // 모델 가중치: 단일 safetensors 또는 sharded
-        let hasSingle = names.contains("model.safetensors")
-        let hasShardedIndex = names.contains("model.safetensors.index.json")
-        let hasShardFile = names.contains { $0.hasPrefix("model-") && $0.hasSuffix(".safetensors") }
-        let hasShards = hasShardedIndex && hasShardFile
-
-        // 최소 파일 크기 체크로 부분 다운로드 탐지 (1MB 미만이면 placeholder일 가능성 높음)
-        let weightsFile = contents.first { url in
+        // .safetensors로 끝나는 파일 중 10MB 이상인 것이 하나라도 있으면 OK
+        // (정상 모델의 가장 작은 shard도 수백 MB 이상이므로 10MB 기준은 충분히 관대)
+        for url in contents {
             let n = url.lastPathComponent
-            return n == "model.safetensors" || (n.hasPrefix("model-") && n.hasSuffix(".safetensors"))
+            guard n.hasSuffix(".safetensors") else { continue }
+            if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+               size >= 10_000_000
+            {
+                return true
+            }
         }
-        if let wf = weightsFile,
-           let size = try? wf.resourceValues(forKeys: [.fileSizeKey]).fileSize,
-           size < 1_000_000
-        {
-            return false
-        }
-
-        return hasSingle || hasShards
+        return false
     }
 
-    /// WhisperKit 모델 캐시 판정 — 자체 포맷 사용 (config.json/safetensors 아님)
+    /// WhisperKit 모델 캐시 판정 — 자체 포맷 사용 (~/Documents/huggingface/models/...)
     private func isWhisperKitCached() -> Bool {
         let fm = FileManager.default
-        let hfDir = fm.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Caches/huggingface/models--" + Self.whisperKitRepoId.replacingOccurrences(of: "/", with: "--"))
-        if fm.fileExists(atPath: hfDir.path) { return true }
-        let altDir = fm.homeDirectoryForCurrentUser
-            .appendingPathComponent("Documents/huggingface/models/" + Self.whisperKitRepoId)
-        return fm.fileExists(atPath: altDir.path)
+        let candidates = [
+            fm.homeDirectoryForCurrentUser
+                .appendingPathComponent("Documents/huggingface/models/" + Self.whisperKitRepoId),
+            fm.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Caches/huggingface/models--" + Self.whisperKitRepoId.replacingOccurrences(of: "/", with: "--"))
+        ]
+        return candidates.contains { fm.fileExists(atPath: $0.path) }
     }
 
     private func modelCachePaths(repoId: String) -> [URL] {
