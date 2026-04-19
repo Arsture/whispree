@@ -18,6 +18,7 @@ final class RecordingCoordinator: ObservableObject {
     private var lastExternalApp: NSRunningApplication?
     private var capturedContext: ExternalContext?
     private let continuousCapture = ContinuousScreenCaptureService()
+    private let mediaPlayback = MediaPlaybackService()
     private let browserContext = BrowserContextService()
     private let terminalContext = TerminalContextService()
 
@@ -127,6 +128,11 @@ final class RecordingCoordinator: ObservableObject {
             appState.partialText = ""
             appState.finalText = ""
             appState.correctedText = ""
+
+            // 재생 중인 음악/영상 일시정지 (Apple Music, Spotify, YouTube 등)
+            if appState.settings.pauseMediaDuringRecording {
+                mediaPlayback.pauseIfPlaying()
+            }
         } catch {
             appState.currentError = .sttError("Failed to start recording: \(error.localizedDescription)")
         }
@@ -140,6 +146,9 @@ final class RecordingCoordinator: ObservableObject {
 
         let audioBuffer = audioService.stopRecording()
         appState.isRecording = false
+
+        // 일시정지했던 음악/영상 재개 (LLM 후처리 중에 다시 들리도록 녹음 종료 즉시)
+        Task { await mediaPlayback.resumeIfPaused() }
 
         // Check for empty audio
         guard !audioBuffer.isEmpty else {
@@ -167,6 +176,7 @@ final class RecordingCoordinator: ObservableObject {
         if audioService.isRecording {
             _ = audioService.stopRecording()
         }
+        Task { await mediaPlayback.resumeIfPaused() }
         appState.transcriptionState = .idle
         appState.isRecording = false
     }
