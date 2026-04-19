@@ -192,6 +192,58 @@ struct GeneralSettingsView: View {
                     }
                 }
 
+                // Browser Restoration Section
+                SettingsCard(title: "브라우저 복원") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Chrome 탭 및 입력 필드 자동 복원")
+                                Text("녹음 시작 전 Chrome 탭과 포커스된 입력 필드를 기억했다가 전사 후 같은 위치로 돌아가 붙여넣습니다.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.restoreBrowserTab },
+                                set: { appState.settings.restoreBrowserTab = $0 }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
+
+                        if appState.settings.restoreBrowserTab {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 4) {
+                                    Text("🧭")
+                                    Text("Chrome 입력 필드 복원을 사용하려면 Chrome에서 한 번만 설정해주세요:")
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(.primary)
+                                }
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("1. Chrome 메뉴바 → 보기 → 개발자 → \"Apple Events로부터 JavaScript 허용\" 체크")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text("2. 첫 녹음 시 macOS가 \"Whispree가 Chrome을 제어\" 권한을 요청하면 허용")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.leading, 20)
+                                Text("설정하지 않으면 탭 복원만 동작하고, 입력 필드 포커스는 복원되지 않습니다.")
+                                    .font(.caption)
+                                    .foregroundStyle(DesignTokens.textTertiary)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(DesignTokens.Surface.subdued)
+                            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                                    .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                            }
+                        }
+                    }
+                }
+
                 // General Settings
                 SettingsCard(title: "General") {
                     VStack(spacing: 8) {

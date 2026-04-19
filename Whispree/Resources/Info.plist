@@ -13,7 +13,7 @@
 	<key>LSUIElement</key>
 	<false/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Whispree needs accessibility access to insert transcribed text into applications.</string>
+	<string>Whispree uses AppleEvents to remember the active Chrome tab and input element before recording, so the transcribed text can be pasted back into the same location.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Whispree needs microphone access to record your voice for transcription.</string>
 	<key>SUAutomaticallyUpdate</key>

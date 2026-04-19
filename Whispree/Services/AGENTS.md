@@ -12,6 +12,7 @@
 |-----------|---------|
 | `Audio/` | 마이크 녹음 + FFT 시각화 (see `Audio/AGENTS.md`) |
 | `Auth/` | Codex CLI 토큰 재사용 + OAuth PKCE 인증 (see `Auth/AGENTS.md`) |
+| `BrowserContext/` | Chrome 탭 + input element 캡처/복원 (see `BrowserContext/AGENTS.md`) |
 | `Hotkey/` | 전역 단축키 + CGEventTap + 충돌 감지 (see `Hotkey/AGENTS.md`) |
 | `LLM/` | LLM 텍스트/비전 교정 — None/LocalText/LocalVision/OpenAI (see `LLM/AGENTS.md`) |
 | `ModelManagement/` | ML 모델 다운로드/캐시 (see `ModelManagement/AGENTS.md`) |

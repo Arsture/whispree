@@ -6,11 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 하나의 feature/fix가 완료되면 반드시 다음을 수행:
 
-1. 기존 앱 종료: `pkill -f "Whispree.app"`
+1. 기존 앱 종료 + 대기: `pkill -9 -f "Whispree.app"; sleep 1`
 2. 빌드: `xcodebuild -project Whispree.xcodeproj -scheme Whispree -destination 'platform=macOS,arch=arm64' build`
-3. /Applications로 복사: `cp -R "$(find ~/Library/Developer/Xcode/DerivedData/Whispree-*/Build/Products/Debug -name 'Whispree.app' -maxdepth 1)" /Applications/`
+3. /Applications로 복사 — **반드시 `ls -td`로 최신 DerivedData 선택** (`find | head -1`은 알파벳 순이라 오래된 빌드를 집어올 수 있음):
+   ```bash
+   SRC=$(ls -td ~/Library/Developer/Xcode/DerivedData/Whispree-*/Build/Products/Debug/Whispree.app | head -1)
+   rm -rf /Applications/Whispree.app && cp -R "$SRC" /Applications/
+   ```
 4. 앱 재실행: `open /Applications/Whispree.app`
 5. 커밋: feature/fix 단위로 커밋. 작업 도중에 중간 커밋하지 말 것 — 기능이 완결된 시점에만 커밋.
+
+**배포 함정 (과거 재발 이슈)**: Xcode는 빌드 설정이 바뀌면 새 DerivedData 폴더(`Whispree-<hash>`)를 만들므로 시간이 지나면 여러 폴더가 쌓임. `find ... | head -1`은 mtime이 아닌 알파벳 순이라 **최신 빌드를 놓치고 오래된 바이너리를 배포**하는 사일런트 버그 발생. 반드시 `ls -td ... | head -1`로 mtime 내림차순 정렬 사용. 배포 후 `nm Whispree.debug.dylib | xcrun swift-demangle | grep <새_심볼>` 로 최소 1회 검증 권장.
 
 ## Git 브랜치 전략
 

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import OSLog
 
 @MainActor
 final class RecordingCoordinator: ObservableObject {
@@ -15,7 +16,9 @@ final class RecordingCoordinator: ObservableObject {
     private var workspaceObserver: AnyCancellable?
     private var previousApp: NSRunningApplication?
     private var lastExternalApp: NSRunningApplication?
+    private var capturedContext: ExternalContext?
     private let continuousCapture = ContinuousScreenCaptureService()
+    private let browserContext = BrowserContextService()
 
     init(
         appState: AppState,
@@ -85,6 +88,22 @@ final class RecordingCoordinator: ObservableObject {
             previousApp = frontmost
         }
 
+        // Chrome 탭 + input element 컨텍스트 동기 캡처 (MainActor — TCC 프롬프트 조건).
+        // NSAppleScript는 background thread에서 호출 시 Automation 프롬프트가 안 뜨고 -1743 조용히 실패.
+        let restoreEnabled = appState.settings.restoreBrowserTab
+        let targetBundle = previousApp?.bundleIdentifier ?? "nil"
+        let isChromeTarget = previousApp.map(BrowserContextService.isChrome) ?? false
+        BrowserContextService.logger.info(
+            "startRecording: previousApp=\(targetBundle, privacy: .public) restoreBrowserTab=\(restoreEnabled) isChrome=\(isChromeTarget)"
+        )
+        if let target = previousApp, restoreEnabled, isChromeTarget {
+            capturedContext = browserContext.captureChrome(app: target)
+        } else if let target = previousApp {
+            capturedContext = .app(target)
+        } else {
+            capturedContext = nil
+        }
+
         // 연속 스크린샷 캡처 시작 (Vision 지원 프로바이더 + 토글 ON일 때)
         if appState.settings.isScreenshotContextEnabled,
            appState.llmProvider?.supportsVision == true
@@ -138,6 +157,7 @@ final class RecordingCoordinator: ObservableObject {
     func cancel() {
         currentTask?.cancel()
         currentTask = nil
+        capturedContext = nil
         continuousCapture.reset()
         if audioService.isRecording {
             _ = audioService.stopRecording()
@@ -271,7 +291,14 @@ final class RecordingCoordinator: ObservableObject {
             if appState.settings.hasCompletedOnboarding {
                 appState.transcriptionState = .inserting
 
-                let success = await textInsertionService.insertText(textToInsert, targetApp: previousApp)
+                // Chrome 탭 + element 복원 (캡처된 컨텍스트가 .chromeTab일 때만)
+                let resolvedContext = capturedContext
+                let targetApp = resolvedContext?.app ?? previousApp
+                if let ctx = resolvedContext, case .chromeTab = ctx {
+                    _ = browserContext.restoreChrome(ctx)
+                }
+
+                let success = await textInsertionService.insertText(textToInsert, targetApp: targetApp)
                 if !success {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(textToInsert, forType: .string)
@@ -279,7 +306,7 @@ final class RecordingCoordinator: ObservableObject {
 
                 // Step 5: 선택된 이미지 붙여넣기
                 if !selectedImages.isEmpty, !Task.isCancelled {
-                    await textInsertionService.insertImages(selectedImages, targetApp: previousApp)
+                    await textInsertionService.insertImages(selectedImages, targetApp: targetApp)
                 }
             }
 

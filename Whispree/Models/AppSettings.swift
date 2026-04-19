@@ -114,6 +114,11 @@ final class AppSettings: ObservableObject {
     @UserDefault(key: "whispree.vadEnabled", defaultValue: true)
     var vadEnabled: Bool
 
+    // MARK: - Browser
+
+    @UserDefault(key: "whispree.restoreBrowserTab", defaultValue: true)
+    var restoreBrowserTab: Bool
+
     // MARK: - Domain words
 
     @CodableUserDefault(key: "whispree.domainWordSets", defaultValue: [])
