@@ -126,6 +126,13 @@ final class AppSettings: ObservableObject {
     @UserDefault(key: "whispree.restoreBrowserTab", defaultValue: true)
     var restoreBrowserTab: Bool
 
+    // MARK: - Terminal
+
+    /// iTerm2 session(pane) + tmux window/pane 위치 복원.
+    /// 녹음 전 포커스된 iTerm2 pane(+ 그 안에서 tmux 돌고 있으면 attached window/pane까지) 기억 → 붙여넣기 직전 동일 pane으로 복귀.
+    @UserDefault(key: "whispree.restoreTerminalContext", defaultValue: true)
+    var restoreTerminalContext: Bool
+
     // MARK: - Domain words
 
     @CodableUserDefault(key: "whispree.domainWordSets", defaultValue: [])

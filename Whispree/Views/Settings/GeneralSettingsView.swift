@@ -265,6 +265,58 @@ struct GeneralSettingsView: View {
                     }
                 }
 
+                // Terminal Restoration Section
+                SettingsCard(title: "터미널 복원") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("iTerm2 pane · tmux 위치 자동 복원")
+                                Text("녹음 시작 전 iTerm2 session(split)과 tmux window/pane 위치를 기억했다가 전사 후 같은 pane으로 돌아가 붙여넣습니다.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.restoreTerminalContext },
+                                set: { appState.settings.restoreTerminalContext = $0 }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
+
+                        if appState.settings.restoreTerminalContext {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 4) {
+                                    Text("🖥️")
+                                    Text("iTerm2 자동화 권한이 필요합니다:")
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(.primary)
+                                }
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("• 첫 녹음 시 macOS가 \"Whispree가 iTerm을 제어\" 권한을 요청하면 허용")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text("• tmux 사용자는 기본 소켓(`tmux`/`tmux -L default`)에서만 동작. 커스텀 `-L`/`-S` 소켓은 미지원")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text("• Terminal.app, Alacritty, Kitty, Ghostty, Warp 등은 아직 미지원 (앱 포커스만 복원)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.leading, 20)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(DesignTokens.Surface.subdued)
+                            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                                    .stroke(DesignTokens.Border.subtle, lineWidth: 1)
+                            }
+                        }
+                    }
+                }
+
                 // General Settings
                 SettingsCard(title: "General") {
                     VStack(spacing: 8) {
