@@ -64,6 +64,7 @@ struct LLMSettingsView: View {
         .task {
             await appState.authService.checkAuthAsync()
             await appState.oauthService.checkAuthAsync()
+            await modelManager.refreshAllCacheStatesAsync()
         }
     }
 
@@ -108,46 +109,156 @@ struct LLMSettingsView: View {
     private func localModelCard(_ spec: LocalModelSpec, sttOverhead: Int64) -> some View {
         let compat = spec.compatibility(otherModelSizeBytes: sttOverhead)
         let isSelected = appState.settings.llmModelId == spec.id
+        let isCached = modelManager.modelCacheStates[spec.id] ?? false
+        let isDownloading = modelManager.downloadingModelIds.contains(spec.id)
+        let errorMsg = modelManager.modelErrors[spec.id]
 
-        return Button {
-            appState.settings.llmModelId = spec.id
-            Task { await appState.switchLLMProvider(to: .local) }
-        } label: {
-            HStack(alignment: .center) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? DesignTokens.accentPrimary : DesignTokens.textTertiary)
-                    .font(.body)
+        let isQueued = modelManager.queuedModelIds.contains(spec.id)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(spec.displayName)
-                            .font(.subheadline.weight(.medium))
-                        if spec.capability == .vision {
-                            Image(systemName: "eye")
-                                .font(.caption2)
-                                .foregroundStyle(DesignTokens.accentPrimary)
+        let state: ModelState = {
+            if isCached { return .ready }
+            if isQueued { return .queued }
+            if isDownloading {
+                if let p = modelManager.downloadProgress[spec.id] {
+                    return .downloading(progress: p)
+                }
+                return .loading
+            }
+            if let err = errorMsg { return .error(err) }
+            return .notDownloaded
+        }()
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Button {
+                appState.settings.llmModelId = spec.id
+                if isCached {
+                    Task { await appState.switchLLMProvider(to: .local) }
+                }
+            } label: {
+                HStack(alignment: .center) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? DesignTokens.accentPrimary : DesignTokens.textTertiary)
+                        .font(.body)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(spec.displayName)
+                                .font(.subheadline.weight(.medium))
+                            if spec.capability == .vision {
+                                Image(systemName: "eye")
+                                    .font(.caption2)
+                                    .foregroundStyle(DesignTokens.accentPrimary)
+                            }
+                            if !isCached && !isDownloading {
+                                Text("다운로드 필요")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                            }
+                        }
+                        Text(spec.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    ModelMetricsView(
+                        sizeText: spec.sizeDescription,
+                        ramPercent: compat.ramUsagePercent,
+                        tokPerSec: compat.estimatedTokPerSec,
+                        latencyMs: nil,
+                        qualityScore: spec.qualityScore,
+                        grade: compat.grade
+                    )
+                }
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .disabled(isDownloading || isQueued)
+
+            if isSelected {
+                modelStateControls(spec: spec, state: state, isQueued: isQueued)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func modelStateControls(spec: LocalModelSpec, state: ModelState, isQueued: Bool = false) -> some View {
+        switch state {
+        case .notDownloaded:
+            HStack {
+                Spacer()
+                Button {
+                    Task {
+                        await modelManager.downloadLLMModel(modelId: spec.id)
+                        if modelManager.modelCacheStates[spec.id] == true {
+                            await appState.switchLLMProvider(to: .local)
                         }
                     }
-                    Text(spec.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                } label: {
+                    Label("다운로드 (\(spec.sizeDescription))", systemImage: "arrow.down.circle")
                 }
-
-                Spacer()
-
-                ModelMetricsView(
-                    sizeText: spec.sizeDescription,
-                    ramPercent: compat.ramUsagePercent,
-                    tokPerSec: compat.estimatedTokPerSec,
-                    latencyMs: nil,
-                    qualityScore: spec.qualityScore,
-                    grade: compat.grade
-                )
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
             }
-            .padding(.vertical, 10)
+            .padding(.leading, 28)
+
+        case .queued:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("대기 중... (다른 모델 다운로드 완료 후 시작)")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("취소", role: .cancel) {
+                    modelManager.cancelLLMDownload(modelId: spec.id)
+                }
+                .font(.caption).controlSize(.small)
+            }
+            .padding(.leading, 28)
+
+        case .loading:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text(isQueued ? "대기 중... (다른 모델 다운로드 완료 후 시작)" : "다운로드 준비 중...")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.leading, 28)
+
+        case let .downloading(progress):
+            VStack(alignment: .leading, spacing: 4) {
+                ProgressView(value: progress)
+                Text("\(Int(progress * 100))% 다운로드 중...")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.leading, 28)
+
+        case .ready:
+            HStack {
+                Label("다운로드됨", systemImage: "checkmark.circle.fill")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("삭제", role: .destructive) {
+                    modelManager.deleteLLMModel(modelId: spec.id)
+                }
+                .font(.caption).controlSize(.small)
+            }
+            .padding(.leading, 28)
+
+        case let .error(msg):
+            HStack(spacing: 8) {
+                Label(msg, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(DesignTokens.semanticColors(for: .danger).foreground)
+                    .font(.caption).lineLimit(2)
+                Spacer()
+                Button("재시도") {
+                    Task { await modelManager.downloadLLMModel(modelId: spec.id) }
+                }
+                .font(.caption).controlSize(.small)
+            }
+            .padding(.leading, 28)
         }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
     }
 
     // MARK: - OpenAI Model
@@ -328,13 +439,17 @@ struct LLMSettingsView: View {
     private var modelStatusNotice: some View {
         HStack(spacing: 8) {
             let isCached = modelManager.modelCacheStates[appState.settings.llmModelId] ?? false
-            if isCached {
+            if case let .downloading(progress) = appState.llmModelState {
+                ProgressView(value: progress).controlSize(.small).frame(width: 80)
+                Text(String(format: "모델 다운로드 중... %d%%", Int(progress * 100)))
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if isCached {
                 ProgressView().controlSize(.small)
                 Text("모델 로딩 중...")
                     .font(.caption).foregroundStyle(.secondary)
             } else if case .loading = appState.llmModelState {
                 ProgressView().controlSize(.small)
-                Text("모델 다운로드 중...")
+                Text("준비 중... (uv 의존성 설치 또는 모델 로딩)")
                     .font(.caption).foregroundStyle(.secondary)
             } else if case let .error(msg) = appState.llmModelState {
                 Image(systemName: "exclamationmark.triangle.fill")

@@ -1,6 +1,9 @@
 import Foundation
 import MLXLLM
 import MLXLMCommon
+import MLXHuggingFace
+import HuggingFace
+import Tokenizers
 
 @MainActor
 final class LocalTextProvider: LLMProvider {
@@ -22,7 +25,11 @@ final class LocalTextProvider: LLMProvider {
 
     func setup() async throws {
         let config = ModelConfiguration(id: modelId)
-        modelContainer = try await LLMModelFactory.shared.loadContainer(configuration: config) { _ in }
+        modelContainer = try await LLMModelFactory.shared.loadContainer(
+            from: #hubDownloader(),
+            using: #huggingFaceTokenizerLoader(),
+            configuration: config
+        ) { _ in }
     }
 
     func teardown() async {
@@ -32,7 +39,10 @@ final class LocalTextProvider: LLMProvider {
     func correct(text: String, systemPrompt: String, glossary: [String]?, screenshots: [Data] = []) async throws -> String {
         guard let modelContainer else { throw LLMError.modelNotLoaded }
 
-        var fullPrompt = systemPrompt + "\n/no_think"
+        var fullPrompt = systemPrompt
+        if modelId.contains("Qwen3") {
+            fullPrompt += "\n/no_think"
+        }
         if let glossary, !glossary.isEmpty {
             fullPrompt += "\n\n용어 사전 (반드시 이 형태로 보존):\n" + glossary.joined(separator: ", ")
         }
