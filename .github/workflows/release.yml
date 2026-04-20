@@ -101,6 +101,7 @@ jobs:
             -scheme Whispree \
             -destination 'platform=macOS,arch=arm64' \
             -configuration Release \
+            -skipMacroValidation \
             clean build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
