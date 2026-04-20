@@ -171,6 +171,18 @@ final class AppState: ObservableObject {
                 let provider: any LLMProvider
                 if spec?.capability == .vision {
                     provider = LocalVisionProvider(modelId: settings.llmModelId)
+                } else if spec?.runtime == .python {
+                    provider = MLXLMPythonProvider(modelId: settings.llmModelId) { [weak self] phase in
+                        guard let self else { return }
+                        switch phase {
+                        case .uvSync:
+                            self.llmModelState = .loading
+                        case let .downloading(progress):
+                            self.llmModelState = .downloading(progress: progress)
+                        case .loading:
+                            self.llmModelState = .loading
+                        }
+                    }
                 } else {
                     provider = LocalTextProvider(modelId: settings.llmModelId)
                 }

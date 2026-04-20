@@ -111,9 +111,17 @@ struct LLMSettingsView: View {
         let isDownloading = modelManager.downloadingModelIds.contains(spec.id)
         let errorMsg = modelManager.modelErrors[spec.id]
 
+        let isQueued = modelManager.queuedModelIds.contains(spec.id)
+
         let state: ModelState = {
             if isCached { return .ready }
-            if isDownloading { return .loading }
+            if isQueued { return .queued }
+            if isDownloading {
+                if let p = modelManager.downloadProgress[spec.id] {
+                    return .downloading(progress: p)
+                }
+                return .loading
+            }
             if let err = errorMsg { return .error(err) }
             return .notDownloaded
         }()
@@ -165,16 +173,16 @@ struct LLMSettingsView: View {
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())
-            .disabled(isDownloading)
+            .disabled(isDownloading || isQueued)
 
             if isSelected {
-                modelStateControls(spec: spec, state: state)
+                modelStateControls(spec: spec, state: state, isQueued: isQueued)
             }
         }
     }
 
     @ViewBuilder
-    private func modelStateControls(spec: LocalModelSpec, state: ModelState) -> some View {
+    private func modelStateControls(spec: LocalModelSpec, state: ModelState, isQueued: Bool = false) -> some View {
         switch state {
         case .notDownloaded:
             HStack {
@@ -194,12 +202,33 @@ struct LLMSettingsView: View {
             }
             .padding(.leading, 28)
 
+        case .queued:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("대기 중... (다른 모델 다운로드 완료 후 시작)")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("취소", role: .cancel) {
+                    modelManager.cancelLLMDownload(modelId: spec.id)
+                }
+                .font(.caption).controlSize(.small)
+            }
+            .padding(.leading, 28)
+
         case .loading:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
-                Text("다운로드 중... (네트워크 속도에 따라 수 분 소요)")
+                Text(isQueued ? "대기 중... (다른 모델 다운로드 완료 후 시작)" : "다운로드 준비 중...")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
+            }
+            .padding(.leading, 28)
+
+        case let .downloading(progress):
+            VStack(alignment: .leading, spacing: 4) {
+                ProgressView(value: progress)
+                Text("\(Int(progress * 100))% 다운로드 중...")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             .padding(.leading, 28)
 
@@ -227,9 +256,6 @@ struct LLMSettingsView: View {
                 .font(.caption).controlSize(.small)
             }
             .padding(.leading, 28)
-
-        case .downloading:
-            EmptyView()
         }
     }
 
@@ -411,13 +437,17 @@ struct LLMSettingsView: View {
     private var modelStatusNotice: some View {
         HStack(spacing: 8) {
             let isCached = modelManager.modelCacheStates[appState.settings.llmModelId] ?? false
-            if isCached {
+            if case let .downloading(progress) = appState.llmModelState {
+                ProgressView(value: progress).controlSize(.small).frame(width: 80)
+                Text(String(format: "모델 다운로드 중... %d%%", Int(progress * 100)))
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if isCached {
                 ProgressView().controlSize(.small)
                 Text("모델 로딩 중...")
                     .font(.caption).foregroundStyle(.secondary)
             } else if case .loading = appState.llmModelState {
                 ProgressView().controlSize(.small)
-                Text("모델 다운로드 중...")
+                Text("준비 중... (uv 의존성 설치 또는 모델 로딩)")
                     .font(.caption).foregroundStyle(.secondary)
             } else if case let .error(msg) = appState.llmModelState {
                 Image(systemName: "exclamationmark.triangle.fill")

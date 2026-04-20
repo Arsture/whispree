@@ -51,6 +51,7 @@ targets:
       - script: |
           mkdir -p "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker"
           cp "${SRCROOT}/mlx-worker/mlx_worker.py" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker/"
+          cp "${SRCROOT}/mlx-worker/mlx_llm_worker.py" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker/"
           cp "${SRCROOT}/mlx-worker/pyproject.toml" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/mlx-worker/"
         name: Copy mlx-worker to bundle
     settings:

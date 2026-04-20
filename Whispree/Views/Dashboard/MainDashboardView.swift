@@ -456,7 +456,7 @@ struct MainDashboardView: View {
                             .font(.caption2)
                     }
                 }
-            case .loading:
+            case .queued, .loading:
                 HStack(spacing: 4) {
                     ProgressView().scaleEffect(0.5)
                     Text("Loading...")

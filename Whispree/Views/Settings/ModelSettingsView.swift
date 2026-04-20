@@ -66,9 +66,18 @@ struct ModelSettingsView: View {
                             let errorMsg = modelManager.modelErrors[spec.id]
                             let compat = spec.compatibility(otherModelSizeBytes: sttOverhead)
 
+                            let isQueued = modelManager.queuedModelIds.contains(spec.id)
+                            let bytes = modelManager.downloadedBytes[spec.id]
+
                             let state: ModelState = {
                                 if isCached { return .ready }
-                                if isDownloading { return .loading }
+                                if isQueued { return .queued }
+                                if isDownloading {
+                                    if let p = modelManager.downloadProgress[spec.id] {
+                                        return .downloading(progress: p)
+                                    }
+                                    return .loading
+                                }
                                 if let err = errorMsg { return .error(err) }
                                 return .notDownloaded
                             }()
@@ -86,7 +95,10 @@ struct ModelSettingsView: View {
                                 state: state,
                                 isSelected: isSelected,
                                 supportsVision: spec.capability == .vision,
+                                downloadedBytes: bytes,
+                                totalBytes: spec.sizeBytes,
                                 onDownload: { Task { await modelManager.downloadLLMModel(modelId: spec.id) } },
+                                onCancel: { modelManager.cancelLLMDownload(modelId: spec.id) },
                                 onDelete: { modelManager.deleteLLMModel(modelId: spec.id) }
                             )
                         }
@@ -99,12 +111,14 @@ struct ModelSettingsView: View {
                         HStack {
                             Text("모델 위치:")
                             Spacer()
-                            Text("~/Library/Application Support/")
+                            Text("~/.cache/huggingface/hub/")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Button("Finder에서 열기") {
-                            NSWorkspace.shared.open(ModelManager.modelsDirectory)
+                            let hub = ModelManager.huggingFaceHubDirectory
+                            try? FileManager.default.createDirectory(at: hub, withIntermediateDirectories: true)
+                            NSWorkspace.shared.open(hub)
                         }
                         .font(.caption)
                     }
@@ -119,6 +133,10 @@ struct ModelSettingsView: View {
     }
 
     private var activeWhisperKitState: ModelState {
+        let whisperKey = "argmaxinc/whisperkit-coreml"
+        if let p = modelManager.downloadProgress[whisperKey] {
+            return .downloading(progress: p)
+        }
         if appState.settings.sttProviderType == .whisperKit {
             if case .downloading = appState.whisperModelState { return appState.whisperModelState }
             if case .loading = appState.whisperModelState { return appState.whisperModelState }
@@ -153,7 +171,10 @@ struct DownloadableModelRow: View {
     let state: ModelState
     var isSelected: Bool = false
     var supportsVision: Bool = false
+    var downloadedBytes: Int64? = nil
+    var totalBytes: Int64? = nil
     let onDownload: () -> Void
+    var onCancel: (() -> Void)? = nil
     let onDelete: () -> Void
 
     var body: some View {
@@ -197,16 +218,38 @@ struct DownloadableModelRow: View {
             Button("다운로드") { onDownload() }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+        case .queued:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("다운로드 대기 중...").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if let onCancel {
+                    Button("취소", role: .cancel) { onCancel() }
+                        .font(.caption).controlSize(.small)
+                }
+            }
         case let .downloading(progress):
             VStack(alignment: .leading, spacing: 4) {
                 ProgressView(value: progress)
-                Text("\(Int(progress * 100))% 다운로드 중...")
-                    .font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Text(progressLabel(progress: progress))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    if let onCancel {
+                        Button("취소", role: .cancel) { onCancel() }
+                            .font(.caption).controlSize(.small)
+                    }
+                }
             }
         case .loading:
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
                 Text("로딩 중...").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if let onCancel {
+                    Button("취소", role: .cancel) { onCancel() }
+                        .font(.caption).controlSize(.small)
+                }
             }
         case .ready:
             HStack {
@@ -226,6 +269,23 @@ struct DownloadableModelRow: View {
                     .font(.caption).controlSize(.small)
             }
         }
+    }
+
+    /// "31 MB / 6.9 GB (0.5%) 다운로드 중..." — 소수점 %로 < 1% 구간도 표시.
+    private func progressLabel(progress: Double) -> String {
+        let pct = progress < 0.01 ? String(format: "%.1f%%", progress * 100)
+                                  : String(format: "%d%%", Int(progress * 100))
+        if let downloaded = downloadedBytes, let total = totalBytes, total > 0 {
+            return "\(formatBytes(downloaded)) / \(formatBytes(total)) (\(pct)) 다운로드 중..."
+        }
+        return "\(pct) 다운로드 중..."
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        let fmt = ByteCountFormatter()
+        fmt.allowedUnits = [.useMB, .useGB]
+        fmt.countStyle = .file
+        return fmt.string(fromByteCount: bytes)
     }
 
     @ViewBuilder

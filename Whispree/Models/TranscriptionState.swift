@@ -43,6 +43,7 @@ enum TranscriptionState: Equatable {
 
 enum ModelState: Equatable {
     case notDownloaded
+    case queued
     case downloading(progress: Double)
     case loading
     case ready

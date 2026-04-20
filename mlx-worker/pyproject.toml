@@ -5,9 +5,21 @@ description = "mlx-audio STT worker for NotMyWhisper"
 requires-python = ">=3.11"
 dependencies = [
     "mlx-audio>=0.4.0",
+    "mlx-lm",
     "soundfile>=0.12.0",
     "numpy>=2.0.0",
 ]
 
 [tool.uv]
 dev-dependencies = []
+# mlx-audio가 mlx-lm==0.31.1을 정확히 고정하지만, Gemma4 지원은 main에만 있음.
+# override-dependencies로 강제 교체 — mlx-audio API 자체는 이 버전에서도 호환.
+# 릴리즈에 gemma4가 포함되면 override 제거 가능.
+override-dependencies = [
+    "mlx-lm @ git+https://github.com/ml-explore/mlx-lm@aa4f880fb35007359fdbe8c0168e1c558994d99c",
+]
+# mlx-audio 일부 버전이 transformers 5.0.0rc* (pre-release)을 요구 — 전역 허용 필요.
+prerelease = "allow"
+
+[tool.uv.sources]
+mlx-lm = { git = "https://github.com/ml-explore/mlx-lm", rev = "aa4f880fb35007359fdbe8c0168e1c558994d99c" }
