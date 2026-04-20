@@ -201,7 +201,7 @@ struct STTProviderRow: View {
         case .ready:
             Label("Ready", systemImage: "checkmark.circle.fill")
                 .font(.caption).foregroundStyle(.secondary)
-        case .loading:
+        case .queued, .loading:
             HStack(spacing: 4) {
                 ProgressView().controlSize(.small)
                 Text("Loading...").font(.caption).foregroundStyle(.secondary)
