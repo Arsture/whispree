@@ -61,7 +61,7 @@ final class AppSettingsTests: XCTestCase {
 
     func testDefaultOpenAIModel() {
         let settings = AppSettings()
-        XCTAssertEqual(settings.openaiModel, .gpt54)
+        XCTAssertEqual(settings.openaiModel, .gpt55)
     }
 
     func testDefaultLLMEnabled() {
@@ -94,14 +94,34 @@ final class AppSettingsTests: XCTestCase {
     // MARK: - OpenAI Models
 
     func testOpenAIModelDefaults() {
+        XCTAssertEqual(OpenAIModel.gpt55.rawValue, "gpt-5.5")
         XCTAssertEqual(OpenAIModel.gpt54.rawValue, "gpt-5.4")
         XCTAssertEqual(OpenAIModel.gpt54mini.rawValue, "gpt-5.4-mini")
         XCTAssertEqual(OpenAIModel.gpt53codex.rawValue, "gpt-5.3-codex")
+        XCTAssertEqual(OpenAIModel.gpt52.rawValue, "gpt-5.2")
+        XCTAssertEqual(OpenAIModel.allCases.map(\.rawValue), [
+            "gpt-5.5",
+            "gpt-5.4",
+            "gpt-5.4-mini",
+            "gpt-5.3-codex",
+            "gpt-5.2",
+        ])
     }
 
     func testOpenAIModelDisplayNames() {
-        XCTAssertTrue(OpenAIModel.gpt54.displayName.contains("Best"))
+        XCTAssertTrue(OpenAIModel.gpt55.displayName.contains("Latest"))
         XCTAssertTrue(OpenAIModel.gpt54mini.displayName.contains("Fast"))
+    }
+
+    func testOpenAIModelAliasMigration() {
+        UserDefaults.standard.set("gpt-5.3-codex-spark", forKey: "whispree.openaiModel")
+        XCTAssertEqual(AppSettings().openaiModel, .gpt54mini)
+
+        UserDefaults.standard.set("gpt-5.2-codex", forKey: "whispree.openaiModel")
+        XCTAssertEqual(AppSettings().openaiModel, .gpt52)
+
+        let decoded = try? JSONDecoder().decode(OpenAIModel.self, from: Data(#""gpt-5.2-codex""#.utf8))
+        XCTAssertEqual(decoded, .gpt52)
     }
 
     // MARK: - CorrectionPrompts Routing
