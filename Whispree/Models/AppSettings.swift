@@ -85,7 +85,11 @@ final class AppSettings: ObservableObject {
     )
     var llmProviderType: LLMProviderType
 
-    @RawRepresentableUserDefault(key: "whispree.openaiModel", defaultValue: .gpt54)
+    @RawRepresentableUserDefault(
+        key: "whispree.openaiModel",
+        defaultValue: .gpt55,
+        rawAliasMap: OpenAIModel.rawAliasMap
+    )
     var openaiModel: OpenAIModel
 
     // MARK: - Screenshot context
@@ -297,7 +301,7 @@ private struct LegacyAppSettings: Codable {
     var mlxAudioModelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit"
     var sttProviderType: STTProviderType = .whisperKit
     var llmProviderType: LLMProviderType = .none
-    var openaiModel: OpenAIModel = .gpt54
+    var openaiModel: OpenAIModel = .gpt55
     var isScreenshotContextEnabled: Bool = false
     var isScreenshotPasteEnabled: Bool = true
     var groqApiKey: String = ""
@@ -320,7 +324,7 @@ private struct LegacyAppSettings: Codable {
         self.mlxAudioModelId = (try? c.decodeIfPresent(String.self, forKey: .mlxAudioModelId)) ?? "mlx-community/Qwen3-ASR-1.7B-8bit"
         self.sttProviderType = (try? c.decodeIfPresent(STTProviderType.self, forKey: .sttProviderType)) ?? .whisperKit
         self.llmProviderType = (try? c.decodeIfPresent(LLMProviderType.self, forKey: .llmProviderType)) ?? .none
-        self.openaiModel = (try? c.decodeIfPresent(OpenAIModel.self, forKey: .openaiModel)) ?? .gpt54
+        self.openaiModel = (try? c.decodeIfPresent(OpenAIModel.self, forKey: .openaiModel)) ?? .gpt55
         self.isScreenshotContextEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .isScreenshotContextEnabled)) ?? false
         self.isScreenshotPasteEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .isScreenshotPasteEnabled)) ?? true
         self.groqApiKey = (try? c.decodeIfPresent(String.self, forKey: .groqApiKey)) ?? ""
