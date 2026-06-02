@@ -391,6 +391,17 @@ struct MainDashboardView: View {
                                     .foregroundStyle(DesignTokens.accentPrimary)
                             }
                         }
+                    } else if appState.settings.llmProviderType == .groq {
+                        HStack(spacing: 4) {
+                            Text(appState.settings.groqLLMModel.displayName)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            if appState.settings.groqLLMModel.supportsVision {
+                                Image(systemName: "eye")
+                                    .font(.caption2)
+                                    .foregroundStyle(DesignTokens.accentPrimary)
+                            }
+                        }
                     }
                 }
                 .padding(14)
@@ -428,6 +439,8 @@ struct MainDashboardView: View {
                 let spec = LocalModelSpec.find(appState.settings.llmModelId)
                 return spec?.capability == .vision ? "eye" : "text.badge.checkmark"
             case .openai: return "globe"
+            case .groq:
+                return appState.settings.groqLLMModel.supportsVision ? "eye" : "bolt.horizontal.fill"
         }
     }
 

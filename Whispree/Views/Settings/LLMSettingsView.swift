@@ -41,6 +41,15 @@ struct LLMSettingsView: View {
                     openAIAuthSection
                 }
 
+                // Groq sections
+                if appState.settings.llmProviderType == .groq {
+                    groqModelSection
+                    if appState.settings.groqLLMModel.supportsVision {
+                        screenshotSection
+                    }
+                    groqApiKeySection
+                }
+
                 // Model Status
                 if appState.settings.llmProviderType == .local,
                    !appState.llmModelState.isReady
@@ -308,6 +317,90 @@ struct LLMSettingsView: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
+    }
+
+    // MARK: - Groq Model
+
+    private var groqModelSection: some View {
+        LiquidSection("Groq 모델") {
+            VStack(spacing: 0) {
+                ForEach(Array(GroqLLMModel.allCases.enumerated()), id: \.element) { index, model in
+                    if index > 0 { Divider() }
+                    groqModelCard(model)
+                }
+            }
+        }
+    }
+
+    private func groqModelCard(_ model: GroqLLMModel) -> some View {
+        let isSelected = appState.settings.groqLLMModel == model
+
+        return Button {
+            appState.settings.groqLLMModel = model
+            Task { await appState.switchLLMProvider(to: .groq) }
+        } label: {
+            HStack(alignment: .center) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? DesignTokens.accentPrimary : DesignTokens.textTertiary)
+                    .font(.body)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(model.displayName)
+                            .font(.subheadline.weight(.medium))
+                        if model.supportsVision {
+                            Image(systemName: "eye")
+                                .font(.caption2)
+                                .foregroundStyle(DesignTokens.accentPrimary)
+                        }
+                    }
+                    Text(model.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                ModelMetricsView(
+                    sizeText: "☁️",
+                    ramPercent: nil,
+                    tokPerSec: nil,
+                    latencyMs: model.estimatedLatencyMs,
+                    qualityScore: model.qualityScore,
+                    grade: .runsGreat
+                )
+            }
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - Groq API Key
+
+    private var groqApiKeySection: some View {
+        LiquidSection("Groq API Key") {
+            VStack(alignment: .leading, spacing: 10) {
+                SecureField("API Key", text: Binding(
+                    get: { appState.settings.groqApiKey },
+                    set: {
+                        appState.settings.groqApiKey = $0
+                        Task { await appState.switchLLMProvider(to: .groq) }
+                    }
+                ))
+                .textFieldStyle(.roundedBorder)
+
+                if appState.settings.groqApiKey.isEmpty {
+                    Label("console.groq.com에서 무료 API Key를 발급받으세요 (STT와 동일 키)", systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                } else {
+                    Label("API Key 설정됨 (STT와 공유)", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     // MARK: - Screenshot Context

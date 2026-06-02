@@ -213,6 +213,22 @@ final class AppState: ObservableObject {
                 } catch {
                     llmModelState = .error(error.localizedDescription)
                 }
+            case .groq:
+                let provider = GroqLLMProvider(
+                    model: settings.groqLLMModel,
+                    apiKey: settings.groqApiKey
+                )
+                llmProvider = provider
+                if provider.supportsVision {
+                    settings.isScreenshotContextEnabled = true
+                }
+                do {
+                    try await provider.setup()
+                    let validation = provider.validate()
+                    llmModelState = validation.isValid ? .ready : .error(validation.message)
+                } catch {
+                    llmModelState = .error(error.localizedDescription)
+                }
         }
     }
 

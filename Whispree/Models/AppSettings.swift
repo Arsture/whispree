@@ -92,6 +92,12 @@ final class AppSettings: ObservableObject {
     )
     var openaiModel: OpenAIModel
 
+    @RawRepresentableUserDefault(
+        key: "whispree.groqLLMModel",
+        defaultValue: .qwen3_32b
+    )
+    var groqLLMModel: GroqLLMModel
+
     // MARK: - Screenshot context
 
     @UserDefault(key: "whispree.isScreenshotContextEnabled", defaultValue: false)
@@ -354,12 +360,14 @@ enum LLMProviderType: String, Codable, CaseIterable {
     case none = "없음 (원문 사용)"
     case local = "로컬 MLX"
     case openai = "OpenAI (GPT)"
+    case groq = "Groq Cloud"
 
     var displayName: String {
         switch self {
             case .none: "없음 (원문 사용)"
             case .local: "로컬 MLX"
             case .openai: "OpenAI (GPT)"
+            case .groq: "Groq Cloud"
         }
     }
 
