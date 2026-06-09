@@ -41,8 +41,8 @@ iTerm2 session(pane) + (선택적) tmux window/pane 컨텍스트 캡처/복원. 
 ### RecordingCoordinator 연동
 
 - `startRecording()`: 타겟이 iTerm2 + `restoreTerminalContext` 활성 시 `captureITerm2` **동기 호출** (MainActor TCC 프롬프트 조건)
-- `processPipeline()` Step 4: `capturedContext`가 `.iTerm2Session`이면 `restoreITerm2` 호출 후 `insertText`
-- `cancel()`: `capturedContext = nil` 리셋
+- FIFO delivery 단계: job `targetContext`가 `.iTerm2Session`이면 `restoreITerm2` 호출 후 `insertText`
+- `cancel()`: active recording context 또는 해당 canceled job targetContext만 정리. 전체 queue context를 지우지 말 것.
 
 ### 미지원 / 향후 확장 후보
 

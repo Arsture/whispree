@@ -1,28 +1,30 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-23 | Updated: 2026-04-02 -->
+<!-- Generated: 2026-03-23 | Updated: 2026-06-09 -->
 
 # Coordinators
 
 ## Purpose
-파이프라인 오케스트레이션. 녹음 → STT → LLM 교정 → 텍스트 삽입 전체 흐름을 조율. VLM 활성 시 스크린샷 캡처 + 선택 플로우 포함.
+병렬 dictation queue 오케스트레이션. 녹음은 job으로 enqueue하고, STT/LLM은 provider별 concurrency 정책에 따라 병렬 처리하며, 스크린샷 선택 + 텍스트/이미지 삽입은 녹음 중 block되는 FIFO delivery로 직렬 조율.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `RecordingCoordinator.swift` | `@MainActor` — 녹음 시작/중지, `processPipeline()` (STT→LLM→Insert), 이전 앱 추적(`lastExternalApp`), 스크린샷 캡처 연동 |
+| `RecordingCoordinator.swift` | `@MainActor` — active recording, `DictationQueueState`, provider-bounded STT/LLM processing tasks, single FIFO delivery task, 이전 앱 추적(`lastExternalApp`), 스크린샷 캡처/선택 연동 |
 
 ## For AI Agents
 
 ### Working In This Directory
-- `RecordingCoordinator`는 파이프라인의 핵심. `startRecording()` → `stopRecording()` → `processPipeline()` 순서
-- `processPipeline()`은 `Task`로 MainActor에서 실행, `await sttProvider.transcribe()`로 백그라운드 추론 후 복귀
-- `startRecording()`은 stuck 상태(transcribing/correcting/inserting)를 강제 리셋
-- `lastExternalApp`은 `NSWorkspace.didActivateApplicationNotification`으로 추적 — 텍스트를 삽입할 대상 앱
-- Chrome 대상 + `restoreBrowserTab` 활성 시 `startRecording()`에서 `BrowserContextService.captureChrome`을 **MainActor 동기 호출** (NSAppleScript TCC 프롬프트 조건) → `capturedContext`에 저장. `processPipeline()` Step 4에서 `restoreChrome` 호출 후 `insertText`
-- iTerm2 대상 + `restoreTerminalContext` 활성 시 `TerminalContextService.captureITerm2` 동기 호출 → Step 4에서 `restoreITerm2`로 session(pane) + tmux `select-window`/`select-pane` 복원
-- VLM 활성(`isScreenshotContextEnabled` + `supportsVision`) 시 `ContinuousScreenCaptureService` 시작/중지
-- 교정 후 스크린샷이 있으면 `ScreenshotSelectionView` 표시 → 사용자 선택 → 붙여넣기
+- `RecordingCoordinator`는 active recording과 queued jobs를 분리한다. `startRecording()`은 녹음만 시작하고, `stopRecording()`은 per-job snapshot/audio/context/screenshots를 `DictationQueueState`에 enqueue한다.
+- `processPipeline()` 단일 함수/단일 `currentTask` 패턴으로 되돌리지 말 것. 현재 흐름은 `scheduleSTTJobs()` / `scheduleLLMJobs()` / `scheduleDelivery()`로 나뉜다.
+- STT/LLM processing task는 provider별 permit(`DictationProviderConcurrencyPolicy`)이 허용하는 만큼 병렬 실행된다. STTProvider 자체는 NOT @MainActor이고 `await sttProvider.transcribe()`에서 백그라운드 추론한다.
+- Delivery는 항상 단일 task이며 FIFO head job만 처리한다. `TextInsertionService.insertText()`/`insertImages()`와 `ScreenshotSelectionView`는 delivery 단계이며 녹음 중에는 시작/진행하지 않는다.
+- `startRecording()`은 기존 screenshot selection/delivery를 pause하고, 녹음 종료 후 FIFO head부터 재개한다. audio start 실패 시 continuous capture/recording flag를 정리하고 scheduler를 다시 돌려야 한다.
+- `cancel()` semantics: recording 중이면 현재 recording만 폐기; active delivery/selection이면 해당 job 하나만 terminal; processing overlay에서 ESC가 들어오면 foreground job 하나만 cancel. passive background 전체 queue 취소 금지.
+- `lastExternalApp`은 `NSWorkspace.didActivateApplicationNotification`으로 추적 — 텍스트를 삽입할 대상 앱. 대상 context는 job별 snapshot으로 보존한다.
+- Chrome 대상 + `restoreBrowserTab` 활성 시 `startRecording()`에서 `BrowserContextService.captureChrome`을 **MainActor 동기 호출** (NSAppleScript TCC 프롬프트 조건) → job targetContext에 저장. Delivery에서 `restoreChrome` 호출 후 `insertText`.
+- iTerm2 대상 + `restoreTerminalContext` 활성 시 `TerminalContextService.captureITerm2` 동기 호출 → Delivery에서 `restoreITerm2`로 session(pane) + tmux `select-window`/`select-pane` 복원.
+- VLM 활성(`isScreenshotContextEnabled` + `supportsVision`) 시 recording 동안 `ContinuousScreenCaptureService` 시작/중지. 교정/전달 단계에서 스크린샷이 있으면 FIFO delivery head에 대해서만 `ScreenshotSelectionView` 표시 → 사용자 선택 → 붙여넣기.
 
 ### Dependencies
 - `AppState` (상태 읽기/쓰기)

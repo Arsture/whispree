@@ -1,16 +1,17 @@
 # Design
 
 ## Source of truth
-- Status: Draft
+- Status: Implemented baseline; keep updated as product design source of truth
 - Last refreshed: 2026-06-09
 - Primary product surfaces: macOS menu bar app, floating transcription overlay, screenshot selection panel, settings/dashboard.
 - Evidence reviewed:
   - `README.md` — Whispree promises fast voice-to-prompt, focus restoration, visual context, and code-switching correction.
   - `docs/PLAN.md` — latency risk already lists optimistic insertion / async correction as mitigation.
-  - `Whispree/Coordinators/RecordingCoordinator.swift` — current pipeline is single active task: recording → STT → LLM correction → optional screenshot selection → insertion.
-  - `Whispree/Services/Hotkey/HotkeyManager.swift` — toggle mode starts only when `transcriptionState == .idle`; push-to-talk calls start/stop but coordinator guards non-idle states.
-  - `Whispree/Models/TranscriptionState.swift` — global state is a single enum, not per-recording/job.
-  - `Whispree/Views/Transcription/TranscriptionOverlayView.swift` — overlay communicates one active state with one spinner/waveform.
+  - `Whispree/Coordinators/RecordingCoordinator.swift` — active recording is separated from queued dictation jobs; STT/LLM processing is provider-bounded and delivery is one FIFO task.
+  - `Whispree/Services/Hotkey/HotkeyManager.swift` — toggle mode follows `appState.isRecording`, and ESC is scoped to preview/recording/active delivery/visible foreground item.
+  - `Whispree/Models/DictationQueue.swift` — per-job snapshots/statuses, provider concurrency policy, FIFO delivery gate, cancellation/cleanup invariants.
+  - `Whispree/Models/TranscriptionState.swift` — global projected UI state; per-recording/job truth lives in `DictationQueueState`.
+  - `Whispree/Views/Transcription/TranscriptionOverlayView.swift` — overlay communicates active recording, calm processing count, and explicit `Cancel #N esc` foreground affordance.
   - `Whispree/Views/Design/DESIGN-ROLE-HIERARCHY.md` — UI should stay calm, semantic, hierarchy-first, and not visually compete with content.
 
 ## Brand
@@ -75,7 +76,7 @@
   - Processing queued/running/done/failed/canceled.
   - Inserted vs copied-to-clipboard fallback.
   - Screenshot selection required.
-- Token/component ownership: UI state should be driven by job statuses, not by a single global `TranscriptionState` once multi-recording is implemented.
+- Token/component ownership: UI state should be driven by `dictationQueueSnapshot`/job statuses. `TranscriptionState` is only the compact projected state for existing views.
 
 ## Accessibility
 - Target standard: macOS-native keyboard accessible controls; do not rely on color alone.
@@ -109,16 +110,16 @@
 - Design-token constraints: follow `Whispree/Views/Design/DESIGN-ROLE-HIERARCHY.md`; structure and typography before color.
 - Performance constraints:
   - STT providers are intentionally not `@MainActor`; LLM providers are currently `@MainActor`.
-  - Current pipeline has one `currentTask` and one global `TranscriptionState`; multi-job work requires a job queue model.
-  - Text insertion uses pasteboard and target app activation, so concurrent insertion must be serialized.
-  - Local LLM/STT concurrency may need a bounded worker count to avoid memory/GPU contention.
+  - `RecordingCoordinator` must keep active recording, provider-bounded processing tasks, and single FIFO delivery task separate. Do not reintroduce one `currentTask` pipeline.
+  - Text insertion uses pasteboard and target app activation, so concurrent insertion must remain serialized.
+  - Local LLM/STT concurrency is bounded by `DictationProviderConcurrencyPolicy` to avoid memory/GPU contention.
 - Compatibility constraints: preserve browser/iTerm context restoration and screenshot selection semantics per job.
 - Test/screenshot expectations:
-  - Unit tests for job state transitions and queue ordering.
-  - Coordinator tests for “record while previous job correcting”.
+  - Unit tests for job state transitions and queue ordering (`DictationQueueTests`).
+  - Coordinator/integration tests for “record while previous job correcting” when seams are introduced.
   - UI tests or view-model tests for pending badge and cancel semantics.
 
 ## Open questions
-- [ ] Should the default delivery be “wait and insert corrected text” or “insert raw immediately, then replace/correct later” for multi-job mode? Owner: product. Impact: core UX and technical risk.
-- [ ] Should multiple completed jobs insert automatically FIFO, or require manual confirmation when target context changed? Owner: product. Impact: safety vs speed.
+- [x] Default delivery waits for corrected/fallback text and inserts FIFO; raw-immediate-replace is deferred.
+- [x] Multiple completed jobs insert automatically FIFO, but delivery is blocked during active recording. Stale target confirmation remains a future safety enhancement.
 - [ ] What is the maximum safe local-concurrency limit per provider/device? Owner: engineering. Impact: memory and reliability.

@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-23 | Updated: 2026-04-02 -->
+<!-- Generated: 2026-03-23 | Updated: 2026-06-09 -->
 
 # Views
 
@@ -16,7 +16,7 @@ SwiftUI 뷰 레이어. 대시보드, 설정, 온보딩, 전사 오버레이, Qui
 | `Onboarding/` | 초기 설정 플로우 — `OnboardingView.swift` |
 | `QuickFix/` | Quick Fix 패널 — `QuickFixPanelView.swift` (단어/매핑 교정 입력) |
 | `Settings/` | 설정 탭 뷰 — General, STT, LLM, Model, DomainWordSets, ShortcutRecorder |
-| `Transcription/` | 전사 오버레이 + 히스토리 — `TranscriptionOverlayView.swift`, `TranscriptionHistoryView.swift` |
+| `Transcription/` | 전사/queue 오버레이 + 히스토리 — `TranscriptionOverlayView.swift`, `TranscriptionHistoryView.swift` |
 
 ## Key Files
 
@@ -54,9 +54,11 @@ SwiftUI 뷰 레이어. 대시보드, 설정, 온보딩, 전사 오버레이, Qui
 - 모든 뷰는 `AppState`를 `@EnvironmentObject`로 관찰
 - `NeonWaveformView`(전사 오버레이)는 `frequencyBands` 기반 60fps 애니메이션 — 성능 민감
 - Settings 뷰는 `AppSettings` 모델과 1:1 매핑 — 설정 필드 추가 시 뷰도 함께 수정
-- `ScreenshotSelectionView`는 `AppState.screenshotSelectionCallback` 통해 결과 전달
+- `ScreenshotSelectionView`는 `AppState.screenshotSelectionCallback` 통해 FIFO delivery head job의 선택 결과만 전달
 - `ModelMetricsView`와 `CompatibilityBadge`는 STT/LLM/Model 설정 뷰에서 재사용
 - NSStatusItem(메뉴바 아이콘) + NSWindow(메인 윈도우) 패턴 사용. MenuBarExtra 미사용
+- 병렬 processing UI는 calm count 중심이어야 한다: 여러 spinner/job detail로 attention을 빼앗지 말고 `dictationQueueSnapshot`의 active/processing/ready count를 노출한다.
+- ESC cancel affordance는 명시 scope가 있을 때만 보여준다. Processing foreground item은 overlay의 `Cancel #N esc` 같은 표시가 있을 때만 전역 ESC scope가 된다.
 
 ### Palette / Color Usage Rules
 - 색 사용의 최상위 근거 문서는 `Whispree/Views/Design/DESIGN-ROLE-HIERARCHY.md` 다. token 선택 전에 먼저 해당 요소의 역할이 구조(surface) / 상호작용(accent) / 의미(semantic) / 텍스트 위계 중 무엇인지 판단한다.
