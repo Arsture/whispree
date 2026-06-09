@@ -8,7 +8,8 @@ export default defineConfig({
       title: 'Whispree',
       description: 'Whispree 사용 설명서 — macOS 음성 받아쓰기 앱의 기능과 사용법. / How to use Whispree, the macOS voice dictation app.',
       customCss: ['./src/styles/custom.css'],
-      favicon: '/favicon.svg',
+      favicon: '/whispree-icon.png',
+      logo: { src: './src/assets/whispree-icon.png', replacesTitle: false },
       // 한국어(root) + English(/en) 이중언어
       defaultLocale: 'root',
       locales: {
