@@ -11,6 +11,7 @@ final class AppState: ObservableObject {
     @Published var finalText: String = ""
     @Published var correctedText: String = ""
     @Published var currentError: AppError?
+    @Published var dictationQueueSnapshot: DictationQueueSnapshot = .empty
 
     // MARK: - Audio
 

@@ -109,13 +109,22 @@ struct MainDashboardView: View {
 
     private var statusText: String {
         if appState.isRecording {
+            let activeQueueCount = appState.dictationQueueSnapshot.activeCount
+            if activeQueueCount > 0 {
+                return "Recording... \(activeQueueCount) item(s) queued"
+            }
             return "Recording..."
         }
+        if appState.dictationQueueSnapshot.deliveryReadyCount > 0 {
+            return "Ready to insert queued result"
+        }
         if appState.transcriptionState == .transcribing {
-            return "Transcribing..."
+            let count = appState.dictationQueueSnapshot.processingCount
+            return count > 1 ? "Transcribing \(count) items..." : "Transcribing..."
         }
         if appState.transcriptionState == .correcting {
-            return "Correcting..."
+            let count = appState.dictationQueueSnapshot.processingCount
+            return count > 1 ? "Correcting \(count) items..." : "Correcting..."
         }
         if appState.whisperModelState != .ready {
             return "Model not ready"
@@ -151,13 +160,13 @@ struct MainDashboardView: View {
             } else if appState.transcriptionState == .transcribing {
                 ProgressView()
                     .scaleEffect(0.8)
-                Text("Transcribing your speech...")
+                Text(queueProcessingText(fallback: "Transcribing your speech..."))
                     .font(.caption)
                     .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
             } else if appState.transcriptionState == .correcting {
                 ProgressView()
                     .scaleEffect(0.8)
-                Text("Applying LLM correction...")
+                Text(queueProcessingText(fallback: "Applying LLM correction..."))
                     .font(.caption)
                     .foregroundStyle(DesignTokens.accentPrimary)
             } else {
@@ -173,6 +182,12 @@ struct MainDashboardView: View {
         .frame(height: 92)
         .background(DesignTokens.surfaceBackgroundView(role: .card))
         .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cardRadius, style: .continuous))
+    }
+
+    private func queueProcessingText(fallback: String) -> String {
+        let active = appState.dictationQueueSnapshot.activeCount
+        guard active > 1 else { return fallback }
+        return "\(active) dictations in queue · insertion remains FIFO"
     }
 
     // MARK: - Accessibility Warning

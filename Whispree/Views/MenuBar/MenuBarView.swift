@@ -27,7 +27,7 @@ struct MenuBarView: View {
                         Circle()
                             .fill(statusColor)
                             .frame(width: 8, height: 8)
-                        Text(appState.transcriptionState.displayText)
+                        Text(statusText)
                             .font(.subheadline)
                             .foregroundStyle(DesignTokens.textSecondary)
                     }
@@ -136,6 +136,17 @@ struct MenuBarView: View {
                     .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
             }
         }
+    }
+
+    private var statusText: String {
+        let active = appState.dictationQueueSnapshot.activeCount
+        if appState.isRecording, active > 0 {
+            return "Recording · \(active) queued"
+        }
+        if !appState.isRecording, active > 1 {
+            return "\(active) queued · FIFO insert"
+        }
+        return appState.transcriptionState.displayText
     }
 
     private var statusColor: Color {

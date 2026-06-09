@@ -64,7 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         switch command {
         case "toggle":
-            if appState.transcriptionState == .recording {
+            if appState.isRecording {
                 recordingCoordinator.stopRecording()
             } else {
                 recordingCoordinator.startRecording()

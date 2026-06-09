@@ -58,6 +58,12 @@ struct TranscriptionOverlayView: View {
                     }
                     Spacer()
                 }
+            } else if isForegroundQueueItemCancelable {
+                HStack(spacing: 12) {
+                    Spacer()
+                    hotkeyBadge(label: foregroundCancelLabel, keys: "esc")
+                    Spacer()
+                }
             }
         }
         .frame(width: 280)
@@ -87,12 +93,31 @@ struct TranscriptionOverlayView: View {
         appState.settings.toggleRecordingShortcut.displayLabel
     }
 
+    private var isForegroundQueueItemCancelable: Bool {
+        appState.dictationQueueSnapshot.foregroundJobSequence != nil &&
+            (appState.transcriptionState == .transcribing || appState.transcriptionState == .correcting)
+    }
+
+    private var foregroundCancelLabel: String {
+        if let sequence = appState.dictationQueueSnapshot.foregroundJobSequence {
+            return "Cancel #\(sequence)"
+        }
+        return "Cancel"
+    }
+
     private var statusText: String {
         if let handoff = appState.handoffToggleFlash {
             return handoff ? String(localized: "Img Attach ON") : String(localized: "Img Attach OFF")
         }
         if isThinkingPauseActive {
             return String(localized: "무음 스킵 중")
+        }
+        let activeQueueCount = appState.dictationQueueSnapshot.activeCount
+        if appState.isRecording, activeQueueCount > 0 {
+            return "Recording · \(activeQueueCount) pending"
+        }
+        if !appState.isRecording, appState.dictationQueueSnapshot.processingCount > 1 {
+            return "Processing \(appState.dictationQueueSnapshot.processingCount) items"
         }
         return appState.transcriptionState.displayText
     }
