@@ -5,13 +5,35 @@ description: Install Whispree, turn on permissions, and get your first voice inp
 
 Whispree runs on **macOS 14 or later · Apple Silicon (arm64)**. On first launch, a 5-step onboarding walks you through permissions and engine setup.
 
-## 1. Install & launch
+## 1. Install
 
-Place the `Whispree.app` from the release into `/Applications` and launch it — a microphone icon appears in the menu bar. (The Dock icon and main window are shown as well.)
+The simplest way is **Homebrew**.
 
-:::note
-If you build it yourself as a developer, follow the build steps in the repository's `CLAUDE.md`. Locally signed Xcode builds do not get Sparkle auto-updates (developers update via `git pull` + rebuild).
-:::
+```bash
+brew tap Arsture/whispree && brew install --cask whispree
+```
+
+A microphone icon appears in the menu bar (the Dock icon and main window show too). Whispree is not notarized with an Apple Developer ID, but **installing via Homebrew clears the Gatekeeper block automatically** and wires up auto-updates — which is why it's the recommended path.
+
+### Advanced: other install methods
+
+**GitHub Releases (manual download)** — You can grab the `.zip`/`.dmg` from [GitHub Releases](https://github.com/Arsture/whispree/releases), but because the app isn't notarized, macOS Gatekeeper blocks it. After unzipping, clear the quarantine flag once and move it to `/Applications` (Homebrew does this for you):
+
+```bash
+xattr -cr Whispree.app
+```
+
+**Build from source (developers)** — To build it yourself:
+
+```bash
+git clone https://github.com/Arsture/whispree.git
+cd whispree
+brew install xcodegen
+xcodegen generate
+open Whispree.xcodeproj   # Build & run with Cmd+R in Xcode
+```
+
+SPM dependencies resolve automatically on the first build. Note that locally signed Xcode builds do not get Sparkle auto-updates (update via `git pull` + rebuild).
 
 ## 2. Turn on permissions
 
