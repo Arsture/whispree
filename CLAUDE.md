@@ -18,6 +18,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **배포 함정 (과거 재발 이슈)**: Xcode는 빌드 설정이 바뀌면 새 DerivedData 폴더(`Whispree-<hash>`)를 만들므로 시간이 지나면 여러 폴더가 쌓임. `find ... | head -1`은 mtime이 아닌 알파벳 순이라 **최신 빌드를 놓치고 오래된 바이너리를 배포**하는 사일런트 버그 발생. 반드시 `ls -td ... | head -1`로 mtime 내림차순 정렬 사용. 배포 후 `nm Whispree.debug.dylib | xcrun swift-demangle | grep <새_심볼>` 로 최소 1회 검증 권장.
 
+## 공개 문서 사이트 (docs-site) & main 배포 게이트
+
+- 공개 문서는 `docs-site/`에 nested Astro Starlight 앱으로 존재하며 Vercel **Root Directory = `docs-site`**로 배포된다. 정적(static) 출력 우선 — 무거운 런타임/SSR 도입 금지.
+- **main 배포 게이트 (필수)**: `dev` → `main` merge / 프로덕션 배포 / 릴리스 push 직전에 사용자 노출·아키텍처·프로바이더·권한·릴리스·워크플로우 변경이 있으면 반드시 다음 중 하나를 수행:
+  1. 해당 페이지(`docs-site/src/content/docs/`) 업데이트
+  2. `docs-site/src/content/docs/reference/feature-doc-template.md` 양식으로 feature SSoT 추가/갱신
+  3. 내부 전용 변경이면 커밋/handoff에 `No docs needed:` 사유 명시
+
+  README만 고치는 것으로는 게이트를 통과하지 못함.
+- 문서 디자인 SSoT는 `docs-site/DESIGN.md` (Vercel-inspired 토큰 스펙 + neon-waveform 시그니처). 루트 `DESIGN.md`는 macOS 앱 전용으로 분리 유지.
+- 문서 검증: `pnpm --dir docs-site build`. nested Vercel 배포는 preview `vercel docs-site`, 프로덕션은 의도적 릴리스 시에만 `vercel docs-site --prod`.
+
 ## Git 브랜치 전략
 
 - **작업은 항상 `dev` 브랜치에서 수행.** 급한 hotfix를 제외하면 `main`에 직접 커밋하지 말 것.

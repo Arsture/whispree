@@ -63,6 +63,12 @@ xcodebuild ... build                 # 빌드
 xcodebuild ... test                  # 테스트 (E2E 포함)
 ```
 
+### Public Docs Site (`docs-site/`)
+- `docs-site/`는 Whispree 공개 문서를 위한 nested Astro Starlight 사이트. Vercel **Root Directory = `docs-site`**로 배포되며 static-first 유지.
+- **main merge/배포 전**: 사용자 노출·아키텍처·프로바이더·권한·릴리스·워크플로우 변경이면 `docs-site/src/content/docs/`의 해당 페이지 또는 feature SSoT(`reference/feature-doc-template.md` 양식)를 갱신하거나, 내부 전용 변경이면 `No docs needed:` 사유를 커밋/handoff에 기록.
+- 문서 디자인 SSoT는 `docs-site/DESIGN.md`. 루트 `DESIGN.md`는 macOS 앱 디자인 계약으로 분리.
+- 검증: `pnpm --dir docs-site build`. 배포: `vercel docs-site` (preview) / `vercel docs-site --prod` (의도적 릴리스).
+
 ### Key Design Constraints
 - STTProvider는 **NOT @MainActor** (ML 추론 = 백그라운드)
 - LLMProvider는 **@MainActor** (API 호출 + AppState 접근)
