@@ -64,10 +64,11 @@ xcodebuild ... test                  # 테스트 (E2E 포함)
 ```
 
 ### Public Docs Site (`docs-site/`)
-- `docs-site/`는 Whispree 공개 문서를 위한 nested Astro Starlight 사이트. Vercel **Root Directory = `docs-site`**로 배포되며 static-first 유지.
-- **main merge/배포 전**: 사용자 노출·아키텍처·프로바이더·권한·릴리스·워크플로우 변경이면 `docs-site/src/content/docs/`의 해당 페이지 또는 feature SSoT(`reference/feature-doc-template.md` 양식)를 갱신하거나, 내부 전용 변경이면 `No docs needed:` 사유를 커밋/handoff에 기록.
+- `docs-site/`는 Whispree 공개 문서를 위한 nested Astro Starlight 사이트. Vercel **Root Directory = `docs-site`**로 배포되며 static-first 유지. **철저히 사용자용**(기능·사용법 중심) — 릴리스/기여 같은 내부 문서는 공개 페이지로 만들지 말 것(`docs-site/CONTRIBUTING.md` 사용).
+- **이중언어(i18n)**: 한국어 root(`src/content/docs/**`) + 영어 `/en/`(`src/content/docs/en/**`). 페이지 변경 시 양 언어를 함께 갱신.
+- **main merge/배포 전**: 사용자 노출(기능·프로바이더·권한·단축키·워크플로우) 변경이면 `docs-site/src/content/docs/**`의 해당 페이지(+ `en/` 미러)를 갱신하거나 `CONTRIBUTING.md` 템플릿으로 새 페이지 추가, 내부 전용이면 `No docs needed:` 사유 기록.
 - 문서 디자인 SSoT는 `docs-site/DESIGN.md`. 루트 `DESIGN.md`는 macOS 앱 디자인 계약으로 분리.
-- 검증: `pnpm --dir docs-site build`. 배포: `vercel docs-site` (preview) / `vercel docs-site --prod` (의도적 릴리스).
+- 검증: `pnpm --dir docs-site build`. 배포: `docs-site/`에서 `vercel deploy --yes` (preview) / `vercel deploy --prod --yes` (의도적 릴리스).
 
 ### Key Design Constraints
 - STTProvider는 **NOT @MainActor** (ML 추론 = 백그라운드)

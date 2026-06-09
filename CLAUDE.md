@@ -21,14 +21,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 공개 문서 사이트 (docs-site) & main 배포 게이트
 
 - 공개 문서는 `docs-site/`에 nested Astro Starlight 앱으로 존재하며 Vercel **Root Directory = `docs-site`**로 배포된다. 정적(static) 출력 우선 — 무거운 런타임/SSR 도입 금지.
-- **main 배포 게이트 (필수)**: `dev` → `main` merge / 프로덕션 배포 / 릴리스 push 직전에 사용자 노출·아키텍처·프로바이더·권한·릴리스·워크플로우 변경이 있으면 반드시 다음 중 하나를 수행:
-  1. 해당 페이지(`docs-site/src/content/docs/`) 업데이트
-  2. `docs-site/src/content/docs/reference/feature-doc-template.md` 양식으로 feature SSoT 추가/갱신
+- **공개 docs는 철저히 사용자용**이다 — "Whispree로 무엇을 할 수 있고 어떻게 쓰는가"(기능 중심). 릴리스/기여 절차 같은 개발자 내부 문서는 공개 페이지로 만들지 말고 `docs-site/CONTRIBUTING.md`와 이 파일에 둔다.
+- **이중언어(i18n)**: 한국어가 root 로케일(`src/content/docs/**`), 영어는 `/en/`(`src/content/docs/en/**`). 페이지 추가/수정 시 **양쪽 언어를 함께** 갱신한다.
+- **main 배포 게이트 (필수)**: `dev` → `main` merge / 프로덕션 배포 / 릴리스 push 직전에 사용자 노출(기능·프로바이더·권한·단축키·워크플로우) 변경이 있으면 반드시 다음 중 하나를 수행:
+  1. 해당 기능 페이지(`docs-site/src/content/docs/**`)와 영어 미러(`.../en/**`) 업데이트
+  2. `docs-site/CONTRIBUTING.md`의 feature 페이지 템플릿으로 새 기능 페이지 추가(양 언어)
   3. 내부 전용 변경이면 커밋/handoff에 `No docs needed:` 사유 명시
 
   README만 고치는 것으로는 게이트를 통과하지 못함.
 - 문서 디자인 SSoT는 `docs-site/DESIGN.md` (Vercel-inspired 토큰 스펙 + neon-waveform 시그니처). 루트 `DESIGN.md`는 macOS 앱 전용으로 분리 유지.
-- 문서 검증: `pnpm --dir docs-site build`. nested Vercel 배포는 preview `vercel docs-site`, 프로덕션은 의도적 릴리스 시에만 `vercel docs-site --prod`.
+- 문서 검증: `pnpm --dir docs-site build`. nested Vercel 배포는 `docs-site/`에서 `vercel deploy --yes`(preview), 프로덕션은 의도적 릴리스 시에만 `vercel deploy --prod --yes`.
 
 ## Git 브랜치 전략
 
