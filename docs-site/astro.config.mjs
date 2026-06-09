@@ -5,10 +5,16 @@ export default defineConfig({
   site: 'https://docs-site-azure-psi.vercel.app',
   integrations: [
     starlight({
-      title: 'Whispree Docs',
-      description: 'Fast voice-to-prompt documentation for Whispree.',
+      title: 'Whispree',
+      description: 'Whispree 사용 설명서 — macOS 음성 받아쓰기 앱의 기능과 사용법. / How to use Whispree, the macOS voice dictation app.',
       customCss: ['./src/styles/custom.css'],
       favicon: '/favicon.svg',
+      // 한국어(root) + English(/en) 이중언어
+      defaultLocale: 'root',
+      locales: {
+        root: { label: '한국어', lang: 'ko' },
+        en: { label: 'English', lang: 'en' }
+      },
       social: [
         {
           icon: 'github',
@@ -18,30 +24,32 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: 'Start',
+          label: '시작하기',
+          translations: { en: 'Start' },
           items: [
-            { label: 'Overview', slug: '' },
-            { label: 'Getting started', slug: 'getting-started' }
+            { label: '개요', translations: { en: 'Overview' }, slug: '' },
+            { label: '설치 & 첫 받아쓰기', translations: { en: 'Install & first dictation' }, slug: 'getting-started' }
           ]
         },
         {
-          label: 'Concepts',
+          label: '기능',
+          translations: { en: 'Features' },
           items: [
-            { label: 'Architecture', slug: 'concepts/architecture' }
+            { label: '받아쓰기 & 멀티 녹음', translations: { en: 'Dictation & multi-recording' }, slug: 'features/dictation' },
+            { label: 'STT 엔진', translations: { en: 'STT engines' }, slug: 'features/stt' },
+            { label: 'AI 교정', translations: { en: 'AI correction' }, slug: 'features/correction' },
+            { label: '단어 사전 & Quick Fix', translations: { en: 'Dictionary & Quick Fix' }, slug: 'features/dictionary' },
+            { label: '화면 컨텍스트 & 복원', translations: { en: 'Visual context & restore' }, slug: 'features/context' },
+            { label: '모델 & 호환성', translations: { en: 'Models & compatibility' }, slug: 'features/models' }
           ]
         },
         {
-          label: 'Guides',
+          label: '참고',
+          translations: { en: 'Reference' },
           items: [
-            { label: 'Providers', slug: 'guides/providers' },
-            { label: 'Permissions', slug: 'guides/permissions' }
-          ]
-        },
-        {
-          label: 'Reference',
-          items: [
-            { label: 'Release process', slug: 'reference/release-process' },
-            { label: 'Feature doc template', slug: 'reference/feature-doc-template' }
+            { label: '권한', translations: { en: 'Permissions' }, slug: 'reference/permissions' },
+            { label: '단축키', translations: { en: 'Shortcuts' }, slug: 'reference/shortcuts' },
+            { label: '구조 한눈에', translations: { en: 'Architecture at a glance' }, slug: 'reference/architecture' }
           ]
         }
       ]

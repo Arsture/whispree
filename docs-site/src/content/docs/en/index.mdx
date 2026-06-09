@@ -1,0 +1,55 @@
+---
+title: Whispree
+description: A macOS voice input app that transcribes what you say, polishes it with AI, and pastes it straight into the app you were using.
+template: splash
+hero:
+  title: Speak, and it becomes a prompt
+  tagline: Whispree is a macOS menu bar app that transcribes your voice, polishes it with AI, and drops it straight into the app you were using. Local-first, Apple Silicon only.
+  actions:
+    - text: Get started
+      link: /en/getting-started/
+      icon: right-arrow
+    - text: Explore features
+      link: /en/features/dictation/
+      icon: document
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## What Whispree does
+
+Press a shortcut → speak → stop, and Whispree handles **dictation (STT) → (optional) AI correction → automatic paste into the app you were last using** in one go. Both the dictation engine and the correction AI are **swappable at runtime**, and everything works end to end with local models alone.
+
+<CardGrid>
+  <Card title="Stay in your flow" icon="rocket">
+    Default shortcut `Ctrl+Shift+R`. Press, speak, and the result lands in the previously focused app (editor, terminal, browser).
+  </Card>
+  <Card title="Local-first, your choice" icon="setting">
+    STT runs on WhisperKit (local) · Groq (cloud) · MLX Audio (local); correction on local MLX · OpenAI · Groq · Claude subscription.
+  </Card>
+  <Card title="Dictation that never stops" icon="seti:audio">
+    Start the next recording immediately while the previous one is still processing. Insertion follows the order you spoke (FIFO).
+  </Card>
+  <Card title="Understands context" icon="seti:image">
+    Capture the screen during recording and pass it to a vision model, or remember the browser tab and terminal session and paste back into exactly that spot.
+  </Card>
+</CardGrid>
+
+## Core features at a glance
+
+<CardGrid>
+  <LinkCard title="Dictation & multi-recording" href="/en/features/dictation/" description="Recording modes (push-to-talk / toggle), multi-recording queue, shortcuts, URL scheme." />
+  <LinkCard title="STT engines" href="/en/features/stt/" description="WhisperKit · Groq · MLX Audio, language selection, silence auto-skip (VAD)." />
+  <LinkCard title="AI correction" href="/en/features/correction/" description="None · local MLX · OpenAI · Groq · Claude subscription, 4 correction modes." />
+  <LinkCard title="Dictionary & Quick Fix" href="/en/features/dictionary/" description="Domain word sets, on-the-fly correction, iCloud sync." />
+  <LinkCard title="Visual context & restore" href="/en/features/context/" description="Screenshots for vision, browser tab and iTerm2/tmux restore." />
+  <LinkCard title="Models & compatibility" href="/en/features/models/" description="Local model registry, 'Can I Run' compatibility grades, downloads." />
+</CardGrid>
+
+## Requirements
+
+- **macOS 14 or later**, **Apple Silicon (arm64) only** — Intel Macs are not supported.
+- Microphone permission is required. Automatic paste needs Accessibility permission.
+- Local models download on first use (WhisperKit STT ~1.5 GB, etc.). Cloud engines (Groq/OpenAI) work immediately once authenticated.
+
+For detailed installation, permissions, and your first dictation, see [Get started](/en/getting-started/).

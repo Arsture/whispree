@@ -502,16 +502,15 @@ Elevation is STACKED — small layered offsets faking natural light — never a 
 
 This file is both the visual contract *and* the docs design SSoT. The structural decisions below govern what the site contains and how new feature docs slot in.
 
-- **Primary navigation**: left sidebar grouped `Start · Concepts · Guides · Reference`.
-- **Core routes**:
-  - `/` Overview (splash)
+- **Audience**: the public site is strictly USER-facing — "what Whispree does and how to use it," feature-first. Dev/release/contributing material is NOT a published page; it lives in `docs-site/CONTRIBUTING.md` and the repo's `CLAUDE.md`/`AGENTS.md`.
+- **Bilingual (i18n)**: Korean is the root locale (`src/content/docs/**`); English lives under `/en/` (`src/content/docs/en/**`). Every page exists in both languages.
+- **Primary navigation**: left sidebar grouped `시작하기/Start · 기능/Features · 참고/Reference`.
+- **Core routes** (Korean root; English mirrored under `/en/…`):
+  - `/` 개요 / Overview (splash)
   - `/getting-started/`
-  - `/concepts/architecture/`
-  - `/guides/providers/`
-  - `/guides/permissions/`
-  - `/reference/release-process/`
-  - `/reference/feature-doc-template/`
-- **Page content order** (every operational page): Outcome → Facts/behavior → Steps/decisions → Verification → Related SSoT to update next time.
+  - `/features/dictation/` · `/features/stt/` · `/features/correction/` · `/features/dictionary/` · `/features/context/` · `/features/models/`
+  - `/reference/permissions/` · `/reference/shortcuts/` · `/reference/architecture/` (architecture stays light)
+- **Page content order** (every feature page): user outcome → what it does / options (prefer tables) → when it runs / how to configure → what can fail → related pages.
 
 ## Appendix B — Content voice
 
@@ -520,12 +519,12 @@ This file is both the visual contract *and* the docs design SSoT. The structural
 - **Every feature page answers**: what it does · when it runs · what can fail · how to verify.
 - **Bilingual stance**: English-first; Korean is an open question (see below) tracked against Starlight i18n cost.
 
-## Appendix C — Docs-update gate (links to release-process)
+## Appendix C — Docs-update gate
 
-Before any `dev → main` merge, production deploy, or release push: update the affected page under `docs-site/src/content/docs/`, or add/update a feature SSoT via the [feature doc template](/reference/feature-doc-template/), or write an explicit `No docs needed:` rationale in the commit/handoff. README-only updates do not satisfy this gate for user-facing, architecture, provider, permission, release, or workflow changes.
+Before any `dev → main` merge, production deploy, or release push: update the affected page under `docs-site/src/content/docs/**` **and its `/en/` mirror**, or add a new feature page via the template in `docs-site/CONTRIBUTING.md`, or write an explicit `No docs needed:` rationale in the commit/handoff. README-only updates do not satisfy this gate for user-facing feature, provider, permission, shortcut, or workflow changes. Full workflow: `docs-site/CONTRIBUTING.md`.
 
 ## Appendix D — Open questions
 
 - [ ] Final production docs domain → sets `site` in `astro.config.mjs` + Vercel alias.
-- [ ] Bilingual Korean/English docs → Starlight i18n structure + maintenance cost.
+- [x] Bilingual Korean/English docs → **decided: Starlight i18n, Korean root + English `/en/`.**
 - [ ] Whether to ship a real Geist/Geist Mono webfont vs. the Inter/JetBrains Mono substitutes (latency vs. fidelity trade-off).
