@@ -50,6 +50,13 @@ struct LLMSettingsView: View {
                     groqApiKeySection
                 }
 
+                // Claude (구독) sections
+                if appState.settings.llmProviderType == .claudeCode {
+                    claudeCodeModelSection
+                    screenshotSection
+                    claudeCodeStatusSection
+                }
+
                 // Model Status
                 if appState.settings.llmProviderType == .local,
                    !appState.llmModelState.isReady
@@ -399,6 +406,83 @@ struct LLMSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
+        }
+    }
+
+    // MARK: - Claude (구독)
+
+    private var claudeCodeModelSection: some View {
+        LiquidSection("Claude 모델") {
+            VStack(spacing: 0) {
+                ForEach(Array(ClaudeCodeModel.allCases.enumerated()), id: \.element) { index, model in
+                    if index > 0 { Divider() }
+                    claudeCodeModelCard(model)
+                }
+            }
+        }
+    }
+
+    private func claudeCodeModelCard(_ model: ClaudeCodeModel) -> some View {
+        let isSelected = appState.settings.claudeCodeModel == model
+
+        return Button {
+            appState.settings.claudeCodeModel = model
+            Task { await appState.switchLLMProvider(to: .claudeCode) }
+        } label: {
+            HStack(alignment: .center) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? DesignTokens.accentPrimary : DesignTokens.textTertiary)
+                    .font(.body)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(model.displayName)
+                            .font(.subheadline.weight(.medium))
+                        Image(systemName: "eye")
+                            .font(.caption2)
+                            .foregroundStyle(DesignTokens.accentPrimary)
+                    }
+                    Text(model.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                ModelMetricsView(
+                    sizeText: "☁️",
+                    ramPercent: nil,
+                    tokPerSec: nil,
+                    latencyMs: model.estimatedLatencyMs,
+                    qualityScore: model.qualityScore,
+                    grade: .runsGreat
+                )
+            }
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+    }
+
+    private var claudeCodeStatusSection: some View {
+        LiquidSection("Claude 구독 연동") {
+            VStack(alignment: .leading, spacing: 10) {
+                if ClaudeCodeProvider.isAvailable {
+                    Label("Claude Code CLI 감지됨 — 기존 구독 로그인을 재사용합니다",
+                          systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Label("Claude Code CLI를 찾을 수 없습니다. 터미널에서 설치 후 `claude`로 로그인하세요.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.semanticColors(for: .warning).foreground)
+                }
+
+                Text("별도 API 키 불필요 (claude CLI가 구독 인증을 재사용 — ToS 안전 경로). 비용은 Agent SDK 크레딧 풀($20·$100·$200/월)에서 차감되며 대화형 Claude Code 한도와 별개입니다. subprocess 방식이라 응답은 ~5-20초입니다.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
         }
     }

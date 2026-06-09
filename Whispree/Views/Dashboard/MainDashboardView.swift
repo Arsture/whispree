@@ -402,6 +402,15 @@ struct MainDashboardView: View {
                                     .foregroundStyle(DesignTokens.accentPrimary)
                             }
                         }
+                    } else if appState.settings.llmProviderType == .claudeCode {
+                        HStack(spacing: 4) {
+                            Text(appState.settings.claudeCodeModel.displayName)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "eye")
+                                .font(.caption2)
+                                .foregroundStyle(DesignTokens.accentPrimary)
+                        }
                     }
                 }
                 .padding(14)
@@ -441,6 +450,7 @@ struct MainDashboardView: View {
             case .openai: return "globe"
             case .groq:
                 return appState.settings.groqLLMModel.supportsVision ? "eye" : "bolt.horizontal.fill"
+            case .claudeCode: return "sparkles"
         }
     }
 
