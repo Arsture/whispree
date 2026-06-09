@@ -71,3 +71,13 @@ mlx_models/
 # Docs (internal planning/handoff)
 docs/
 .omx/
+# Web docs site
+node_modules/
+docs-site/node_modules/
+docs-site/.astro/
+docs-site/dist/
+docs-site/.vercel/
+
+# Public docs content must remain tracked despite the internal `docs/` ignore rule.
+!docs-site/src/content/docs/
+!docs-site/src/content/docs/**

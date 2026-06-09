@@ -1,0 +1,45 @@
+---
+title: Whispree Docs
+description: Fast voice-to-prompt documentation for Whispree.
+template: splash
+hero:
+  title: Whispree Docs
+  tagline: Voice-to-prompt for macOS developers. Record, correct, and insert text without losing flow.
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+    - text: Understand the architecture
+      link: /concepts/architecture/
+      icon: document
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What Whispree does
+
+Whispree is a macOS menu bar app for fast dictation into the app you were already using. It records speech, transcribes through a selectable STT provider, optionally corrects with an LLM provider, and inserts the result back into the captured target context.
+
+<CardGrid>
+  <Card title="Start quickly" icon="rocket">
+    Install the app, grant macOS permissions, choose providers, and verify insertion.
+  </Card>
+  <Card title="Keep speaking" icon="seti:audio-settings">
+    Recording is separated from background STT/LLM processing so later utterances can queue safely.
+  </Card>
+  <Card title="Use visual context" icon="seti:image">
+    Screen capture can provide VLM context while preserving explicit screenshot selection.
+  </Card>
+  <Card title="Document every feature" icon="document">
+    Future features should update a docs SSoT page or the feature-doc template before main deployment.
+  </Card>
+</CardGrid>
+
+## Current docs map
+
+- [Getting started](/getting-started/) — install, run, and first verification.
+- [Architecture](/concepts/architecture/) — queue, providers, target context, and insertion.
+- [Providers](/guides/providers/) — STT and LLM choices.
+- [Permissions](/guides/permissions/) — Accessibility, Screen Recording, Automation.
+- [Release process](/reference/release-process/) — dev/main deploy rules and docs-update gate.
+- [Feature doc template](/reference/feature-doc-template/) — SSoT shape for future feature updates.

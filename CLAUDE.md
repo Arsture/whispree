@@ -18,6 +18,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **배포 함정 (과거 재발 이슈)**: Xcode는 빌드 설정이 바뀌면 새 DerivedData 폴더(`Whispree-<hash>`)를 만들므로 시간이 지나면 여러 폴더가 쌓임. `find ... | head -1`은 mtime이 아닌 알파벳 순이라 **최신 빌드를 놓치고 오래된 바이너리를 배포**하는 사일런트 버그 발생. 반드시 `ls -td ... | head -1`로 mtime 내림차순 정렬 사용. 배포 후 `nm Whispree.debug.dylib | xcrun swift-demangle | grep <새_심볼>` 로 최소 1회 검증 권장.
 
+
+## Public Docs Site & Main Deploy Gate
+
+- Public docs live in `docs-site/` as a nested Astro Starlight app deployed on Vercel with Root Directory `docs-site`.
+- Before any `dev` → `main` merge, production deploy, or release push, update affected docs pages and feature SSoT entries under `docs-site/src/content/docs/`, or write an explicit `No docs needed:` rationale in the handoff/commit. README-only updates are not enough for user-facing behavior, architecture, provider, permission, release, or workflow changes.
+- Keep docs website design decisions in `docs-site/DESIGN.md`; keep root `DESIGN.md` focused on the macOS app.
+- Docs verification command: `pnpm --dir docs-site build`. For nested Vercel deployment, use `vercel docs-site` for preview and `vercel docs-site --prod` only when intentionally releasing docs.
+
 ## Git 브랜치 전략
 
 - **작업은 항상 `dev` 브랜치에서 수행.** 급한 hotfix를 제외하면 `main`에 직접 커밋하지 말 것.
