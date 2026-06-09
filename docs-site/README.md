@@ -19,27 +19,33 @@ pnpm --dir docs-site preview
 
 ## Vercel deployment
 
-Use a separate Vercel project connected to the existing `Arsture/whispree` repository.
+This docs site is a **separate Vercel project** (`docs-site`) so the macOS app
+repo never deploys as a whole. Framework/build settings live in `vercel.json`
+(Astro · `pnpm install --frozen-lockfile` · `pnpm build` · output `dist`).
 
-Recommended dashboard settings:
+Two deploy paths, depending on the project's **Root Directory** setting:
 
-- **Framework Preset**: Astro
-- **Root Directory**: `docs-site`
-- **Install Command**: `pnpm install --frozen-lockfile`
-- **Build Command**: `pnpm build`
-- **Output Directory**: `dist`
+### A. CLI deploy from this folder (current setup, Root Directory = `.`)
 
-CLI path:
+The linked project uses Root Directory `.`, so deploys run from *inside*
+`docs-site/`, uploading only this folder:
 
 ```bash
-# From repository root, link the docs project in monorepo mode.
-vercel link --repo
-
-# Deploy this nested project after linking.
-vercel docs-site
-
-# Production deploy only when intentionally releasing docs.
-vercel docs-site --prod
+cd docs-site
+vercel deploy --yes          # preview
+vercel deploy --prod --yes   # production (intentional docs release only)
 ```
 
-Vercel's monorepo guidance recommends selecting the project root directory for the app you want to deploy. The local `vercel.json` mirrors the dashboard settings so the nested project remains explicit.
+`vercel link --yes --project docs-site` (run once from `docs-site/`) recreates
+the local `.vercel/` link if it is missing.
+
+### B. GitHub push-to-deploy (Root Directory = `docs-site`)
+
+If you later connect the project to the `Arsture/whispree` GitHub repo for
+automatic preview/production deploys on push, change the project's **Root
+Directory to `docs-site`** in the dashboard so Vercel builds this nested folder
+instead of the repo root. Do not mix the two: Root Directory `.` is for CLI
+deploys from inside `docs-site/`; `docs-site` is for repo-root Git builds.
+
+Production deploys should follow the docs-update gate in
+[`/reference/release-process`](./src/content/docs/reference/release-process.md).
