@@ -1,0 +1,55 @@
+---
+title: Whispree
+description: 말하면 받아쓰고, AI가 다듬어, 쓰던 앱에 그대로 붙여넣는 macOS 음성 입력 앱.
+template: splash
+hero:
+  title: 말하면, 바로 프롬프트가 됩니다
+  tagline: Whispree는 음성을 받아쓰고 AI로 다듬어 쓰던 앱에 그대로 넣어주는 macOS 메뉴바 앱입니다. 로컬 우선, Apple Silicon 전용.
+  actions:
+    - text: 시작하기
+      link: /getting-started/
+      icon: right-arrow
+    - text: 기능 둘러보기
+      link: /features/dictation/
+      icon: document
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Whispree가 하는 일
+
+단축키를 누르고 → 말하고 → 멈추면, Whispree가 **받아쓰기(STT) → (선택) AI 교정 → 직전에 쓰던 앱에 자동 붙여넣기**까지 한 번에 처리합니다. 받아쓰기 엔진과 교정 AI는 모두 **런타임에 바꿀 수 있고**, 로컬 모델만으로도 완결됩니다.
+
+<CardGrid>
+  <Card title="말하던 흐름 그대로" icon="rocket">
+    기본 단축키 `Ctrl+Shift+R`. 누르고 말하면 직전 앱(에디터·터미널·브라우저)에 결과가 들어갑니다.
+  </Card>
+  <Card title="로컬 우선, 선택은 자유" icon="setting">
+    STT는 WhisperKit(로컬)·Groq(클라우드)·MLX Audio(로컬), 교정은 로컬 MLX·OpenAI·Groq·Claude 구독 중 선택.
+  </Card>
+  <Card title="멈추지 않는 받아쓰기" icon="seti:audio">
+    이전 녹음이 처리되는 동안 바로 다음 녹음을 시작할 수 있습니다. 삽입은 말한 순서대로(FIFO).
+  </Card>
+  <Card title="문맥까지 이해" icon="seti:image">
+    녹음 중 화면을 캡처해 비전 모델에 전달하거나, 브라우저 탭·터미널 세션을 기억했다가 그 자리에 정확히 붙여넣습니다.
+  </Card>
+</CardGrid>
+
+## 핵심 기능 한눈에
+
+<CardGrid>
+  <LinkCard title="받아쓰기 & 멀티 녹음" href="/features/dictation/" description="녹음 모드(누르기/토글), 멀티 녹음 큐, 단축키, URL 스킴." />
+  <LinkCard title="STT 엔진" href="/features/stt/" description="WhisperKit · Groq · MLX Audio, 언어 선택, 무음 자동 스킵(VAD)." />
+  <LinkCard title="AI 교정" href="/features/correction/" description="None · 로컬 MLX · OpenAI · Groq · Claude 구독, 교정 모드 4종." />
+  <LinkCard title="단어 사전 & Quick Fix" href="/features/dictionary/" description="도메인 단어 세트, 즉석 교정, iCloud 동기화." />
+  <LinkCard title="화면 컨텍스트 & 복원" href="/features/context/" description="비전용 스크린샷, 브라우저 탭·iTerm2/tmux 복원." />
+  <LinkCard title="모델 & 호환성" href="/features/models/" description="로컬 모델 레지스트리, ‘Can I Run’ 호환성 등급, 다운로드." />
+</CardGrid>
+
+## 요구 사항
+
+- **macOS 14 이상**, **Apple Silicon(arm64) 전용** — Intel Mac은 지원하지 않습니다.
+- 마이크 권한은 필수. 자동 붙여넣기에는 손쉬운 사용(Accessibility) 권한이 필요합니다.
+- 로컬 모델은 첫 사용 시 다운로드됩니다(WhisperKit STT ~1.5 GB 등). 클라우드 엔진(Groq/OpenAI)은 인증만 있으면 즉시 사용.
+
+자세한 설치·권한·첫 받아쓰기는 [시작하기](/getting-started/)를 참고하세요.

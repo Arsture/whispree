@@ -1,0 +1,223 @@
+/*
+ * Whispree Docs — theme overrides.
+ * Implements docs-site/DESIGN.md: Vercel-grade stark ink/white discipline
+ * + Whispree's signature neon-waveform gradient (cyan -> blue -> violet).
+ * Tokens here mirror the DESIGN.md frontmatter; change both together.
+ */
+
+:root {
+  /* Type — Inter (Geist substitute) + JetBrains Mono (Geist Mono substitute) */
+  --sl-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sl-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Interactive accent = link blue (cyan is decorative only — see DESIGN.md) */
+  --sl-color-accent-low: #d3e5ff;
+  --sl-color-accent: #0070f3;
+  --sl-color-accent-high: #0761d1;
+
+  /*
+   * Gray ladder. In Starlight these are SEMANTIC contrast tokens, not literal
+   * colors: --sl-color-white = strongest-contrast text (ink in light mode),
+   * --sl-color-black = the page background (white in light mode). Do NOT set
+   * --sl-color-white to #fff in light mode — it renders headings white-on-white.
+   */
+  --sl-color-white: #171717;   /* strongest text / headings (ink) */
+  --sl-color-gray-1: #2e2e2e;
+  --sl-color-gray-2: #4d4d4d;  /* body */
+  --sl-color-gray-3: #666666;
+  --sl-color-gray-4: #888888;  /* mute */
+  --sl-color-gray-5: #a1a1a1;
+  --sl-color-gray-6: #ebebeb;  /* hairline */
+  --sl-color-gray-7: #fafafa;  /* canvas-soft */
+  --sl-color-black: #ffffff;   /* page background (canvas) */
+
+  /* Whispree signature tokens */
+  --wh-ink: #171717;
+  --wh-accent: #29bc9b;
+  --wh-accent-bright: #50e3c2;
+  --wh-accent-soft: #aaffec;
+  --wh-accent-deep: #0f7a63;
+  --wh-violet: #7928ca;
+  --wh-waveform: linear-gradient(90deg, #50e3c2 0%, #0070f3 52%, #7928ca 100%);
+  --wh-hairline: #ebebeb;
+
+  /* Stacked-shadow elevation recipe (DESIGN.md "Elevation & Depth") */
+  --wh-shadow-2: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02), 0 2px 2px rgba(0, 0, 0, 0.04);
+  --wh-shadow-3: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.05);
+
+  --sl-content-width: 52rem;
+  --sl-sidebar-width: 18rem;
+  --sl-text-code: 0.84rem;
+}
+
+:root[data-theme='dark'] {
+  /* True ink polarity flip — not a muddy gray. Brighter cyan reads on ink. */
+  --sl-color-accent-low: #10233f;
+  --sl-color-accent: #52a8ff;
+  --sl-color-accent-high: #aaffec;
+  --sl-color-white: #ffffff;   /* strongest text (white on ink) */
+  --sl-color-gray-1: #f5f5f5;
+  --sl-color-gray-2: #c7c7c7;
+  --sl-color-gray-3: #a1a1a1;
+  --sl-color-gray-4: #888888;
+  --sl-color-gray-5: #4d4d4d;
+  --sl-color-gray-6: #2a2a2a;
+  --sl-color-gray-7: #1c1c1c;
+  --sl-color-black: #171717;
+  --sl-color-bg: #171717;
+  --sl-color-bg-nav: #171717;
+  --sl-color-bg-sidebar: #1c1c1c;
+
+  --wh-hairline: #2a2a2a;
+  --wh-shadow-2: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --wh-shadow-3: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Geist-leaning Inter alternates + negative display tracking ── */
+body {
+  font-feature-settings: "cv01", "cv02", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #171717;
+  color: #f2f2f2;
+}
+
+/* ── Neon-waveform accent line under the top nav ── */
+.header {
+  border-bottom: 1px solid var(--wh-hairline);
+}
+.header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px 0;
+  height: 2px;
+  background: var(--wh-waveform);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* ── Headlines: sentence-case + aggressive negative tracking (the voice) ── */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.hero h1 {
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+.sl-markdown-content h1 { letter-spacing: -0.04em; }
+
+/* ── Hero (splash landing) ── */
+.hero {
+  padding-block: clamp(4rem, 11vw, 8rem);
+}
+.hero h1 {
+  letter-spacing: -0.05em;
+}
+.hero .tagline {
+  color: var(--sl-color-gray-2);
+}
+/* Signature neon-waveform glow — hero-scale only, blurred, behind content */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 3rem 6% auto;
+  height: 18rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(closest-side at 18% 50%, rgba(80, 227, 194, 0.30), transparent 70%),
+    radial-gradient(closest-side at 50% 46%, rgba(0, 112, 243, 0.26), transparent 72%),
+    radial-gradient(closest-side at 82% 52%, rgba(121, 40, 202, 0.24), transparent 70%);
+  filter: blur(46px);
+  pointer-events: none;
+  z-index: -1;
+}
+/* Hero CTA pill scale (DESIGN.md button-primary / button-secondary) */
+.hero .action {
+  border-radius: 100px;
+}
+
+/* ── Cards: sit on the page (inset hairline + soft stack), never float heavy ── */
+.card {
+  border-color: var(--wh-hairline);
+  border-radius: 12px;
+  box-shadow: var(--wh-shadow-2);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.card:hover {
+  box-shadow: var(--wh-shadow-3);
+}
+.card .icon {
+  color: var(--wh-accent-deep);
+}
+
+/* ── Inline code + code blocks: mono technical layer ── */
+.sl-markdown-content code:not(:where(.not-content *)) {
+  border: 1px solid var(--wh-hairline);
+  border-radius: 4px;
+  background: var(--sl-color-gray-7);
+  padding: 0.05rem 0.32rem;
+  font-size: 0.85em;
+}
+.sl-markdown-content pre {
+  border: 1px solid var(--wh-hairline);
+  border-radius: 8px;
+}
+
+/* ── Sidebar: caption-mono group eyebrows + blue active state ── */
+.sidebar-content summary,
+.sidebar-content h2,
+.sidebar-content .group-label span {
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-4);
+}
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+  font-weight: 500;
+  border-radius: 6px;
+  box-shadow: inset 2px 0 0 var(--sl-color-accent);
+}
+
+/* ── Right TOC: cyan is the one structural wayfinding accent ── */
+starlight-toc a[aria-current='true'] {
+  color: var(--sl-color-gray-1);
+  border-inline-start-color: var(--wh-accent);
+}
+
+/* ── Tables: mono header eyebrow + hairline rows ── */
+.sl-markdown-content table:not(:where(.not-content *)) {
+  border: 1px solid var(--wh-hairline);
+  border-radius: 8px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+.sl-markdown-content th:not(:where(.not-content *)) {
+  background: var(--sl-color-gray-7);
+  font-family: var(--sl-font-mono);
+  font-size: 0.74rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-2);
+}
+.sl-markdown-content th:not(:where(.not-content *)),
+.sl-markdown-content td:not(:where(.not-content *)) {
+  border-color: var(--wh-hairline);
+}
+
+/* ── Links: blue, underline-on-hover ── */
+.sl-markdown-content a:not(:where(.not-content *)) {
+  text-underline-offset: 0.18em;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+}

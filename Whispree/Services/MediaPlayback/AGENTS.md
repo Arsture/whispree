@@ -48,7 +48,7 @@ pause 경로별로 플래그 추적 (`pausedMusic`, `pausedSpotify`, `pausedViaA
 
 ## Dependencies
 
-- `RecordingCoordinator` — 녹음 시작/종료/취소 시점에서 호출
+- `RecordingCoordinator` — active recording 시작/종료/취소 시점에서 호출. LLM 후처리/queue processing 동안에는 녹음 종료 직후 재생을 재개해야 한다.
 - `AppSettings.pauseMediaDuringRecording` — 사용자 토글 (기본 true)
 - `PermissionManager.queryAutomationStatus` — Music/Spotify AppleScript 권한 체크
 - `Info.plist`: `NSAppleEventsUsageDescription`

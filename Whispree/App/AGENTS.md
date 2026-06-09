@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-23 | Updated: 2026-04-02 -->
+<!-- Generated: 2026-03-23 | Updated: 2026-06-09 -->
 
 # App
 
@@ -12,16 +12,17 @@
 |------|-------------|
 | `WhispreeApp.swift` | SwiftUI `@main` 진입점, Scene 구성 |
 | `AppDelegate.swift` | NSApplicationDelegate — 메뉴바 아이콘, 핫키, 윈도우 관리, Quick Fix 조율 |
-| `AppState.swift` | `@MainActor ObservableObject` 중앙 상태 — 전사 상태, 프로바이더, 오디오 레벨, 설정, 히스토리, 스크린샷 캡처 |
+| `AppState.swift` | `@MainActor ObservableObject` 중앙 상태 — projected 전사 상태, dictation queue snapshot, 프로바이더, 오디오 레벨, 설정, 히스토리, 스크린샷 캡처 |
 | `Constants.swift` | 앱 전역 상수 (모델명, URL, 기본값 등) |
 
 ## For AI Agents
 
 ### Working In This Directory
 - `AppState`는 **모든 View와 Service가 참조**하는 중앙 상태. 프로퍼티 변경 시 영향 범위를 반드시 확인
+- `transcriptionState`는 multi-job source of truth가 아니라 UI projection이다. 실제 queue/order/cancel state는 `DictationQueueState`가 소유하고 `dictationQueueSnapshot`으로 UI에 노출된다.
 - `AppState`는 `@MainActor` — UI 스레드에서만 접근
 - Provider 전환 로직(`switchSTTProvider`, `switchLLMProvider`)이 여기에 있음
-- `AppState`에 스크린샷 관련 상태: `capturedScreenshots`, `screenshotSelectionCallback`, `previewRequestCallback`
+- `AppState`에 스크린샷 관련 상태: `capturedScreenshots`, `screenshotSelectionCallback`, `previewRequestCallback`. Callback은 FIFO delivery head job에만 대응해야 하며 ESC/recording suspend 시 exactly once로 정리되어야 한다.
 - `AppDelegate`는 lifecycle 관리 — NSStatusItem(메뉴바 아이콘) + NSWindow(메인 윈도우). Dock 아이콘 표시(`LSUIElement=false`)는 의도적 설계
 
 ### Testing

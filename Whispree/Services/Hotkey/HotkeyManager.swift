@@ -90,7 +90,7 @@ final class HotkeyManager: ObservableObject {
             whispreeShortcut: shortcut,
             keyDown: { [weak self] in
                 guard let self else { return }
-                let shouldRecord = appState.transcriptionState == .idle
+                let shouldRecord = !appState.isRecording
                 onRecordingToggle?(shouldRecord)
             }
         )
@@ -112,7 +112,9 @@ final class HotkeyManager: ObservableObject {
         // 로컬 모니터 — Whispree가 포커스일 때 ESC 소비 (선택 패널 등)
         escMonitorLocal = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard event.keyCode == 53, let self else { return event }
-            if self.appState.transcriptionState != .idle {
+            if self.eventTap.isPreviewOpen ||
+                self.appState.transcriptionState == .selectingScreenshots ||
+                self.appState.isRecording {
                 // EventTap의 onEscPressed와 같은 통합 핸들러 호출
                 self.handleUnifiedEsc()
                 return nil
@@ -125,15 +127,41 @@ final class HotkeyManager: ObservableObject {
             self?.handleUnifiedEsc()
         }
 
-        // 파이프라인 상태 동기화
+        // ESC scope 동기화. 전역 ESC는 명시적으로 cancel 가능한 현재 scope
+        // (녹음, 스크린샷 선택/배송, overlay에 보이는 foreground queue item)에서만 소비한다.
         appState.$transcriptionState
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                guard let self else { return }
-                self.eventTap.isPipelineActive = (state != .idle)
-                self.eventTap.isSelectionActive = (state == .selectingScreenshots)
+            .sink { [weak self] _ in
+                self?.updateEscScopes()
             }
             .store(in: &stateCancellable)
+
+        appState.$isRecording
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateEscScopes()
+            }
+            .store(in: &stateCancellable)
+
+        appState.$dictationQueueSnapshot
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateEscScopes()
+            }
+            .store(in: &stateCancellable)
+    }
+
+    private func updateEscScopes() {
+        let state = appState.transcriptionState
+        let hasForegroundQueueItem = appState.dictationQueueSnapshot.foregroundJobSequence != nil
+        let hasActiveDelivery = appState.dictationQueueSnapshot.activeDeliverySequence != nil
+        let isForegroundProcessingVisible = (state == .transcribing || state == .correcting) && hasForegroundQueueItem
+
+        eventTap.isSelectionActive = state == .selectingScreenshots
+        eventTap.isPipelineActive = appState.isRecording ||
+            state == .recording ||
+            isForegroundProcessingVisible ||
+            (state == .inserting && hasActiveDelivery)
     }
 
     /// 통합 ESC 핸들러 — 우선순위대로 분기
@@ -143,13 +171,21 @@ final class HotkeyManager: ObservableObject {
             onEscPreview?()
             return
         }
-        // 2. 선택 패널 활성이면 → 건너뛰기
+        // 2. 선택/배송/foreground queue item이면 → 해당 item 하나만 취소
         if appState.transcriptionState == .selectingScreenshots {
-            appState.screenshotSelectionCallback?([])
+            onCancel?()
             return
         }
-        // 3. 녹음/전사/교정 중이면 → 파이프라인 취소
-        if appState.transcriptionState != .idle {
+        // 3. 활성 녹음만 취소. 백그라운드 STT/LLM job은 명시적으로 선택된
+        // foreground scope 없이 전역 ESC로 취소하지 않는다.
+        if appState.isRecording {
+            onCancel?()
+            return
+        }
+        if appState.transcriptionState == .transcribing ||
+            appState.transcriptionState == .correcting ||
+            appState.transcriptionState == .inserting
+        {
             onCancel?()
         }
     }

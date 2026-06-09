@@ -1,16 +1,17 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-23 | Updated: 2026-04-02 -->
+<!-- Generated: 2026-03-23 | Updated: 2026-06-09 -->
 
 # Models
 
 ## Purpose
-데이터 모델과 설정 타입 정의. Codable 설정, 도메인 단어 세트, 모델 정보, 전사 상태 머신, 디바이스/모델 호환성 평가.
+데이터 모델과 설정 타입 정의. Codable 설정, 도메인 단어 세트, 모델 정보, 전사/UI 상태, 병렬 dictation queue 상태 머신, 디바이스/모델 호환성 평가.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
 | `AppSettings.swift` | `@MainActor final class: ObservableObject` — 3종 property wrapper로 각 필드를 `whispree.<fieldName>` 키에 **개별 저장**. 1회성 legacy blob(`"WhispreeSettings"`) 마이그레이션 내장. private `LegacyAppSettings`는 구 blob 디코드 전용 (건드리지 말 것) |
+| `DictationQueue.swift` | `@MainActor` queue state machine — `DictationJob`, immutable job snapshot, provider concurrency policy, FIFO delivery gate, scoped cancellation, terminal cleanup/retention |
 | `UserDefault.swift` | 3종 property wrapper: `@UserDefault` / `@RawRepresentableUserDefault` / `@CodableUserDefault`. `_enclosingInstance` static subscript로 ObservableObject 반응성 자동 처리 |
 | `DomainWordSets.swift` | 도메인 특화 단어 세트 (프로그래밍, 의료 등) — STT promptTokens 주입 및 LLM glossary 용 |
 | `ModelInfo.swift` | WhisperKit/LLM 모델 메타데이터 (이름, 크기, 상태) |
@@ -72,14 +73,23 @@ SwiftUI Binding도 동일한 이유로 `$settings.domainWordSets[i]` projection 
 
 #### 기타 모델 파일
 
-- `TranscriptionState`는 UI와 `RecordingCoordinator` 양쪽에서 참조 — 상태 추가 시 양쪽 핸들링 필요
+- `TranscriptionState`는 global UI projection일 뿐 per-job source of truth가 아니다. Multi-recording 상태/순서/permit은 `DictationQueueState`/`DictationJobStatus`가 소유한다. 상태 추가 시 UI projection(`RecordingCoordinator.refreshProjectedState`)과 queue tests를 같이 확인.
 - `DomainWordSets`는 STT Provider의 `promptTokens`와 LLM Provider의 `glossary`에 매핑
 - `DeviceCapability` + `LocalModelSpec` + `ModelCompatibility`가 "Can I Run" 시스템 구성 — 모델 추가 시 세 파일 모두 확인
 - `LocalModelSpec.supported` 배열에 모델 추가 시 `minMemoryGB`, `qualityScore` 설정 필수
 
+#### DictationQueue invariants
+
+- Queue admission에는 작은 고정 cap을 두지 않는다. 메모리 안전은 terminal cleanup/retention/resource warning으로 다룬다.
+- Provider별 concurrency permit은 `DictationProviderConcurrencyPolicy`와 provider별 permit dictionary가 source of truth다. 별도 전역 counter를 추가해 혼합하지 말 것.
+- FIFO delivery: later job이 먼저 ready여도 earlier non-terminal job이 끝나기 전에는 삽입하지 않는다. failed/canceled/skipped terminal job은 FIFO를 unblock해야 한다.
+- Terminal transition은 STT/LLM permit release, active delivery clear, audio/screenshots/selected images/target context cleanup을 수행해야 한다.
+- Late provider completion이 canceled/terminal job을 resurrect하면 안 된다.
+
 ### Testing
 - `WhispreeTests/Models/AppSettingsTests.swift` — 설정 직렬화/역직렬화 + CorrectionMode 마이그레이션
 - `WhispreeTests/Models/DomainWordSetsTests.swift` — 도메인 단어 세트
+- `WhispreeTests/Models/DictationQueueTests.swift` — queue ordering/concurrency/FIFO/cancellation/cleanup state machine
 - `WhispreeTests/Services/LLMServiceTests.swift` — LocalModelSpec 검증
 
 <!-- MANUAL: -->

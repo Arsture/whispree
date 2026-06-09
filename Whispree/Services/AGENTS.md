@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-03-23 | Updated: 2026-04-02 -->
+<!-- Generated: 2026-03-23 | Updated: 2026-06-09 -->
 
 # Services
 
@@ -30,6 +30,7 @@
 - **STTProvider는 NOT @MainActor**, **LLMProvider는 @MainActor** — 이 비대칭이 의도적 설계
 - **ScreenCaptureService는 NOT @MainActor**, **ContinuousScreenCaptureService는 @MainActor**
 - **EventTapHotkeyService는 NOT @MainActor** (CGEventTap은 저수준 이벤트 처리)
-- 새 서비스 추가 시: 프로토콜 정의 → 구현체 → AppState에 등록 → RecordingCoordinator에서 연결
+- 새 서비스 추가 시: 프로토콜 정의 → 구현체 → AppState에 등록 → RecordingCoordinator/queue delivery 경계에서 연결
+- Dictation job 처리에서 STT/LLM 서비스 호출은 provider별 concurrency permit 하에 병렬 가능하지만, TextInsertion/ScreenCapture selection/target restore는 FIFO delivery 단계에서만 수행
 
 <!-- MANUAL: -->

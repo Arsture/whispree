@@ -46,9 +46,11 @@ Built for Korean developers who mix English. LLM correction handles Korean + Eng
 
 ### Smart Dictation
 
+Speak again while Whispree is correcting the previous utterance: new recordings are queued immediately, STT/LLM post-processing can run in parallel under provider limits, and final insertion stays FIFO so text lands in the order you spoke.
+
 - **Record** — `Ctrl+Shift+R` (default). Push to Talk (hold to record) or Toggle (press once to start, again to stop) modes
 - **Quick Fix** — `Ctrl+Shift+D` (default). Add misheard words to correction dictionary & Replace
-- **Cancel** — `ESC`. Cancel anytime during recording
+- **Cancel** — `ESC`. Cancels the current scope only: active recording, screenshot selection/delivery, or the visible foreground queued item; it never clears the whole queue.
 - All hotkeys are customizable in Settings.
 
 ### Nearly Free
