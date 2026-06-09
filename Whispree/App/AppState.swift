@@ -230,18 +230,6 @@ final class AppState: ObservableObject {
                 } catch {
                     llmModelState = .error(error.localizedDescription)
                 }
-            case .claudeCode:
-                // `claude -p` 서브프로세스로 구독 인증 재사용 (genuine binary = ToS 안전 경로).
-                // 스크린샷 컨텍스트는 캡처가 opt-in이라 자동 활성화하지 않음.
-                let provider = ClaudeCodeProvider(model: settings.claudeCodeModel)
-                llmProvider = provider
-                do {
-                    try await provider.setup()
-                    let validation = provider.validate()
-                    llmModelState = validation.isValid ? .ready : .error(validation.message)
-                } catch {
-                    llmModelState = .error(error.localizedDescription)
-                }
         }
     }
 

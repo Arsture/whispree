@@ -462,8 +462,6 @@ final class RecordingCoordinator: ObservableObject {
             "openai:\(appState.settings.openaiModel.rawValue)"
         case .groq:
             "groq:\(appState.settings.groqLLMModel.rawValue):\(appState.settings.groqApiKey.hashValue)"
-        case .claudeCode:
-            "claudeCode:\(appState.settings.claudeCodeModel.rawValue)"
         }
     }
 

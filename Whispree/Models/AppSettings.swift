@@ -98,18 +98,12 @@ final class AppSettings: ObservableObject {
     )
     var groqLLMModel: GroqLLMModel
 
-    @RawRepresentableUserDefault(
-        key: "whispree.claudeCodeModel",
-        defaultValue: .haiku45
-    )
-    var claudeCodeModel: ClaudeCodeModel
-
     // MARK: - Screenshot context
 
     @UserDefault(key: "whispree.isScreenshotContextEnabled", defaultValue: false)
     var isScreenshotContextEnabled: Bool
 
-    @UserDefault(key: "whispree.isScreenshotPasteEnabled", defaultValue: false)
+    @UserDefault(key: "whispree.isScreenshotPasteEnabled", defaultValue: true)
     var isScreenshotPasteEnabled: Bool
 
     // MARK: - Groq API
@@ -367,7 +361,6 @@ enum LLMProviderType: String, Codable, CaseIterable {
     case local = "로컬 MLX"
     case openai = "OpenAI (GPT)"
     case groq = "Groq Cloud"
-    case claudeCode = "Claude (구독)"
 
     var displayName: String {
         switch self {
@@ -375,7 +368,6 @@ enum LLMProviderType: String, Codable, CaseIterable {
             case .local: "로컬 MLX"
             case .openai: "OpenAI (GPT)"
             case .groq: "Groq Cloud"
-            case .claudeCode: "Claude (구독)"
         }
     }
 
