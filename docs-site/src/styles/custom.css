@@ -15,16 +15,21 @@
   --sl-color-accent: #0070f3;
   --sl-color-accent-high: #0761d1;
 
-  /* Gray ladder — every divider/border/disabled step is deliberate */
-  --sl-color-white: #ffffff;
-  --sl-color-gray-1: #171717;
-  --sl-color-gray-2: #4d4d4d;
+  /*
+   * Gray ladder. In Starlight these are SEMANTIC contrast tokens, not literal
+   * colors: --sl-color-white = strongest-contrast text (ink in light mode),
+   * --sl-color-black = the page background (white in light mode). Do NOT set
+   * --sl-color-white to #fff in light mode — it renders headings white-on-white.
+   */
+  --sl-color-white: #171717;   /* strongest text / headings (ink) */
+  --sl-color-gray-1: #2e2e2e;
+  --sl-color-gray-2: #4d4d4d;  /* body */
   --sl-color-gray-3: #666666;
-  --sl-color-gray-4: #888888;
+  --sl-color-gray-4: #888888;  /* mute */
   --sl-color-gray-5: #a1a1a1;
-  --sl-color-gray-6: #ebebeb;
-  --sl-color-gray-7: #fafafa;
-  --sl-color-black: #ffffff;
+  --sl-color-gray-6: #ebebeb;  /* hairline */
+  --sl-color-gray-7: #fafafa;  /* canvas-soft */
+  --sl-color-black: #ffffff;   /* page background (canvas) */
 
   /* Whispree signature tokens */
   --wh-ink: #171717;
@@ -50,7 +55,7 @@
   --sl-color-accent-low: #10233f;
   --sl-color-accent: #52a8ff;
   --sl-color-accent-high: #aaffec;
-  --sl-color-white: #f5f5f5;
+  --sl-color-white: #ffffff;   /* strongest text (white on ink) */
   --sl-color-gray-1: #f5f5f5;
   --sl-color-gray-2: #c7c7c7;
   --sl-color-gray-3: #a1a1a1;
