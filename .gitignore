@@ -71,3 +71,15 @@ mlx_models/
 # Docs (internal planning/handoff)
 docs/
 .omx/
+
+# Public docs site (docs-site/) — Astro Starlight on Vercel
+node_modules/
+docs-site/node_modules/
+docs-site/.astro/
+docs-site/dist/
+docs-site/.vercel/
+
+# The `docs/` rule above also matches docs-site/src/content/docs/ — re-include
+# the public docs content so it stays tracked.
+!docs-site/src/content/docs/
+!docs-site/src/content/docs/**
