@@ -16,13 +16,11 @@ export default defineConfig({
         root: { label: '한국어', lang: 'ko' },
         en: { label: 'English', lang: 'en' }
       },
-      social: [
-        {
-          icon: 'github',
-          label: 'GitHub',
-          href: 'https://github.com/Arsture/whispree'
-        }
-      ],
+      // GitHub button (new tab + live star count) is rendered by the
+      // SocialIcons override below, so the default `social` entry is omitted.
+      components: {
+        SocialIcons: './src/components/SocialIcons.astro'
+      },
       sidebar: [
         {
           label: '시작하기',
