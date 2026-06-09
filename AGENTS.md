@@ -63,14 +63,6 @@ xcodebuild ... build                 # 빌드
 xcodebuild ... test                  # 테스트 (E2E 포함)
 ```
 
-
-### Public Docs Site
-
-- `docs-site/` is the nested Vercel-hosted public documentation site for Whispree. It uses Astro Starlight and should stay static-first.
-- Before merging/deploying to `main`, update affected docs under `docs-site/src/content/docs/` and the relevant feature SSoT, or record a clear `No docs needed:` rationale for internal-only changes.
-- Keep root `DESIGN.md` as the macOS app design contract; use `docs-site/DESIGN.md` for docs website UX/UI decisions.
-- Vercel deploys must use Root Directory `docs-site` (or `vercel docs-site` from the repository root). Do not deploy the repository root as the docs project.
-
 ### Key Design Constraints
 - STTProvider는 **NOT @MainActor** (ML 추론 = 백그라운드)
 - LLMProvider는 **@MainActor** (API 호출 + AppState 접근)
