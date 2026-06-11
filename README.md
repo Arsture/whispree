@@ -149,7 +149,7 @@ Wants to be [OpenCode](https://github.com/nicepkg/opencode). Still a long way to
 | | STT | LLM |
 |---|---|---|
 | **Cloud (Recommended)** | [Groq](https://groq.com/) — accurate, fast | [OpenAI via Codex CLI](https://github.com/openai/codex) — use your existing account |
-| **Local** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML+ANE, decent accuracy | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — 6 models supported |
+| **Local** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML+ANE, decent accuracy | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) + Python MLX workers — local text/VLM models |
 | **Local** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — fast, lightweight | [MLXVLM](https://github.com/ml-explore/mlx-swift-lm) — vision model (screenshot context) |
 
 ### Supported Models
@@ -175,6 +175,7 @@ The built-in **Can I Run** feature detects your hardware (chip, RAM, bandwidth) 
 | **Local Text** | `Qwen3-Coder-30B-A3B-Instruct-4bit` | ~16 GB | MoE coding (32GB+ recommended) |
 | **Local Text** | `GLM-4.7-Flash-4bit` | ~16 GB | Chinese/Korean (32GB+ recommended) |
 | **Local Vision** | `Qwen3-VL-4B-Instruct-8bit` | ~4.8 GB | Screenshot context |
+| **Local Vision** | `diffusiongemma-26B-A4B-it-4bit` | ~15.6 GB | DiffusionGemma VLM via Python MLX worker (32GB+ recommended) |
 
 ## Requirements
 

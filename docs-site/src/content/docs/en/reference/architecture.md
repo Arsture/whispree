@@ -27,7 +27,7 @@ The key is the **separation of recording, processing, and insertion**. That way,
 
 ## Where it goes back to
 
-Each recording also remembers "where the result should go". It distinguishes regular apps, Chrome tabs, and iTerm2/tmux sessions, then at insertion time restores **the spot at the moment recording started — not whatever app is frontmost now**. (See [Context restore](/en/features/context/).)
+Each recording also remembers "where the result should go". It distinguishes regular apps, Chrome tabs, and iTerm2/tmux sessions, then at insertion time restores **the captured target context — not whatever app is frontmost now**. For Chrome, if the same input element is still active, Whispree re-reads the latest caret position changed during processing. (See [Context restore](/en/features/context/).)
 
 ## Safety constraints
 

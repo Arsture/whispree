@@ -73,6 +73,14 @@ final class LLMServiceTests: XCTestCase {
         XCTAssertNotNil(visionSpec)
     }
 
+    func testDiffusionGemmaUsesPythonVisionRuntime() {
+        let spec = LocalModelSpec.find("mlx-community/diffusiongemma-26B-A4B-it-4bit")
+        XCTAssertNotNil(spec)
+        XCTAssertEqual(spec?.capability, .vision)
+        XCTAssertEqual(spec?.runtime, .python)
+        XCTAssertGreaterThanOrEqual(spec?.minMemoryGB ?? 0, 32)
+    }
+
     func testLocalModelSpecFindUnknown() {
         let spec = LocalModelSpec.find("unknown/model")
         XCTAssertNil(spec)
@@ -84,6 +92,14 @@ final class LLMServiceTests: XCTestCase {
         let provider = LocalTextProvider()
         XCTAssertFalse(provider.requiresNetwork)
         XCTAssertFalse(provider.supportsVision)
+    }
+
+    func testPythonProviderVisionCapabilityFollowsModelSpec() {
+        let textProvider = MLXLMPythonProvider(modelId: "lmstudio-community/gemma-4-26B-A4B-it-MLX-4bit")
+        XCTAssertFalse(textProvider.supportsVision)
+
+        let visionProvider = MLXLMPythonProvider(modelId: "mlx-community/diffusiongemma-26B-A4B-it-4bit")
+        XCTAssertTrue(visionProvider.supportsVision)
     }
 
     func testOpenAIProviderSupportsVision() {

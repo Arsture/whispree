@@ -97,6 +97,16 @@ struct LocalModelSpec: Identifiable, Codable, Hashable {
             qualityScore: 29,
             runtime: .python
         ),
+        LocalModelSpec(
+            id: "mlx-community/diffusiongemma-26B-A4B-it-4bit",
+            displayName: "DiffusionGemma 26B MoE (4-bit)",
+            description: "DiffusionGemma VLM — 블록 확산 생성, 스크린샷 교정 지원 (uv 필요)",
+            sizeBytes: 15_600_000_000,     // HF 모델 카드: 4-bit MLX, 15.6 GB
+            capability: .vision,
+            minMemoryGB: 32,
+            qualityScore: 31,
+            runtime: .python
+        ),
 
         // === Qwen3 ===
         LocalModelSpec(

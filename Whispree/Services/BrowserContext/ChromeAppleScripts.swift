@@ -9,9 +9,11 @@ enum ChromeAppleScripts {
     /// document.activeElement의 CSS selector + 커서 위치를 함께 캡처.
     /// - selector: #id로 끝나거나 body 방향 nth-of-type 체인.
     /// - type: "input" (selectionStart/End 사용) | "ce" (contenteditable — root 기준 문자 offset) | "".
-    /// - start/end: input은 selectionStart/selectionEnd. ce는 TreeWalker로 환산한 문자 offset.
-    /// 반환 포맷: `selector|::|type|::|start|::|end` (빈 input = "")
-    private static let captureElementJS = "(function(){var el=document.activeElement;if(!el||el===document.body)return '';var target=el;var parts=[];while(el&&el.nodeType===1&&el!==document.body){var name=el.nodeName.toLowerCase();if(el.id){parts.unshift('#'+el.id);break;}var idx=1,sib=el;while((sib=sib.previousElementSibling)){if(sib.nodeName===el.nodeName)idx++;}parts.unshift(name+':nth-of-type('+idx+')');el=el.parentNode;}var selector=parts.join(' > ');var type='',start=0,end=0;if(typeof target.selectionStart==='number'&&typeof target.value==='string'){type='input';start=target.selectionStart||0;end=target.selectionEnd||0;}else if(target.isContentEditable){type='ce';var sel=window.getSelection();if(sel&&sel.rangeCount>0){var r=sel.getRangeAt(0);var pre=document.createRange();pre.selectNodeContents(target);try{pre.setEnd(r.startContainer,r.startOffset);start=pre.toString().length;pre.setEnd(r.endContainer,r.endOffset);end=pre.toString().length;}catch(_){start=0;end=0;}}}return selector+'|::|'+type+'|::|'+start+'|::|'+end;})()"
+    /// - start/end: input은 selectionStart/selectionEnd. ce는 legacy text offset fallback.
+    /// - startPath/endPath: ce는 root 기준 childNodes index path. 빈 paragraph/BR 위치까지 표현.
+    /// - startNodeOffset/endNodeOffset: ce path node 내부 offset. 실제 복원은 path+node offset을 우선 사용.
+    /// 반환 포맷: `selector|::|type|::|start|::|end|::|startPath|::|endPath|::|startNodeOffset|::|endNodeOffset` (빈 input = "")
+    private static let captureElementJS = "(function(){var el=document.activeElement;if(!el||el===document.body)return '';var target=el;var parts=[];while(el&&el.nodeType===1&&el!==document.body){var name=el.nodeName.toLowerCase();if(el.id){parts.unshift('#'+el.id);break;}var idx=1,sib=el;while((sib=sib.previousElementSibling)){if(sib.nodeName===el.nodeName)idx++;}parts.unshift(name+':nth-of-type('+idx+')');el=el.parentNode;}var selector=parts.join(' > ');var type='',start=0,end=0,sp='',ep='',so=0,eo=0;function path(root,n){var a=[];while(n&&n!==root){var p=n.parentNode;if(!p)return '';var i=0,c=p.firstChild;while(c&&c!==n){i++;c=c.nextSibling;}a.unshift(i);n=p;}return a.join(',');}if(typeof target.selectionStart==='number'&&typeof target.value==='string'){type='input';start=target.selectionStart||0;end=target.selectionEnd||0;so=start;eo=end;}else if(target.isContentEditable){type='ce';var sel=window.getSelection();if(sel&&sel.rangeCount>0){var r=sel.getRangeAt(0);sp=path(target,r.startContainer);ep=path(target,r.endContainer);so=r.startOffset||0;eo=r.endOffset||0;var pre=document.createRange();pre.selectNodeContents(target);try{pre.setEnd(r.startContainer,r.startOffset);start=pre.toString().length;pre.setEnd(r.endContainer,r.endOffset);end=pre.toString().length;}catch(_){start=0;end=0;}}}return selector+'|::|'+type+'|::|'+start+'|::|'+end+'|::|'+sp+'|::|'+ep+'|::|'+so+'|::|'+eo;})()"
 
     /// 활성 Chrome 탭의 window idx | tab idx | tab id | URL을 "|::|"로 구분 반환.
     /// front window 없으면 "".
@@ -85,13 +87,27 @@ enum ChromeAppleScripts {
 
     /// 활성 탭에서 selector 엘리먼트에 focus + **캡처 당시 커서 위치를 그대로 복원**.
     /// - input/textarea: `setSelectionRange(start, end)`. value 길이를 초과하면 clamp.
-    /// - contenteditable: TreeWalker로 text node + offset 환산 후 `Range.setStart/setEnd`.
-    /// 캡처 시점과 DOM이 달라져 offset이 유효하지 않으면 텍스트 노드 끝으로 fallback.
+    /// - contenteditable: childNodes path + node-local offset으로 우선 복원. 없으면 legacy text offset fallback.
+    ///   path 방식은 빈 paragraph/BR 위치까지 보존한다.
     /// JS 미허용 시 조용히 실패 ("fail" 반환, 탭 복원만 수행된 상태 유지).
-    static func focusElement(selector: String, type: String, start: Int, end: Int) -> String {
+    static func focusElement(
+        selector: String,
+        type: String,
+        start: Int,
+        end: Int,
+        startPath: String? = nil,
+        endPath: String? = nil,
+        startNodeOffset: Int? = nil,
+        endNodeOffset: Int? = nil
+    ) -> String {
         let escSelector = escapeForJSSingleQuotedString(selector)
         let escType = escapeForJSSingleQuotedString(type)
-        let js = "try{var e=document.querySelector('\(escSelector)');if(!e)throw 0;e.focus();var t='\(escType)',s=\(start),ed=\(end);if(t==='input'){if(typeof e.setSelectionRange==='function'){var vl=((typeof e.value==='string')?e.value:'').length;e.setSelectionRange(Math.min(s,vl),Math.min(ed,vl));}}else if(t==='ce'){function fp(root,tg){var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);var rem=tg,n=w.nextNode(),last=null;while(n){var ln=n.nodeValue.length;if(rem<=ln)return{n:n,o:rem};rem-=ln;last=n;n=w.nextNode();}return last?{n:last,o:last.nodeValue.length}:{n:root,o:0};}var sp=fp(e,s),ep=fp(e,ed);var r=document.createRange();r.setStart(sp.n,sp.o);r.setEnd(ep.n,ep.o);var sl=window.getSelection();if(sl){sl.removeAllRanges();sl.addRange(r);}}}catch(_){}"
+        let escStartPath = escapeForJSSingleQuotedString(startPath ?? "")
+        let escEndPath = escapeForJSSingleQuotedString(endPath ?? "")
+        let nodeStart = startNodeOffset ?? -1
+        let nodeEnd = endNodeOffset ?? -1
+        let hasNodePath = startPath != nil && endPath != nil && startNodeOffset != nil && endNodeOffset != nil
+        let js = "try{var e=document.querySelector('\(escSelector)');if(!e)throw 0;e.focus();var t='\(escType)',s=\(start),ed=\(end),spa='\(escStartPath)',epa='\(escEndPath)',nso=\(nodeStart),neo=\(nodeEnd),hp=\(hasNodePath ? "true" : "false");if(t==='input'){if(typeof e.setSelectionRange==='function'){var vl=((typeof e.value==='string')?e.value:'').length;e.setSelectionRange(Math.min(s,vl),Math.min(ed,vl));}}else if(t==='ce'){function byp(root,p){var n=root;if(p==='')return n;var a=p.split(',');for(var i=0;i<a.length;i++){var x=parseInt(a[i],10);if(!n.childNodes||x<0||x>=n.childNodes.length)return null;n=n.childNodes[x];}return n;}function clamp(n,o){return n.nodeType===3?Math.min(o,n.nodeValue.length):Math.min(o,n.childNodes?n.childNodes.length:0);}function fp(root,tg){var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);var rem=tg,n=w.nextNode(),last=null;while(n){var ln=n.nodeValue.length;if(rem<=ln)return{n:n,o:rem};rem-=ln;last=n;n=w.nextNode();}return last?{n:last,o:last.nodeValue.length}:{n:root,o:0};}var sn=hp?byp(e,spa):null,en=hp?byp(e,epa):null,so=nso>=0?nso:s,eo=neo>=0?neo:ed;if(!sn||!en){var sp=fp(e,s),ep=fp(e,ed);sn=sp.n;so=sp.o;en=ep.n;eo=ep.o;}else{so=clamp(sn,so);eo=clamp(en,eo);}var r=document.createRange();r.setStart(sn,so);r.setEnd(en,eo);var sl=window.getSelection();if(sl){sl.removeAllRanges();sl.addRange(r);}}}catch(_){}"
         let escJS = escapeForAppleScript(js)
         return """
         tell application "Google Chrome"

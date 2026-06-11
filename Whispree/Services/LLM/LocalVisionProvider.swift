@@ -24,6 +24,7 @@ final class LocalVisionProvider: LLMProvider {
     }
 
     func setup() async throws {
+        MLXMemoryControl.configureInteractiveCacheLimit()
         let config = ModelConfiguration(id: modelId)
         modelContainer = try await VLMModelFactory.shared.loadContainer(
             from: #hubDownloader(),
@@ -34,10 +35,12 @@ final class LocalVisionProvider: LLMProvider {
 
     func teardown() async {
         modelContainer = nil
+        MLXMemoryControl.releaseCachedBuffers()
     }
 
     func correct(text: String, systemPrompt: String, glossary: [String]?, screenshots: [Data] = []) async throws -> String {
         guard let modelContainer else { throw LLMError.modelNotLoaded }
+        defer { MLXMemoryControl.releaseCachedBuffers() }
 
         var fullPrompt = systemPrompt
         if let glossary, !glossary.isEmpty {

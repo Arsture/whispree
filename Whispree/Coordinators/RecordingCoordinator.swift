@@ -17,6 +17,7 @@ final class RecordingCoordinator: ObservableObject {
     private var thinkingPauseCancellable: AnyCancellable?
     private var workspaceObserver: AnyCancellable?
     private var activeRecordingContext: ExternalContext?
+    private var chromeCaretTrackingTask: Task<Void, Never>?
     private var lastExternalApp: NSRunningApplication?
     private let continuousCapture = ContinuousScreenCaptureService()
     private let mediaPlayback = MediaPlaybackService()
@@ -89,6 +90,7 @@ final class RecordingCoordinator: ObservableObject {
 
         let previousApp = currentExternalTargetApp()
         activeRecordingContext = captureTargetContext(previousApp)
+        startChromeCaretTrackingIfNeeded()
 
         // 연속 스크린샷 캡처 시작 (Vision 지원 프로바이더 + 토글 ON일 때)
         if appState.settings.isScreenshotContextEnabled,
@@ -158,6 +160,7 @@ final class RecordingCoordinator: ObservableObject {
             targetContext: activeRecordingContext,
             screenshots: screenshots
         )
+        startChromeCaretTrackingIfNeeded()
         if enqueued == nil {
             appState.currentError = .sttError("녹음된 오디오가 비어 있습니다.")
         }
@@ -399,6 +402,48 @@ final class RecordingCoordinator: ObservableObject {
         Task { await mediaPlayback.resumeIfPaused() }
         scheduleProcessingAndDelivery()
         refreshProjectedState()
+    }
+
+    private func startChromeCaretTrackingIfNeeded() {
+        guard chromeCaretTrackingTask == nil else { return }
+        guard hasTrackableChromeContext() else { return }
+        chromeCaretTrackingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                let shouldContinue = await self.refreshTrackedChromeCarets()
+                if !shouldContinue {
+                    await MainActor.run { self.chromeCaretTrackingTask = nil }
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 250_000_000)
+            }
+        }
+    }
+
+    private func hasTrackableChromeContext() -> Bool {
+        if activeRecordingContext?.isChromeTab == true {
+            return true
+        }
+        return queue.nonTerminalJobs().contains { $0.targetContext?.isChromeTab == true }
+    }
+
+    private func refreshTrackedChromeCarets() -> Bool {
+        var hasTrackableContext = false
+        if let context = activeRecordingContext, context.isChromeTab {
+            hasTrackableContext = true
+            if let updated = browserContext.refreshChromeCaretIfActive(context) {
+                activeRecordingContext = updated
+            }
+        }
+
+        for job in queue.nonTerminalJobs() {
+            guard let context = job.targetContext, context.isChromeTab else { continue }
+            hasTrackableContext = true
+            if let updated = browserContext.refreshChromeCaretIfActive(context) {
+                queue.updateTargetContext(jobID: job.id, targetContext: updated)
+            }
+        }
+        return hasTrackableContext
     }
 
     private func suspendActiveScreenshotSelectionForRecording() {
