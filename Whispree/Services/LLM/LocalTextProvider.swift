@@ -24,6 +24,7 @@ final class LocalTextProvider: LLMProvider {
     }
 
     func setup() async throws {
+        MLXMemoryControl.configureInteractiveCacheLimit()
         let config = ModelConfiguration(id: modelId)
         modelContainer = try await LLMModelFactory.shared.loadContainer(
             from: #hubDownloader(),
@@ -34,10 +35,12 @@ final class LocalTextProvider: LLMProvider {
 
     func teardown() async {
         modelContainer = nil
+        MLXMemoryControl.releaseCachedBuffers()
     }
 
     func correct(text: String, systemPrompt: String, glossary: [String]?, screenshots: [Data] = []) async throws -> String {
         guard let modelContainer else { throw LLMError.modelNotLoaded }
+        defer { MLXMemoryControl.releaseCachedBuffers() }
 
         var fullPrompt = systemPrompt
         if modelId.contains("Qwen3") {

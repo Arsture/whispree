@@ -16,7 +16,7 @@ AI polishes your raw transcription — from spacing, punctuation, and misrecogni
 | **Claude (subscription)** | Via local `claude` CLI | ✅ | Claude Code CLI installed + logged in |
 
 ### Local MLX
-Fully local correction. It supports text models (Qwen3, Gemma 4, GLM, etc.) and a vision model (Qwen3-VL-4B); download models in Settings → Models. With a vision model, you can leverage [visual context](/en/features/context/) for correction. For per-model compatibility, see [Models & compatibility](/en/features/models/).
+Fully local correction. It supports text models (Qwen3, Gemma 4, GLM, etc.) and vision models (Qwen3-VL-4B, DiffusionGemma 26B); download models in Settings → Models. With a vision model, you can leverage [visual context](/en/features/context/) for correction. For per-model compatibility, see [Models & compatibility](/en/features/models/).
 
 ### OpenAI (GPT)
 Uses the ChatGPT Responses API (SSE streaming). For authentication, it **prefers reusing the Codex CLI token (`~/.codex/auth.json`)**, and if absent, connects via **OpenAI login** (browser PKCE) in the LLM tab. Models: GPT-5.5 (default) · 5.4 · 5.4 Mini · 5.3 Codex · 5.2. Vision supported.

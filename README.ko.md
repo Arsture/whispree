@@ -149,7 +149,7 @@ tell application "Whispree" to open location "whispree://toggle"
 | | STT | LLM |
 |---|---|---|
 | **클라우드 (권장)** | [Groq](https://groq.com/) — 정확, 빠름 | [OpenAI via Codex CLI](https://github.com/openai/codex) — 기존 계정 그대로 |
-| **로컬** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML+ANE, 적당히 정확 | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) — 6개 모델 지원 |
+| **로컬** | [WhisperKit](https://github.com/argmaxinc/WhisperKit) — CoreML+ANE, 적당히 정확 | [mlx-swift-lm](https://github.com/ml-explore/mlx-swift-lm) + Python MLX 워커 — 로컬 텍스트/VLM 모델 |
 | **로컬** | [MLX Audio](https://github.com/ml-explore/mlx-audio) — 빠름, 가벼움 | [MLXVLM](https://github.com/ml-explore/mlx-swift-lm) — 비전 모델 (스크린샷 컨텍스트) |
 
 ### 지원 모델
@@ -175,6 +175,7 @@ tell application "Whispree" to open location "whispree://toggle"
 | **로컬 Text** | `Qwen3-Coder-30B-A3B-Instruct-4bit` | ~16 GB | MoE 코딩 특화 (32GB+ 권장) |
 | **로컬 Text** | `GLM-4.7-Flash-4bit` | ~16 GB | 중국어/한국어 (32GB+ 권장) |
 | **로컬 Vision** | `Qwen3-VL-4B-Instruct-8bit` | ~4.8 GB | 스크린샷 컨텍스트 활용 |
+| **로컬 Vision** | `diffusiongemma-26B-A4B-it-4bit` | ~15.6 GB | Python MLX 워커로 실행되는 DiffusionGemma VLM (32GB+ 권장) |
 
 ## 요구 사항
 

@@ -11,12 +11,12 @@ Download and manage supported models under Settings → Models.
 
 - **STT**: WhisperKit Large V3 Turbo (~1.5 GB), Qwen3-ASR-1.7B-8bit (~1.0 GB).
 - **Correction (text)**: Qwen3 (1.7B/4B default/8B), Qwen3 Coder 30B, Gemma 4 (2B/4B/26B MoE/31B), SuperGemma4 26B, GLM-4.7 Flash, and more.
-- **Correction (vision)**: Qwen3-VL-4B.
+- **Correction (vision)**: Qwen3-VL-4B, DiffusionGemma 26B A4B.
 
 Each model can be downloaded/canceled/deleted inline, with progress (bytes · %) and an "in use" badge shown. If another download is in progress, it queues up, and you can retry on failure.
 
 :::note
-Some large MoE models (e.g. Gemma 4 26B) are not ported to mlx-swift and **run via a Python worker**, which requires `uv` to be installed. The registry marks them with that runtime.
+Some large MoE/VLM models (e.g. Gemma 4 26B, DiffusionGemma 26B) are not ported to mlx-swift and **run via a Python worker**, which requires `uv` to be installed. The registry marks them with that runtime.
 :::
 
 ## 'Can I Run' compatibility

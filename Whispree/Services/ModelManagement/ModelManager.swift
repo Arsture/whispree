@@ -355,9 +355,22 @@ final class ModelManager: ObservableObject {
         }
 
         do {
-            let config = ModelConfiguration(id: modelId)
-
-            if spec?.capability == .vision {
+            if spec?.runtime == .python {
+                let provider = MLXLMPythonProvider(modelId: modelId) { [weak self] phase in
+                    guard let self else { return }
+                    switch phase {
+                    case .uvSync:
+                        self.downloadProgress.removeValue(forKey: modelId)
+                    case let .downloading(progress):
+                        self.downloadProgress[modelId] = progress
+                    case .loading:
+                        self.downloadProgress.removeValue(forKey: modelId)
+                    }
+                }
+                try await provider.setup()
+                await provider.teardown()
+            } else if spec?.capability == .vision {
+                let config = ModelConfiguration(id: modelId)
                 let _ = try await VLMModelFactory.shared.loadContainer(
                     from: SerialHubDownloader(),
                     using: #huggingFaceTokenizerLoader(),
@@ -365,6 +378,7 @@ final class ModelManager: ObservableObject {
                     progressHandler: progressHandler
                 )
             } else {
+                let config = ModelConfiguration(id: modelId)
                 let _ = try await LLMModelFactory.shared.loadContainer(
                     from: SerialHubDownloader(),
                     using: #huggingFaceTokenizerLoader(),
@@ -632,4 +646,3 @@ private struct SerialHubDownloader: MLXLMCommon.Downloader {
         )
     }
 }
-

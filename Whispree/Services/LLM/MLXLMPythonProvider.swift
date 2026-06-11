@@ -13,9 +13,13 @@ final class MLXLMPythonProvider: LLMProvider {
 
     typealias ProgressHandler = @MainActor @Sendable (SetupPhase) -> Void
 
-    let name = "로컬 LLM (Python)"
+    var name: String {
+        supportsVision ? "로컬 VLM (Python)" : "로컬 LLM (Python)"
+    }
     let requiresNetwork = false
-    let supportsVision = false
+    var supportsVision: Bool {
+        LocalModelSpec.find(modelId)?.capability == .vision
+    }
 
     private var process: Process?
     private var stdinPipe: Pipe?
@@ -180,7 +184,11 @@ final class MLXLMPythonProvider: LLMProvider {
             }
         }
 
-        try sendCommand(["cmd": "load", "model": modelId])
+        try sendCommand([
+            "cmd": "load",
+            "model": modelId,
+            "capability": supportsVision ? "vision" : "text",
+        ])
         let loadResp = try await readResponse(timeout: 1800)
         pollerTask?.cancel()
         guard loadResp["ok"] as? Bool == true else {
@@ -242,10 +250,15 @@ final class MLXLMPythonProvider: LLMProvider {
             fullPrompt += "\n\n용어 사전 (반드시 이 형태로 보존):\n" + glossary.joined(separator: ", ")
         }
 
+        let screenshotPayload = supportsVision
+            ? screenshots.suffix(3).map { $0.base64EncodedString() }
+            : []
+
         try sendCommand([
             "cmd": "correct",
             "system_prompt": fullPrompt,
             "user_text": text,
+            "screenshots": Array(screenshotPayload),
             "max_tokens": 2000,
             "temperature": 0.0,
         ])

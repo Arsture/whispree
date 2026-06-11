@@ -347,6 +347,12 @@ final class DictationQueueState {
         jobs[index].selectedImages = images
     }
 
+    func updateTargetContext(jobID: DictationJobID, targetContext: ExternalContext) {
+        guard let index = jobs.firstIndex(where: { $0.id == jobID }) else { return }
+        guard !jobs[index].status.isTerminal else { return }
+        jobs[index].targetContext = targetContext
+    }
+
     func failLLMFallbackToRaw(jobID: DictationJobID) {
         completeLLM(jobID: jobID, correctedText: nil)
     }

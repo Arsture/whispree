@@ -28,10 +28,10 @@ While recording, **hold the left Option key for ~0.5 seconds** to toggle "attach
 
 ## Context restore
 
-The spot you were in when you started dictating is restored exactly at insertion time. Rather than simply pasting into "whatever app is frontmost now", it returns to **the location at the moment recording started**.
+The spot you were in when you started dictating is restored at insertion time. Rather than simply pasting into "whatever app is frontmost now", it returns to **the Chrome tab/input field or terminal session captured when recording started**.
 
 ### Browser restore (Chrome)
-**Browser restore** *(on by default)* under Settings → General. It remembers the **Chrome tab and the focused input element and cursor position** at the start of recording, then returns to that tab and that input field before inserting.
+**Browser restore** *(on by default)* under Settings → General. It remembers the **Chrome tab and focused input element** at the start of recording, then returns to that tab and input field before inserting. If you keep typing or move the caret in the same input while processing runs, then switch away, Whispree re-reads Chrome's latest caret position right before insertion and pastes there.
 
 - Chrome only. Requires Automation permission.
 - Element-level cursor restore requires Chrome's "Allow JavaScript from Apple Events". Even with it off, **tab restore still works** (only element restore is skipped).

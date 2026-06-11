@@ -36,7 +36,7 @@ final class BrowserContextService {
         let element = Self.runComputeElement()
         if let element = element {
             Self.logger.info(
-                "captureChrome: element selector=\(element.selector, privacy: .public) type=\(element.type, privacy: .public) start=\(element.start) end=\(element.end)"
+                "captureChrome: element selector=\(element.selector, privacy: .public) type=\(element.type, privacy: .public) start=\(element.start) end=\(element.end) startPath=\(element.startPath ?? "nil", privacy: .public) startNodeOffset=\(element.startNodeOffset ?? -1)"
             )
         } else {
             Self.logger.info("captureChrome: element=<none>")
@@ -65,14 +65,62 @@ final class BrowserContextService {
             return false
         }
 
-        if let element = element, !element.selector.isEmpty {
+        if let element, !element.selector.isEmpty {
             let focused = Self.runFocusElement(element)
             Self.logger.info(
-                "restoreChrome: focus \(element.type, privacy: .public) start=\(element.start) end=\(element.end) → \(focused ? "ok" : "fail", privacy: .public)"
+                "restoreChrome: focus \(element.type, privacy: .public) start=\(element.start) end=\(element.end) startPath=\(element.startPath ?? "nil", privacy: .public) startNodeOffset=\(element.startNodeOffset ?? -1) → \(focused ? "ok" : "fail", privacy: .public)"
             )
         }
 
         return true
+    }
+
+    /// If Chrome is currently frontmost and still on the captured tab/input,
+    /// return the same context with the latest caret/selection. This is used
+    /// while dictation is processing so delivery can restore the last caret the
+    /// user left behind before switching away from Chrome.
+    func refreshChromeCaretIfActive(_ ctx: ExternalContext) -> ExternalContext? {
+        guard case let .chromeTab(app, windowIndex, tabIndex, tabID, tabURL, capturedElement) = ctx else {
+            return nil
+        }
+        guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == Self.chromeBundleID else {
+            return nil
+        }
+        guard let activeTab = Self.runCapture(),
+              activeTab.tabID == tabID || activeTab.tabURL == tabURL
+        else {
+            return nil
+        }
+        guard let liveElement = Self.runComputeElement(), !liveElement.selector.isEmpty else {
+            return nil
+        }
+        if let capturedElement {
+            guard liveElement.selector == capturedElement.selector,
+                  liveElement.type == capturedElement.type
+            else {
+                return nil
+            }
+            guard liveElement.start != capturedElement.start
+                || liveElement.end != capturedElement.end
+                || liveElement.startPath != capturedElement.startPath
+                || liveElement.endPath != capturedElement.endPath
+                || liveElement.startNodeOffset != capturedElement.startNodeOffset
+                || liveElement.endNodeOffset != capturedElement.endNodeOffset
+            else {
+                return nil
+            }
+        }
+        Self.logger.info(
+            "refreshChromeCaret: selector=\(liveElement.selector, privacy: .public) type=\(liveElement.type, privacy: .public) start=\(liveElement.start) end=\(liveElement.end) startPath=\(liveElement.startPath ?? "nil", privacy: .public) startNodeOffset=\(liveElement.startNodeOffset ?? -1)"
+        )
+        return .chromeTab(
+            app: app,
+            windowIndex: windowIndex,
+            tabIndex: tabIndex,
+            tabID: tabID,
+            tabURL: tabURL,
+            element: liveElement
+        )
     }
 
     // MARK: - AppleScript runners (MainActor — TCC 프롬프트는 메인 스레드에서만 표시됨)
@@ -93,7 +141,8 @@ final class BrowserContextService {
         return (winIdx, tabIdx, tabID, parts[3])
     }
 
-    /// `selector|::|type|::|start|::|end` 포맷 파싱. selector 빈 문자열이면 nil.
+    /// `selector|::|type|::|start|::|end|::|startPath|::|endPath|::|startNodeOffset|::|endNodeOffset` 포맷 파싱.
+    /// selector 빈 문자열이면 nil. path/node offset이 없는 구버전 포맷도 fallback으로 허용.
     private static func runComputeElement() -> ElementInfo? {
         guard let raw = executeScript(ChromeAppleScripts.captureActiveElement),
               !raw.isEmpty
@@ -104,7 +153,20 @@ final class BrowserContextService {
         let type = parts[1]
         let start = Int(parts[2]) ?? 0
         let end = Int(parts[3]) ?? start
-        return ElementInfo(selector: selector, type: type, start: start, end: end)
+        let startPath = parts.count >= 6 ? parts[4] : nil
+        let endPath = parts.count >= 6 ? parts[5] : nil
+        let startNodeOffset = parts.count >= 8 ? Int(parts[6]) : nil
+        let endNodeOffset = parts.count >= 8 ? Int(parts[7]) : nil
+        return ElementInfo(
+            selector: selector,
+            type: type,
+            start: start,
+            end: end,
+            startPath: startPath,
+            endPath: endPath,
+            startNodeOffset: startNodeOffset,
+            endNodeOffset: endNodeOffset
+        )
     }
 
     private static func runRestoreTab(tabID: Int, fallbackURL: String) -> Bool {
@@ -117,7 +179,11 @@ final class BrowserContextService {
                 selector: info.selector,
                 type: info.type,
                 start: info.start,
-                end: info.end
+                end: info.end,
+                startPath: info.startPath,
+                endPath: info.endPath,
+                startNodeOffset: info.startNodeOffset,
+                endNodeOffset: info.endNodeOffset
             )
         ) == "ok"
     }

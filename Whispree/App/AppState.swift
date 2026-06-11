@@ -162,6 +162,9 @@ final class AppState: ObservableObject {
 
     func switchLLMProvider(to type: LLMProviderType) async {
         await llmProvider?.teardown()
+        if type != .local {
+            MLXMemoryControl.releaseCachedBuffers()
+        }
         llmModelState = .loading
         switch type {
             case .none:
@@ -170,9 +173,7 @@ final class AppState: ObservableObject {
             case .local:
                 let spec = LocalModelSpec.find(settings.llmModelId)
                 let provider: any LLMProvider
-                if spec?.capability == .vision {
-                    provider = LocalVisionProvider(modelId: settings.llmModelId)
-                } else if spec?.runtime == .python {
+                if spec?.runtime == .python {
                     provider = MLXLMPythonProvider(modelId: settings.llmModelId) { [weak self] phase in
                         guard let self else { return }
                         switch phase {
@@ -184,6 +185,8 @@ final class AppState: ObservableObject {
                             self.llmModelState = .loading
                         }
                     }
+                } else if spec?.capability == .vision {
+                    provider = LocalVisionProvider(modelId: settings.llmModelId)
                 } else {
                     provider = LocalTextProvider(modelId: settings.llmModelId)
                 }
