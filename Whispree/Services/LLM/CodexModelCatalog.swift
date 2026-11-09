@@ -103,6 +103,25 @@ enum CodexModelCatalog {
         effortOrder.first { efforts.contains($0) }
     }
 
+    /// 사용자가 고를 수 있는 effort. `ultra`는 작업 자동 위임이라 받아쓰기 교정에 의미가 없어 뺀다.
+    static func selectableEfforts(in efforts: [String]) -> [String] {
+        effortOrder.filter { $0 != "ultra" && efforts.contains($0) }
+    }
+
+    /// 요청에 실을 effort를 정한다. nil이면 `reasoning` 필드를 생략한다.
+    /// - 선호값이 비어 있으면(자동) 모델이 허용하는 가장 낮은 값.
+    /// - 선호값을 모델이 지원하면 그 값, 아니면 가장 낮은 값.
+    /// - 카탈로그에 없는 모델은 검증할 수 없으므로 생략 (잘못 보내면 403).
+    static func resolveEffort(entry: CodexModel?, preference: String) -> String? {
+        guard let entry else { return nil }
+        guard !preference.isEmpty else { return entry.lowestEffort }
+        if entry.supportedEfforts.contains(preference) { return preference }
+        OpenAIProvider.logger.notice(
+            "OpenAI: reasoning effort '\(preference, privacy: .public)' unsupported by model=\(entry.slug, privacy: .public) — using lowest"
+        )
+        return entry.lowestEffort
+    }
+
     // MARK: - Lenient decoding
 
     /// 알 수 없는 키는 무시되고, 모든 필드는 optional — Codex CLI 버전이 바뀌어도 디코드가 깨지지 않게.

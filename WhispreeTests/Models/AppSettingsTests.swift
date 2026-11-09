@@ -46,6 +46,11 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.openaiModel, "gpt-6-luna")
     }
 
+    func testDefaultOpenAIReasoningEffortIsAuto() {
+        let settings = makeSettings()
+        XCTAssertEqual(settings.openaiReasoningEffort, "")
+    }
+
     func testDefaultLLMEnabled() {
         let settings = makeSettings()
         // 기본값은 `true` — 사용자가 명시적으로 끄기 전까지 교정 활성화가 의도.

@@ -261,6 +261,7 @@ final class AppState: ObservableObject {
                 settings.isScreenshotContextEnabled = true
                 let provider = OpenAIProvider(
                     model: settings.openaiModel,
+                    reasoningEffortPreference: settings.openaiReasoningEffort,
                     authService: authService,
                     oauthService: oauthService
                 )

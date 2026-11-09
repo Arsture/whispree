@@ -38,6 +38,7 @@ struct LLMSettingsView: View {
                 // OpenAI sections
                 if appState.settings.llmProviderType == .openai {
                     openAIModelSection
+                    openAIReasoningSection
                     screenshotSection
                     openAIAuthSection
                 }
@@ -304,6 +305,51 @@ struct LLMSettingsView: View {
                 ForEach(Array(openAIModelChoices.enumerated()), id: \.element.id) { index, model in
                     if index > 0 { Divider() }
                     openAIModelCard(model)
+                }
+            }
+        }
+    }
+
+    /// 현재 모델이 지원하는 effort (ultra 제외). 카탈로그에 없는 모델이면 빈 배열 → 자동만 보인다.
+    private var openAIEffortChoices: [String] {
+        let entry = codexModels.first { $0.slug == appState.settings.openaiModel }
+        return CodexModelCatalog.selectableEfforts(in: entry?.supportedEfforts ?? [])
+    }
+
+    /// 저장된 값이 현재 모델에서 지원되지 않으면 자동으로 보인다. 저장값은 그대로 두고 요청 시 resolveEffort가 처리한다.
+    private var openAIEffortSelection: String {
+        let stored = appState.settings.openaiReasoningEffort
+        return openAIEffortChoices.contains(stored) ? stored : ""
+    }
+
+    private var openAIReasoningSection: some View {
+        let choices = openAIEffortChoices
+        let selection = openAIEffortSelection
+        let entry = codexModels.first { $0.slug == appState.settings.openaiModel }
+        let effective = CodexModelCatalog.resolveEffort(entry: entry, preference: selection)
+        let isSlow = effective.flatMap { CodexModelCatalog.effortOrder.firstIndex(of: $0) }
+            .map { $0 >= (CodexModelCatalog.effortOrder.firstIndex(of: "high") ?? Int.max) } ?? false
+
+        return LiquidSection("생각 수준") {
+            VStack(alignment: .leading, spacing: 6) {
+                Picker("생각 수준", selection: Binding(
+                    get: { openAIEffortSelection },
+                    set: { (newValue: String) in
+                        appState.settings.openaiReasoningEffort = newValue
+                        (appState.llmProvider as? OpenAIProvider)?.reasoningEffortPreference = newValue
+                    }
+                )) {
+                    Text("자동 (가장 빠르게)").tag("")
+                    ForEach(choices, id: \.self) { effort in
+                        Text(effort).tag(effort)
+                    }
+                }
+                .labelsHidden()
+
+                if isSlow {
+                    Text("교정이 느려질 수 있어요")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }

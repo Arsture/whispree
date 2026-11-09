@@ -92,6 +92,10 @@ final class AppSettings: ObservableObject, UserDefaultsStoreProviding {
     @UserDefault(key: "whispree.openaiModel", defaultValue: CodexModelCatalog.defaultModelSlug)
     var openaiModel: String
 
+    /// OpenAI reasoning effort 선호값. "" = 자동(모델이 허용하는 가장 낮은 값). 모델이 지원하지 않는 값이면 요청 시 자동으로 대체된다.
+    @UserDefault(key: "whispree.openaiReasoningEffort", defaultValue: "")
+    var openaiReasoningEffort: String
+
     @RawRepresentableUserDefault(
         key: "whispree.groqLLMModel",
         defaultValue: .qwen3_32b

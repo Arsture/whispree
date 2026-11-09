@@ -27,7 +27,7 @@ LLM 기반 텍스트 교정. 프로토콜 추상화로 None/LocalText/LocalVisio
 - word-edit-distance가 0.5를 초과하면 교정 결과를 버리고 원본 반환 → 환각 방지 핵심 로직
 - `CorrectionPrompts`는 **한국어** few-shot 예시 포함 — 프롬프트 수정 시 한국어/영어 코드스위칭 케이스 테스트
 - `LocalVisionProvider`는 스크린샷을 `data:image/jpeg;base64,...` 형태로 변환하여 모델에 전달
-- `OpenAIProvider`는 SSE 스트리밍 파싱. 모델은 자유 slug 문자열(`AppSettings.openaiModel`, 키 `whispree.openaiModel`)이며 목록은 `CodexModelCatalog`가 `~/.codex/models_cache.json`에서 읽는다(없으면 fallback). 요청의 `reasoning.effort`는 해당 모델 `supported_reasoning_levels` 중 가장 낮은 값 — 허용되지 않는 effort(예: `none`)를 보내면 403 `reasoning_effort_not_allowed`. 카탈로그에 없는 모델이면 `reasoning` 필드를 생략
+- `OpenAIProvider`는 SSE 스트리밍 파싱. 모델은 자유 slug 문자열(`AppSettings.openaiModel`, 키 `whispree.openaiModel`)이며 목록은 `CodexModelCatalog`가 `~/.codex/models_cache.json`에서 읽는다(없으면 fallback). 요청의 `reasoning.effort`는 `CodexModelCatalog.resolveEffort`가 정한다: 기본(자동, `AppSettings.openaiReasoningEffort` = "")은 해당 모델 `supported_reasoning_levels` 중 가장 낮은 값, 사용자가 LLM 설정의 "생각 수준"에서 고르면(`ultra` 제외) 모델이 지원할 때만 그 값(미지원이면 가장 낮은 값으로 대체 + 로그). 선호값은 `OpenAIProvider.reasoningEffortPreference`로 요청마다 읽혀 재시작 없이 반영, 모델 변경 시 저장값은 유지하고 UI는 미지원이면 자동으로 표시 — 허용되지 않는 effort(예: `none`)를 보내면 403 `reasoning_effort_not_allowed`. 카탈로그에 없는 모델이면 `reasoning` 필드를 생략
 - non-200 / 빈 응답 / SSE `response.failed`·`error`는 원문을 조용히 반환하지 않고 `LLMError.correctionFailed`를 throw → `RecordingCoordinator`가 OSLog(`com.whispree.app`/`LLM`)에 사유를 남기고 원문으로 fallback
 - `OpenAICompatibleProvider`는 non-streaming 단일 요청. 모델 ID가 자유 문자열이므로 enum 프로바이더(`GroqLLMModel`)와 달리 모델별 특수 파라미터(reasoning_effort 등) 없음
 

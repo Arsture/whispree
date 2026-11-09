@@ -88,6 +88,38 @@ final class CodexModelCatalogTests: XCTestCase {
         XCTAssertNil(CodexModelCatalog.lowestEffort(in: ["turbo"]))
     }
 
+    private func entry(_ efforts: [String]) -> CodexModel {
+        CodexModel(slug: "m", displayName: "M", description: "", supportsVision: true, supportedEfforts: efforts)
+    }
+
+    func testResolveEffortAutoUsesLowest() {
+        let e = entry(["medium", "low", "high"])
+        XCTAssertEqual(CodexModelCatalog.resolveEffort(entry: e, preference: ""), "low")
+    }
+
+    func testResolveEffortSupportedPreference() {
+        let e = entry(["low", "medium", "high"])
+        XCTAssertEqual(CodexModelCatalog.resolveEffort(entry: e, preference: "high"), "high")
+    }
+
+    func testResolveEffortUnsupportedPreferenceFallsBackToLowest() {
+        let e = entry(["low", "medium"])
+        XCTAssertEqual(CodexModelCatalog.resolveEffort(entry: e, preference: "max"), "low")
+    }
+
+    func testResolveEffortUnknownModelOmitsField() {
+        XCTAssertNil(CodexModelCatalog.resolveEffort(entry: nil, preference: ""))
+        XCTAssertNil(CodexModelCatalog.resolveEffort(entry: nil, preference: "high"))
+    }
+
+    func testSelectableEffortsExcludeUltra() {
+        XCTAssertEqual(
+            CodexModelCatalog.selectableEfforts(in: ["ultra", "max", "low", "xhigh", "high", "medium"]),
+            ["low", "medium", "high", "xhigh", "max"]
+        )
+        XCTAssertEqual(CodexModelCatalog.selectableEfforts(in: []), [])
+    }
+
     func testNormalizedSlugAliases() {
         XCTAssertEqual(CodexModelCatalog.normalizedSlug("gpt-5.6"), "gpt-5.6-sol")
         XCTAssertEqual(CodexModelCatalog.normalizedSlug("gpt-5.3-codex-spark"), "gpt-5.4-mini")

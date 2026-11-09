@@ -11,8 +11,10 @@ final class OpenAIProvider: LLMProvider {
     private(set) var model: String
     /// 카탈로그에 있는 모델이면 vision/effort 정보를 쓴다. 없으면 nil.
     private var catalogEntry: CodexModel?
+    /// 사용자가 고른 reasoning effort. 빈 문자열이면 자동(가장 낮은 값). 요청마다 읽으므로 재시작 없이 반영된다.
+    var reasoningEffortPreference: String
 
-    static let logger = Logger(subsystem: "com.whispree.app", category: "LLM")
+    nonisolated static let logger = Logger(subsystem: "com.whispree.app", category: "LLM")
     private static let requestTimeout: TimeInterval = 30
     private static let errorBodyLimit = 2048
 
@@ -29,11 +31,13 @@ final class OpenAIProvider: LLMProvider {
     init(
         model: String = CodexModelCatalog.defaultModelSlug,
         catalog: [CodexModel] = CodexModelCatalog.load(),
+        reasoningEffortPreference: String = "",
         authService: CodexAuthService,
         oauthService: OAuthService
     ) {
         self.model = model
         catalogEntry = catalog.first { $0.slug == model }
+        self.reasoningEffortPreference = reasoningEffortPreference
         self.authService = authService
         self.oauthService = oauthService
     }
@@ -80,7 +84,7 @@ final class OpenAIProvider: LLMProvider {
 
         let body = Self.makeRequestBody(
             model: model,
-            reasoningEffort: catalogEntry?.lowestEffort,
+            reasoningEffort: CodexModelCatalog.resolveEffort(entry: catalogEntry, preference: reasoningEffortPreference),
             instructions: fullPrompt,
             userContent: userContent
         )
