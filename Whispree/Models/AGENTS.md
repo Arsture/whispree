@@ -15,7 +15,6 @@
 | `UserDefault.swift` | 3종 property wrapper: `@UserDefault` / `@RawRepresentableUserDefault` / `@CodableUserDefault`. `_enclosingInstance` static subscript로 ObservableObject 반응성 자동 처리 |
 | `DomainWordSets.swift` | 도메인 특화 단어 세트 (프로그래밍, 의료 등) — STT promptTokens 주입 및 LLM glossary 용 |
 | `ModelInfo.swift` | WhisperKit/LLM 모델 메타데이터 (이름, 크기, 상태) |
-| `OpenAIModels.swift` | OpenAI API 응답 모델 (ChatCompletion, SSE 스트리밍 파싱) |
 | `TranscriptionState.swift` | 상태 머신 enum — `idle → recording → transcribing → correcting → inserting → idle`, `ModelState` enum |
 | `CapturedScreenshot.swift` | 녹음 중 캡처된 스크린샷 데이터 모델 — `Identifiable`, appName/timestamp/imageData |
 | `DeviceCapability.swift` | Apple Silicon 하드웨어 감지 — chipName, totalRAMGB, memoryBandwidthGBs, gpuCores. `static let current` 싱글톤 |

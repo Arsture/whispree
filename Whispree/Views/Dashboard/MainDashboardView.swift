@@ -391,7 +391,7 @@ struct MainDashboardView: View {
                     }
 
                     if appState.settings.llmProviderType == .openai {
-                        Text(appState.settings.openaiModel.displayName)
+                        Text(CodexModelCatalog.displayName(for: appState.settings.openaiModel))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     } else if appState.settings.llmProviderType == .local {

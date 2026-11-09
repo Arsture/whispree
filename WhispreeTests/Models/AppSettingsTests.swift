@@ -43,7 +43,7 @@ final class AppSettingsTests: XCTestCase {
 
     func testDefaultOpenAIModel() {
         let settings = makeSettings()
-        XCTAssertEqual(settings.openaiModel, .gpt56sol)
+        XCTAssertEqual(settings.openaiModel, "gpt-6-luna")
     }
 
     func testDefaultLLMEnabled() {
@@ -85,48 +85,26 @@ final class AppSettingsTests: XCTestCase {
 
     // MARK: - OpenAI Models
 
-    func testOpenAIModelDefaults() {
-        XCTAssertEqual(OpenAIModel.gpt56sol.rawValue, "gpt-5.6-sol")
-        XCTAssertEqual(OpenAIModel.gpt56terra.rawValue, "gpt-5.6-terra")
-        XCTAssertEqual(OpenAIModel.gpt56luna.rawValue, "gpt-5.6-luna")
-        XCTAssertEqual(OpenAIModel.gpt55.rawValue, "gpt-5.5")
-        XCTAssertEqual(OpenAIModel.gpt54.rawValue, "gpt-5.4")
-        XCTAssertEqual(OpenAIModel.gpt54mini.rawValue, "gpt-5.4-mini")
-        XCTAssertEqual(OpenAIModel.gpt53codex.rawValue, "gpt-5.3-codex")
-        XCTAssertEqual(OpenAIModel.gpt52.rawValue, "gpt-5.2")
-        XCTAssertEqual(OpenAIModel.allCases.map(\.rawValue), [
-            "gpt-5.6-sol",
-            "gpt-5.6-terra",
-            "gpt-5.6-luna",
-            "gpt-5.5",
-            "gpt-5.4",
-            "gpt-5.4-mini",
-            "gpt-5.3-codex",
-            "gpt-5.2",
-        ])
-    }
-
-    func testOpenAIModelDisplayNames() {
-        XCTAssertTrue(OpenAIModel.gpt56sol.displayName.contains("Latest"))
-        XCTAssertTrue(OpenAIModel.gpt56luna.displayName.contains("Fast"))
-        XCTAssertTrue(OpenAIModel.gpt54mini.displayName.contains("Fast"))
+    func testOpenAIModelKeepsUnknownStoredSlug() {
+        // 카탈로그에 없는 slug라도 사용자의 선택을 덮어쓰지 않는다.
+        store.set("gpt-9-experimental", forKey: "whispree.openaiModel")
+        XCTAssertEqual(makeSettings().openaiModel, "gpt-9-experimental")
+        XCTAssertEqual(store.string(forKey: "whispree.openaiModel"), "gpt-9-experimental")
     }
 
     func testOpenAIModelAliasMigration() {
         store.set("gpt-5.3-codex-spark", forKey: "whispree.openaiModel")
-        XCTAssertEqual(makeSettings().openaiModel, .gpt54mini)
+        XCTAssertEqual(makeSettings().openaiModel, "gpt-5.4-mini")
+        XCTAssertEqual(store.string(forKey: "whispree.openaiModel"), "gpt-5.4-mini")
 
         store.set("gpt-5.2-codex", forKey: "whispree.openaiModel")
-        XCTAssertEqual(makeSettings().openaiModel, .gpt52)
+        XCTAssertEqual(makeSettings().openaiModel, "gpt-5.2")
 
         store.set("gpt-5.6", forKey: "whispree.openaiModel")
-        XCTAssertEqual(makeSettings().openaiModel, .gpt56sol)
+        XCTAssertEqual(makeSettings().openaiModel, "gpt-5.6-sol")
 
-        let decoded = try? JSONDecoder().decode(OpenAIModel.self, from: Data(#""gpt-5.2-codex""#.utf8))
-        XCTAssertEqual(decoded, .gpt52)
-
-        let decodedAlias = try? JSONDecoder().decode(OpenAIModel.self, from: Data(#""gpt-5.6""#.utf8))
-        XCTAssertEqual(decodedAlias, .gpt56sol)
+        store.set("gpt-5.6-luna", forKey: "whispree.openaiModel")
+        XCTAssertEqual(makeSettings().openaiModel, "gpt-5.6-luna")
     }
 
     // MARK: - CorrectionPrompts Routing
@@ -212,7 +190,7 @@ final class AppSettingsTests: XCTestCase {
         let s1 = makeSettings()
         s1.groqApiKey = "gsk_test_123"
         s1.audioInputChannel = 2
-        s1.openaiModel = .gpt54mini
+        s1.openaiModel = "gpt-5.4-mini"
         s1.recordingMode = .toggle
         s1.openaiCompatibleBaseURL = "http://localhost:11434/v1"
         s1.openaiCompatibleAPIKey = "compat-key"
@@ -223,7 +201,7 @@ final class AppSettingsTests: XCTestCase {
         let s2 = makeSettings()
         XCTAssertEqual(s2.groqApiKey, "gsk_test_123")
         XCTAssertEqual(s2.audioInputChannel, 2)
-        XCTAssertEqual(s2.openaiModel, .gpt54mini)
+        XCTAssertEqual(s2.openaiModel, "gpt-5.4-mini")
         XCTAssertEqual(s2.recordingMode, .toggle)
         XCTAssertEqual(s2.openaiCompatibleBaseURL, "http://localhost:11434/v1")
         XCTAssertEqual(s2.openaiCompatibleAPIKey, "compat-key")
@@ -374,7 +352,7 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.mlxAudioModelId, "legacy-mlx")
         XCTAssertEqual(settings.sttProviderType, .groq)
         XCTAssertEqual(settings.llmProviderType, .openai)
-        XCTAssertEqual(settings.openaiModel, .gpt54mini)
+        XCTAssertEqual(settings.openaiModel, "gpt-5.4-mini")
         XCTAssertTrue(settings.isScreenshotContextEnabled)
         // 활성화 ON + 전달 OFF → 독립 토글이므로 값 유지
         XCTAssertFalse(settings.isScreenshotPasteEnabled)

@@ -20,7 +20,7 @@ description: 받아쓴 텍스트를 다듬는 LLM 프로바이더 6종과 교정
 완전 로컬 교정. 텍스트 모델(Qwen3, Gemma 4, GLM 등)과 비전 모델(Qwen3-VL-4B, DiffusionGemma 26B)을 지원하며, 모델은 설정 → 모델에서 받습니다. 비전 모델을 쓰면 [화면 컨텍스트](/features/context/)를 교정에 활용할 수 있습니다. 모델별 호환성은 [모델 & 호환성](/features/models/) 참고.
 
 ### OpenAI (GPT)
-ChatGPT Responses API(SSE 스트리밍)를 사용합니다. 인증은 **Codex CLI 토큰(`~/.codex/auth.json`)을 우선** 재사용하고, 없으면 LLM 탭에서 **OpenAI 로그인**(브라우저 PKCE)으로 연결합니다. 모델: GPT-5.6 Sol(기본)·Terra·Luna·5.5·5.4·5.4 Mini·5.3 Codex·5.2. 비전 지원.
+ChatGPT Responses API(SSE 스트리밍)를 사용합니다. 인증은 **Codex CLI 토큰(`~/.codex/auth.json`)을 우선** 재사용하고, 없으면 LLM 탭에서 **OpenAI 로그인**(브라우저 PKCE)으로 연결합니다. 모델 목록은 Mac에 설치된 Codex CLI가 지원하는 모델로 자동 표시돼, 새 모델이 나와도 앱을 업데이트할 필요가 없습니다. Codex CLI가 없으면 기본 목록(GPT-6.1 Sol·Terra, GPT-6 Astra·Sol·Luna, GPT-5.6 Sol·Terra·Luna)이 보입니다. 비전 지원.
 
 ### OpenAI 호환 API
 `POST {Base URL}/chat/completions`을 지원하는 모든 엔드포인트에서 동작합니다 — OpenRouter, DeepSeek, Together, vLLM, Ollama, LM Studio 등. **Base URL**(`/v1` 포함)과 **모델 ID**를 직접 입력하고, 필요하면 **API Key**를 넣습니다(로컬 서버는 생략 가능). 모델이 이미지 입력을 지원하면 **Vision 지원 모델** 토글을 켜서 화면 컨텍스트를 활용하세요.

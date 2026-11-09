@@ -5,6 +5,8 @@ import OSLog
 
 @MainActor
 final class RecordingCoordinator: ObservableObject {
+    private static let llmLogger = Logger(subsystem: "com.whispree.app", category: "LLM")
+
     private let appState: AppState
     private let audioService: AudioService
     private let textInsertionService: TextInsertionService
@@ -290,17 +292,36 @@ final class RecordingCoordinator: ObservableObject {
         }
 
         guard let job = queue.job(id: jobID) else { return }
-        guard currentLLMProviderConfigKey() == job.snapshot.llmProviderConfigKey else {
+        let logger = Self.llmLogger
+        let jobKey = job.snapshot.llmProviderConfigKey ?? "nil"
+        let currentKey = currentLLMProviderConfigKey()
+        guard currentKey == job.snapshot.llmProviderConfigKey else {
+            logger.error(
+                "LLM fallback to raw: config key mismatch job=\(jobKey, privacy: .public) current=\(currentKey, privacy: .public)"
+            )
             queue.failLLMFallbackToRaw(jobID: jobID)
             return
         }
-        guard let llmProvider = appState.llmProvider, llmProvider.isReady,
-              !(llmProvider is NoneProvider)
-        else {
+        guard let llmProvider = appState.llmProvider else {
+            logger.error("LLM fallback to raw: provider is nil config=\(currentKey, privacy: .public)")
+            queue.failLLMFallbackToRaw(jobID: jobID)
+            return
+        }
+        if llmProvider is NoneProvider {
+            logger.info("LLM fallback to raw: NoneProvider active config=\(currentKey, privacy: .public)")
+            queue.failLLMFallbackToRaw(jobID: jobID)
+            return
+        }
+        let validation = llmProvider.validate()
+        guard validation.isValid else {
+            logger.error(
+                "LLM fallback to raw: provider not ready provider=\(llmProvider.name, privacy: .public) config=\(currentKey, privacy: .public) reason=\(validation.message, privacy: .public)"
+            )
             queue.failLLMFallbackToRaw(jobID: jobID)
             return
         }
 
+        let startedAt = Date()
         do {
             let screenshotData = job.snapshot.screenshotContextEnabled && llmProvider.supportsVision
                 ? job.screenshots.map(\.imageData)
@@ -312,12 +333,20 @@ final class RecordingCoordinator: ObservableObject {
                 screenshots: screenshotData
             )
             guard !Task.isCancelled else { return }
+            let elapsedMs = Int(Date().timeIntervalSince(startedAt) * 1000)
+            logger.info(
+                "LLM corrected provider=\(llmProvider.name, privacy: .public) config=\(currentKey, privacy: .public) latencyMs=\(elapsedMs, privacy: .public) screenshots=\(screenshotData.count, privacy: .public) unchanged=\(corrected == job.transcribedText, privacy: .public)"
+            )
             queue.completeLLM(jobID: jobID, correctedText: corrected)
             appState.correctedText = corrected
         } catch is CancellationError {
             return
         } catch {
             guard !Task.isCancelled else { return }
+            let elapsedMs = Int(Date().timeIntervalSince(startedAt) * 1000)
+            logger.error(
+                "LLM fallback to raw: correct() threw provider=\(llmProvider.name, privacy: .public) config=\(currentKey, privacy: .public) latencyMs=\(elapsedMs, privacy: .public) error=\(String(describing: error), privacy: .public)"
+            )
             // LLM failure is non-fatal - use raw transcription.
             queue.failLLMFallbackToRaw(jobID: jobID)
             appState.correctedText = ""
@@ -506,7 +535,7 @@ final class RecordingCoordinator: ObservableObject {
         case .local:
             "local:\(appState.settings.llmModelId)"
         case .openai:
-            "openai:\(appState.settings.openaiModel.rawValue)"
+            "openai:\(appState.settings.openaiModel)"
         case .groq:
             "groq:\(appState.settings.groqLLMModel.rawValue):\(appState.settings.groqApiKey.hashValue)"
         case .openaiCompatible:

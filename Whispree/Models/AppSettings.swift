@@ -87,12 +87,10 @@ final class AppSettings: ObservableObject, UserDefaultsStoreProviding {
     )
     var llmProviderType: LLMProviderType
 
-    @RawRepresentableUserDefault(
-        key: "whispree.openaiModel",
-        defaultValue: .gpt56sol,
-        rawAliasMap: OpenAIModel.rawAliasMap
-    )
-    var openaiModel: OpenAIModel
+    /// Codex 모델 slug (자유 문자열). 목록은 `CodexModelCatalog`가 Codex CLI 캐시에서 읽는다.
+    /// 과거 enum rawValue도 slug 문자열이었으므로 같은 키를 그대로 쓴다. 옛 alias는 `runFieldMigrations`에서 정규화.
+    @UserDefault(key: "whispree.openaiModel", defaultValue: CodexModelCatalog.defaultModelSlug)
+    var openaiModel: String
 
     @RawRepresentableUserDefault(
         key: "whispree.groqLLMModel",
@@ -255,6 +253,11 @@ final class AppSettings: ObservableObject, UserDefaultsStoreProviding {
         if llmModelId.contains("Qwen2.5") {
             llmModelId = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
         }
+        // 구 OpenAIModel enum alias → 현재 slug
+        let normalizedOpenAIModel = CodexModelCatalog.normalizedSlug(openaiModel)
+        if normalizedOpenAIModel != openaiModel {
+            openaiModel = normalizedOpenAIModel
+        }
         // 스크린샷 활성화 OFF인데 전달만 ON인 상태 정리
         if !isScreenshotContextEnabled, isScreenshotPasteEnabled {
             isScreenshotPasteEnabled = false
@@ -293,7 +296,7 @@ final class AppSettings: ObservableObject, UserDefaultsStoreProviding {
         defaults.set(legacy.mlxAudioModelId, forKey: "whispree.mlxAudioModelId")
         defaults.set(legacy.sttProviderType.rawValue, forKey: "whispree.sttProviderType")
         defaults.set(legacy.llmProviderType.rawValue, forKey: "whispree.llmProviderType")
-        defaults.set(legacy.openaiModel.rawValue, forKey: "whispree.openaiModel")
+        defaults.set(legacy.openaiModel, forKey: "whispree.openaiModel")
         defaults.set(legacy.isScreenshotContextEnabled, forKey: "whispree.isScreenshotContextEnabled")
         defaults.set(legacy.isScreenshotPasteEnabled, forKey: "whispree.isScreenshotPasteEnabled")
         defaults.set(legacy.groqApiKey, forKey: "whispree.groqApiKey")
@@ -332,7 +335,7 @@ private struct LegacyAppSettings: Codable {
     var mlxAudioModelId: String = "mlx-community/Qwen3-ASR-1.7B-8bit"
     var sttProviderType: STTProviderType = .whisperKit
     var llmProviderType: LLMProviderType = .none
-    var openaiModel: OpenAIModel = .gpt55
+    var openaiModel: String = "gpt-5.5"
     var isScreenshotContextEnabled: Bool = false
     var isScreenshotPasteEnabled: Bool = true
     var groqApiKey: String = ""
@@ -359,7 +362,9 @@ private struct LegacyAppSettings: Codable {
         self.mlxAudioModelId = (try? c.decodeIfPresent(String.self, forKey: .mlxAudioModelId)) ?? "mlx-community/Qwen3-ASR-1.7B-8bit"
         self.sttProviderType = (try? c.decodeIfPresent(STTProviderType.self, forKey: .sttProviderType)) ?? .whisperKit
         self.llmProviderType = (try? c.decodeIfPresent(LLMProviderType.self, forKey: .llmProviderType)) ?? .none
-        self.openaiModel = (try? c.decodeIfPresent(OpenAIModel.self, forKey: .openaiModel)) ?? .gpt55
+        self.openaiModel = CodexModelCatalog.normalizedSlug(
+            (try? c.decodeIfPresent(String.self, forKey: .openaiModel)) ?? "gpt-5.5"
+        )
         self.isScreenshotContextEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .isScreenshotContextEnabled)) ?? false
         self.isScreenshotPasteEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .isScreenshotPasteEnabled)) ?? true
         self.groqApiKey = (try? c.decodeIfPresent(String.self, forKey: .groqApiKey)) ?? ""

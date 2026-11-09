@@ -4,6 +4,7 @@ struct LLMSettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var modelManager: ModelManager
     @State private var customPrompt: String = ""
+    @State private var codexModels: [CodexModel] = CodexModelCatalog.fallbackModels
 
     var body: some View {
         ScrollView {
@@ -82,6 +83,9 @@ struct LLMSettingsView: View {
             await appState.authService.checkAuthAsync()
             await appState.oauthService.checkAuthAsync()
             await modelManager.refreshAllCacheStatesAsync()
+        }
+        .task {
+            codexModels = await Task.detached { CodexModelCatalog.load() }.value
         }
     }
 
@@ -280,10 +284,24 @@ struct LLMSettingsView: View {
 
     // MARK: - OpenAI Model
 
+    /// 저장된 slug가 카탈로그에 없어도 사용자의 선택을 그대로 보여준다.
+    private var openAIModelChoices: [CodexModel] {
+        let current = appState.settings.openaiModel
+        guard !codexModels.contains(where: { $0.slug == current }) else { return codexModels }
+        let stored = CodexModel(
+            slug: current,
+            displayName: current,
+            description: "목록에 없는 모델",
+            supportsVision: true,
+            supportedEfforts: []
+        )
+        return codexModels + [stored]
+    }
+
     private var openAIModelSection: some View {
         LiquidSection("OpenAI 모델") {
             VStack(spacing: 0) {
-                ForEach(Array(OpenAIModel.allCases.enumerated()), id: \.element) { index, model in
+                ForEach(Array(openAIModelChoices.enumerated()), id: \.element.id) { index, model in
                     if index > 0 { Divider() }
                     openAIModelCard(model)
                 }
@@ -291,11 +309,12 @@ struct LLMSettingsView: View {
         }
     }
 
-    private func openAIModelCard(_ model: OpenAIModel) -> some View {
-        let isSelected = appState.settings.openaiModel == model
+    private func openAIModelCard(_ model: CodexModel) -> some View {
+        let isSelected = appState.settings.openaiModel == model.slug
 
         return Button {
-            appState.settings.openaiModel = model
+            appState.settings.openaiModel = model.slug
+            (appState.llmProvider as? OpenAIProvider)?.updateModel(model.slug, catalog: codexModels)
         } label: {
             HStack(alignment: .center) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -305,21 +324,14 @@ struct LLMSettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.displayName)
                         .font(.subheadline.weight(.medium))
-                    Text(model.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if !model.description.isEmpty {
+                        Text(model.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Spacer()
-
-                ModelMetricsView(
-                    sizeText: "☁️",
-                    ramPercent: nil,
-                    tokPerSec: nil,
-                    latencyMs: model.estimatedLatencyMs,
-                    qualityScore: model.qualityScore,
-                    grade: .runsGreat
-                )
             }
             .padding(.vertical, 10)
         }

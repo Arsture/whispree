@@ -148,6 +148,73 @@ final class LLMServiceTests: XCTestCase {
         XCTAssertTrue(true, "OpenAIProvider.supportsVision is declared as true")
     }
 
+    func testOpenAIRequestBodyUsesGivenReasoningEffort() throws {
+        let body = OpenAIProvider.makeRequestBody(
+            model: "gpt-6-luna",
+            reasoningEffort: "low",
+            instructions: "교정하세요.",
+            userContent: [["type": "input_text", "text": "원문"]]
+        )
+
+        XCTAssertEqual(body["model"] as? String, "gpt-6-luna")
+        let reasoning = try XCTUnwrap(body["reasoning"] as? [String: String])
+        XCTAssertEqual(reasoning["effort"], "low")
+        XCTAssertNoThrow(try JSONSerialization.data(withJSONObject: body))
+    }
+
+    func testOpenAIRequestBodyOmitsReasoningWhenEffortUnknown() {
+        let body = OpenAIProvider.makeRequestBody(
+            model: "gpt-unknown",
+            reasoningEffort: nil,
+            instructions: "교정하세요.",
+            userContent: [["type": "input_text", "text": "원문"]]
+        )
+
+        XCTAssertNil(body["reasoning"])
+    }
+
+    func testOpenAIServerMessageExtraction() {
+        XCTAssertEqual(
+            OpenAIProvider.serverMessage(from: #"{"detail":{"code":"reasoning_effort_not_allowed","message":"no"}}"#),
+            "reasoning_effort_not_allowed: no"
+        )
+        XCTAssertEqual(
+            OpenAIProvider.serverMessage(from: #"{"error":{"message":"bad model"}}"#),
+            "bad model"
+        )
+        XCTAssertEqual(OpenAIProvider.serverMessage(from: #"{"detail":"Unauthorized"}"#), "Unauthorized")
+        XCTAssertEqual(OpenAIProvider.serverMessage(from: "plain text"), "plain text")
+    }
+
+    func testOpenAIStreamFailureDetection() {
+        XCTAssertNil(OpenAIProvider.streamFailureMessage(from: ["type": "response.output_text.delta", "delta": "x"]))
+        XCTAssertEqual(
+            OpenAIProvider.streamFailureMessage(from: [
+                "type": "response.failed",
+                "response": ["error": ["code": "server_error", "message": "boom"]],
+            ]),
+            "response.failed server_error: boom"
+        )
+        XCTAssertEqual(
+            OpenAIProvider.streamFailureMessage(from: ["type": "error", "message": "rate limited"]),
+            "error rate limited"
+        )
+    }
+
+    func testOpenAIProviderVisionAndModelFollowCatalog() {
+        let catalog = [
+            CodexModel(slug: "text-only", displayName: "T", description: "", supportsVision: false, supportedEfforts: ["low"]),
+        ]
+        let auth = CodexAuthService()
+        let oauth = OAuthService()
+        let provider = OpenAIProvider(model: "text-only", catalog: catalog, authService: auth, oauthService: oauth)
+        XCTAssertFalse(provider.supportsVision)
+
+        provider.updateModel("not-in-catalog", catalog: catalog)
+        XCTAssertEqual(provider.model, "not-in-catalog")
+        XCTAssertTrue(provider.supportsVision, "카탈로그에 없으면 vision 지원으로 간주")
+    }
+
     // MARK: - OpenAICompatibleProvider
 
     func testOpenAICompatibleProviderValidate() {
