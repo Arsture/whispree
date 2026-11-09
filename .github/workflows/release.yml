@@ -207,6 +207,15 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Keep Vercel from deploying the gh-pages branch
+        # Vercel's Root Directory is docs-site and it builds every pushed branch.
+        # gh-pages only holds the appcast, so without this every release fails a
+        # preview build ("Root Directory docs-site does not exist") and emails about it.
+        # Vercel reads vercel.json from the deployed branch, so it must live here.
+        run: |
+          mkdir -p appcast/docs-site
+          echo '{"git":{"deploymentEnabled":false}}' > appcast/docs-site/vercel.json
+
       - name: Deploy appcast to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
