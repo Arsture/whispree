@@ -10,7 +10,7 @@ Dictation is Whispree's core flow. **Record → STT → (optional) AI correction
 1. Start recording with the shortcut (`Ctrl+Shift+R`).
 2. While you speak, the waveform overlay shows the state and the shortcut badges.
 3. When you stop recording, STT transcribes; if a correction engine is on, it polishes the text, then
-4. The result is inserted into the input field of **the app you were using right before you started recording** (clipboard + paste).
+4. The result is inserted into the input field of **the app you were using right before you started recording** (clipboard + paste). If you are typing, it waits briefly until you pause before pasting, and the result stays on the clipboard.
 
 You don't need to pick a target app separately. Whispree remembers the app at the moment recording started and returns to that spot. If there's no valid target (e.g., recording from the Settings window), it falls back to a clipboard copy.
 

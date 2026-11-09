@@ -3,8 +3,25 @@ import ApplicationServices
 import Carbon.HIToolbox
 
 final class TextInsertionService {
-    /// 클립보드 복원 Task — 이미지 붙여넣기 시작 시 취소해야 함
-    private var clipboardRestoreTask: Task<Void, Never>?
+    /// 붙여넣기 전 사용자의 실제 키 입력이 이만큼 멈춰 있어야 한다.
+    static let keyboardIdleGap: TimeInterval = 0.5
+    /// 계속 타이핑 중이어도 이 시간이 지나면 붙여넣는다 (FIFO delivery를 무한정 막지 않기 위해).
+    static let keyboardIdleMaxWait: TimeInterval = 3.0
+
+    /// 사용자가 키보드를 치는 중이면 멈출 때까지 기다린다.
+    /// 타이핑(특히 한글 조합) 도중에 합성 Cmd+V가 끼어들면 조합 글자와 엉켜 붙여넣기가 깨진다.
+    /// hidSystemState는 실제 하드웨어 입력만 반영하므로 Whispree가 보낸 합성 이벤트는 영향을 주지 않는다.
+    func waitForKeyboardIdle() async {
+        let deadline = Date().addingTimeInterval(Self.keyboardIdleMaxWait)
+        let heldModifiers: CGEventFlags = [.maskCommand, .maskShift, .maskAlternate, .maskControl]
+        while Date() < deadline {
+            let sinceKey = CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: .keyDown)
+            let modifiersHeld = !CGEventSource.flagsState(.hidSystemState).intersection(heldModifiers).isEmpty
+            if sinceKey >= Self.keyboardIdleGap, !modifiersHeld { return }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+
     func insertText(_ text: String, targetApp: NSRunningApplication? = nil) async -> Bool {
         // 유효한 외부 앱이 있으면 활성화 + Cmd+V
         if let target = targetApp,
@@ -73,15 +90,15 @@ final class TextInsertionService {
     private func insertViaClipboard(_ text: String) async -> Bool {
         let pasteboard = NSPasteboard.general
 
-        // Save current clipboard
-        let previousContents = pasteboard.string(forType: .string)
-
-        // Set our text
+        // 받아쓰기 결과는 클립보드에 그대로 남긴다 (이전 내용 복원 안 함).
+        // 붙여넣기가 실패해도 사용자가 직접 Cmd+V로 쓸 수 있다.
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
         // Small delay to ensure pasteboard is ready (async — MainActor yield)
         try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+
+        await waitForKeyboardIdle()
 
         // Simulate Cmd+V
         let source = CGEventSource(stateID: .combinedSessionState)
@@ -98,17 +115,6 @@ final class TextInsertionService {
         keyDown.post(tap: .cgAnnotatedSessionEventTap)
         keyUp.post(tap: .cgAnnotatedSessionEventTap)
 
-        // Restore clipboard after delay (async, non-blocking)
-        // 이미지 붙여넣기가 뒤따르면 이 Task는 취소됨
-        clipboardRestoreTask = Task {
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2s
-            guard !Task.isCancelled else { return }
-            pasteboard.clearContents()
-            if let previous = previousContents {
-                pasteboard.setString(previous, forType: .string)
-            }
-        }
-
         return true
     }
 
@@ -117,12 +123,9 @@ final class TextInsertionService {
     /// 캡처된 스크린샷들을 대상 앱에 이미지로 순서대로 붙여넣기
     /// 흐름: 영어 입력소스 전환 → 각 이미지(클립보드 복사 → Ctrl+V → Cmd+V) → 입력소스 복원
     @MainActor
-    func insertImages(_ images: [Data], targetApp: NSRunningApplication? = nil) async {
+    /// - Parameter clipboardTextAfter: 끝난 뒤 클립보드에 남길 텍스트 (보통 방금 붙여넣은 받아쓰기 결과).
+    func insertImages(_ images: [Data], targetApp: NSRunningApplication? = nil, clipboardTextAfter: String? = nil) async {
         guard !images.isEmpty else { return }
-
-        // 텍스트 삽입의 클립보드 복원 Task 취소 — 이미지 붙여넣기 도중에 prev 복원 방지
-        clipboardRestoreTask?.cancel()
-        clipboardRestoreTask = nil
 
         // 대상 앱이 이미 활성화되어 있어야 함
         if let target = targetApp,
@@ -147,6 +150,9 @@ final class TextInsertionService {
                 TISSelectInputSource(original)
             }
             pasteboard.clearContents()
+            if let clipboardTextAfter {
+                pasteboard.setString(clipboardTextAfter, forType: .string)
+            }
         }
 
         try? await Task.sleep(nanoseconds: 100_000_000)
@@ -162,6 +168,7 @@ final class TextInsertionService {
             pasteboard.setData(pngData, forType: .png)
 
             try? await Task.sleep(nanoseconds: 200_000_000) // 0.2초 — 클립보드 안정화
+            await waitForKeyboardIdle()
 
             // Ctrl+V (터미널 Claude CLI)
             sendPasteKey(flags: .maskControl)

@@ -15,6 +15,8 @@ FIFO delivery head job의 전사/교정 결과를 이전 앱에 붙여넣기. �
 ## For AI Agents
 
 ### Working In This Directory
+- 붙여넣기(텍스트·이미지) 직전에 `waitForKeyboardIdle()`로 실제 키 입력이 0.5초 멈추고 수정키가 눌려 있지 않을 때까지 기다린다(최대 3초). 타이핑/한글 조합 도중 합성 Cmd+V가 끼면 글자가 깨지기 때문. `hidSystemState` 기준이라 합성 이벤트는 영향 없음.
+- 받아쓰기 결과는 **클립보드에 남긴다** — 이전 클립보드 복원 로직은 제거됨(되살리지 말 것). 이미지 붙여넣기 후에도 `clipboardTextAfter`로 텍스트를 다시 올려둔다.
 - **Accessibility 권한 필수** (`AXIsProcessTrusted`) — 없으면 CGEvent 전송 실패
 - `Task.sleep` 사용 (Thread.sleep 아님) — MainActor yield
 - job `targetContext`/target app이 nil이면 (예: Settings 창에서 녹음 시) 클립보드 전용 폴백

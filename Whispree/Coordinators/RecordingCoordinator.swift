@@ -434,6 +434,9 @@ final class RecordingCoordinator: ObservableObject {
         let targetApp = resolvedContext?.app
         restoreTargetContext(resolvedContext)
 
+        // 사용자가 타이핑 중이면 멈출 때까지 기다린 뒤 붙여넣기 직전 값을 읽는다.
+        await textInsertionService.waitForKeyboardIdle()
+        guard !Task.isCancelled else { return }
         trainingData.prepareEditObservation(sessionID: jobID, app: targetApp)
         let success = await textInsertionService.insertText(textToInsert, targetApp: targetApp)
         if success {
@@ -454,7 +457,7 @@ final class RecordingCoordinator: ObservableObject {
 
         let imagesToInsert = selectedImages.isEmpty ? job.selectedImages : selectedImages
         if !imagesToInsert.isEmpty, !Task.isCancelled {
-            await textInsertionService.insertImages(imagesToInsert, targetApp: targetApp)
+            await textInsertionService.insertImages(imagesToInsert, targetApp: targetApp, clipboardTextAfter: textToInsert)
         }
 
         appState.addToHistory(
