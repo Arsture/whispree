@@ -28,3 +28,4 @@
 - `eventTap.isPipelineActive`는 ESC를 소비해도 되는 명시 scope가 있을 때만 true여야 한다. 상태 표시가 `.transcribing/.correcting`이라는 이유만으로 ESC를 삼키지 말 것; overlay에 `Cancel #N esc`처럼 foreground item cancel affordance가 있어야 한다.
 
 <!-- MANUAL: -->
+- `isEditObservationActive`/`onEditMarker`는 학습 데이터 편집 관찰 전용 observe-only 훅이다(Return/Cmd+Return/Esc/Cmd+Z만). 반환값/소비 여부에 절대 관여시키지 말 것 — ESC scoping 동작은 그대로다.

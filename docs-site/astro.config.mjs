@@ -39,7 +39,8 @@ export default defineConfig({
             { label: 'AI 교정', translations: { en: 'AI correction' }, slug: 'features/correction' },
             { label: '단어 사전 & Quick Fix', translations: { en: 'Dictionary & Quick Fix' }, slug: 'features/dictionary' },
             { label: '화면 컨텍스트 & 복원', translations: { en: 'Visual context & restore' }, slug: 'features/context' },
-            { label: '모델 & 호환성', translations: { en: 'Models & compatibility' }, slug: 'features/models' }
+            { label: '모델 & 호환성', translations: { en: 'Models & compatibility' }, slug: 'features/models' },
+            { label: '학습 데이터 모으기', translations: { en: 'Training data collection' }, slug: 'features/training-data' }
           ]
         },
         {

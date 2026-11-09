@@ -1,5 +1,6 @@
 import KeyboardShortcuts
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct GeneralSettingsView: View {
     @EnvironmentObject var appState: AppState
@@ -9,6 +10,10 @@ struct GeneralSettingsView: View {
     @State private var quickFixConflict: ShortcutConflict?
     @State private var inputChannelCount: Int = 1
     @State private var syncStatusMessage: String?
+    @State private var datasetStats: (sessions: Int, bytes: Int64)?
+    @State private var exportIncludesPrivate = false
+    @State private var exportStatus: String?
+    @State private var isExporting = false
 
     var body: some View {
         ScrollView {
@@ -208,6 +213,74 @@ struct GeneralSettingsView: View {
                         .disabled(!appState.settings.sharedDictionaryEnabled)
                     }
                 }
+
+                // Training Data Section
+                SettingsCard(title: "학습 데이터") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("학습 데이터 모으기")
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { appState.settings.collectTrainingData },
+                                set: {
+                                    appState.settings.collectTrainingData = $0
+                                    refreshDatasetStats()
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
+
+                        Text("내 Mac에만 저장돼요")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        TextField(TrainingDataStore.defaultRoot.path, text: Binding(
+                            get: { appState.settings.trainingDataPath },
+                            set: { appState.settings.trainingDataPath = $0 }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { refreshDatasetStats() }
+
+                        HStack(spacing: 8) {
+                            Button("폴더 열기") {
+                                let root = TrainingDataRecorder.shared.root
+                                try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+                                NSWorkspace.shared.open(root)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            if let stats = datasetStats {
+                                Text("받아쓰기 \(stats.sessions)개 · \(ByteCountFormatter.string(fromByteCount: stats.bytes, countStyle: .file))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Divider()
+
+                        Toggle("스크린샷과 입력창 기록 포함", isOn: $exportIncludesPrivate)
+                            .toggleStyle(.checkbox)
+
+                        HStack(spacing: 8) {
+                            Button("데이터 내보내기") { exportDataset() }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(isExporting)
+
+                            if isExporting {
+                                ProgressView().controlSize(.small)
+                            }
+                            if let message = exportStatus {
+                                Text(message)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .onAppear { refreshDatasetStats() }
 
                 // Browser Restoration Section
                 SettingsCard(title: "브라우저 복원") {
@@ -442,6 +515,31 @@ struct GeneralSettingsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, 4)
+    }
+
+    private func refreshDatasetStats() {
+        Task { datasetStats = await TrainingDataRecorder.shared.stats() }
+    }
+
+    private func exportDataset() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = TrainingDataExporter.defaultFileName()
+        panel.allowedContentTypes = [.zip]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let includePrivate = exportIncludesPrivate
+        isExporting = true
+        exportStatus = nil
+        Task {
+            do {
+                _ = try await TrainingDataRecorder.shared.export(to: url, includePrivate: includePrivate)
+                exportStatus = "내보냈어요"
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            } catch {
+                TrainingDataStore.logger.error("export failed: \(String(describing: error), privacy: .public)")
+                exportStatus = "내보내지 못했어요"
+            }
+            isExporting = false
+        }
     }
 
     private func showSyncStatus(_ message: String) {

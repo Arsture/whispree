@@ -495,6 +495,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     Task {
                         _ = await self.quickFixService.replaceText(with: correctedText, in: targetApp)
                         self.quickFixService.addWordToDictionary(correctedText, appState: self.appState)
+                        TrainingDataRecorder.shared.recordQuickFix(
+                            appBundleID: targetApp.bundleIdentifier, selectedText: originalText,
+                            correctedText: correctedText, mode: "word", dictionaryEntry: correctedText
+                        )
                     }
                 },
                 onConfirmMapping: { [weak self] fromText, toText in
@@ -505,6 +509,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     Task {
                         _ = await self.quickFixService.replaceText(with: toText, in: targetApp)
                         self.quickFixService.addCorrectionToDictionary(from: fromText, to: toText, appState: self.appState)
+                        TrainingDataRecorder.shared.recordQuickFix(
+                            appBundleID: targetApp.bundleIdentifier, selectedText: originalText,
+                            correctedText: toText, mode: "mapping", dictionaryEntry: "\(fromText) → \(toText)"
+                        )
                     }
                 },
                 onCancel: { [weak self] in

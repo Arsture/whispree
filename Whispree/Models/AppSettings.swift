@@ -175,6 +175,16 @@ final class AppSettings: ObservableObject, UserDefaultsStoreProviding {
     @UserDefault(key: "whispree.sharedDictionaryPath", defaultValue: nil)
     var sharedDictionaryPath: String?
 
+    // MARK: - Training data (local only)
+
+    /// 받아쓰기 원본·결과·붙여넣기 후 편집을 로컬 데이터셋에 수집 (기본 OFF).
+    @UserDefault(key: "whispree.collectTrainingData", defaultValue: false)
+    var collectTrainingData: Bool
+
+    /// 데이터셋 루트. 빈 문자열이면 `~/.whispree/dataset/`.
+    @UserDefault(key: "whispree.trainingDataPath", defaultValue: "")
+    var trainingDataPath: String
+
     // MARK: - Hotkeys (WhispreeShortcut — combo + modifier-only 지원)
 
     @CodableUserDefault(

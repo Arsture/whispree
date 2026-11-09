@@ -25,6 +25,8 @@ final class RecordingCoordinator: ObservableObject {
     private let mediaPlayback = MediaPlaybackService()
     private let browserContext = BrowserContextService()
     private let terminalContext = TerminalContextService()
+    private let trainingData = TrainingDataRecorder.shared
+    private var recordingStartedAt: Date?
 
     init(
         appState: AppState,
@@ -34,6 +36,7 @@ final class RecordingCoordinator: ObservableObject {
         self.appState = appState
         self.audioService = audioService
         self.textInsertionService = textInsertionService
+        trainingData.settings = appState.settings
 
         // Pipe audio level + frequency bands to appState for UI
         levelCancellable = audioService.$currentLevel
@@ -109,6 +112,7 @@ final class RecordingCoordinator: ObservableObject {
             try audioService.startRecording(channelSelection: appState.settings.audioInputChannel)
             appState.transcriptionState = .recording
             appState.isRecording = true
+            recordingStartedAt = Date()
             appState.partialText = ""
             appState.finalText = ""
             appState.correctedText = ""
@@ -163,6 +167,17 @@ final class RecordingCoordinator: ObservableObject {
             screenshots: screenshots
         )
         startChromeCaretTrackingIfNeeded()
+        if let enqueued {
+            trainingData.beginSession(
+                id: enqueued,
+                recordStartedAt: recordingStartedAt,
+                recordStoppedAt: Date(),
+                audio: audioBuffer,
+                snapshot: snapshot,
+                targetContext: activeRecordingContext,
+                screenshots: screenshots
+            )
+        }
         if enqueued == nil {
             appState.currentError = .sttError("녹음된 오디오가 비어 있습니다.")
         }
@@ -259,6 +274,7 @@ final class RecordingCoordinator: ObservableObject {
             return trimmed
         }()
 
+        let sttStartedAt = Date()
         do {
             if let whisperProvider = sttProvider as? WhisperKitProvider {
                 whisperProvider.domainWordSets = job.snapshot.domainWordSets
@@ -270,12 +286,17 @@ final class RecordingCoordinator: ObservableObject {
             )
             guard !Task.isCancelled else { return }
             let requiresLLM = shouldRunLLM(for: job)
+            trainingData.recordSTT(id: jobID, text: result.text, latencyMs: Self.elapsedMs(since: sttStartedAt))
             queue.completeSTT(jobID: jobID, text: result.text, requiresLLM: requiresLLM)
             appState.finalText = result.text
         } catch is CancellationError {
             return
         } catch {
             guard !Task.isCancelled else { return }
+            trainingData.recordSTT(
+                id: jobID, text: nil, latencyMs: Self.elapsedMs(since: sttStartedAt),
+                failureReason: String(describing: error)
+            )
             queue.failSTT(jobID: jobID, message: error.localizedDescription)
             appState.currentError = .sttError(error.localizedDescription)
         }
@@ -299,16 +320,19 @@ final class RecordingCoordinator: ObservableObject {
             logger.error(
                 "LLM fallback to raw: config key mismatch job=\(jobKey, privacy: .public) current=\(currentKey, privacy: .public)"
             )
+            trainingData.recordLLM(id: jobID, provider: nil, systemPrompt: nil, output: nil, failureReason: "config key mismatch", latencyMs: nil)
             queue.failLLMFallbackToRaw(jobID: jobID)
             return
         }
         guard let llmProvider = appState.llmProvider else {
             logger.error("LLM fallback to raw: provider is nil config=\(currentKey, privacy: .public)")
+            trainingData.recordLLM(id: jobID, provider: nil, systemPrompt: nil, output: nil, failureReason: "provider is nil", latencyMs: nil)
             queue.failLLMFallbackToRaw(jobID: jobID)
             return
         }
         if llmProvider is NoneProvider {
             logger.info("LLM fallback to raw: NoneProvider active config=\(currentKey, privacy: .public)")
+            trainingData.recordLLM(id: jobID, provider: llmProvider.name, systemPrompt: nil, output: nil, failureReason: "NoneProvider active", latencyMs: nil)
             queue.failLLMFallbackToRaw(jobID: jobID)
             return
         }
@@ -317,23 +341,31 @@ final class RecordingCoordinator: ObservableObject {
             logger.error(
                 "LLM fallback to raw: provider not ready provider=\(llmProvider.name, privacy: .public) config=\(currentKey, privacy: .public) reason=\(validation.message, privacy: .public)"
             )
+            trainingData.recordLLM(id: jobID, provider: llmProvider.name, systemPrompt: nil, output: nil, failureReason: "provider not ready: \(validation.message)", latencyMs: nil)
             queue.failLLMFallbackToRaw(jobID: jobID)
             return
         }
 
         let startedAt = Date()
+        var llmPrompt: String?
         do {
             let screenshotData = job.snapshot.screenshotContextEnabled && llmProvider.supportsVision
                 ? job.screenshots.map(\.imageData)
                 : []
+            let prompt = systemPrompt(for: job, includeScreenshotPrompt: !screenshotData.isEmpty)
+            llmPrompt = prompt
             let corrected = try await llmProvider.correct(
                 text: job.transcribedText,
-                systemPrompt: systemPrompt(for: job, includeScreenshotPrompt: !screenshotData.isEmpty),
+                systemPrompt: prompt,
                 glossary: job.snapshot.glossary.isEmpty ? nil : job.snapshot.glossary,
                 screenshots: screenshotData
             )
             guard !Task.isCancelled else { return }
             let elapsedMs = Int(Date().timeIntervalSince(startedAt) * 1000)
+            trainingData.recordLLM(
+                id: jobID, provider: llmProvider.name, systemPrompt: llmPrompt, output: corrected,
+                failureReason: nil, latencyMs: elapsedMs
+            )
             logger.info(
                 "LLM corrected provider=\(llmProvider.name, privacy: .public) config=\(currentKey, privacy: .public) latencyMs=\(elapsedMs, privacy: .public) screenshots=\(screenshotData.count, privacy: .public) unchanged=\(corrected == job.transcribedText, privacy: .public)"
             )
@@ -348,6 +380,10 @@ final class RecordingCoordinator: ObservableObject {
                 "LLM fallback to raw: correct() threw provider=\(llmProvider.name, privacy: .public) config=\(currentKey, privacy: .public) latencyMs=\(elapsedMs, privacy: .public) error=\(String(describing: error), privacy: .public)"
             )
             // LLM failure is non-fatal - use raw transcription.
+            trainingData.recordLLM(
+                id: jobID, provider: llmProvider.name, systemPrompt: llmPrompt, output: nil,
+                failureReason: "correct() threw: \(String(describing: error))", latencyMs: elapsedMs
+            )
             queue.failLLMFallbackToRaw(jobID: jobID)
             appState.correctedText = ""
         }
@@ -398,7 +434,19 @@ final class RecordingCoordinator: ObservableObject {
         let targetApp = resolvedContext?.app
         restoreTargetContext(resolvedContext)
 
+        trainingData.prepareEditObservation(sessionID: jobID, app: targetApp)
         let success = await textInsertionService.insertText(textToInsert, targetApp: targetApp)
+        if success {
+            trainingData.pasteDidHappen()
+        } else {
+            trainingData.cancelPreparedObservation()
+        }
+        let imagesForDataset = selectedImages.isEmpty ? job.selectedImages : selectedImages
+        trainingData.recordDelivery(
+            id: jobID,
+            pastedText: textToInsert,
+            selectedScreenshotIndices: job.screenshots.indices.filter { imagesForDataset.contains(job.screenshots[$0].imageData) }
+        )
         if !success {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(textToInsert, forType: .string)
@@ -612,7 +660,12 @@ final class RecordingCoordinator: ObservableObject {
         }
     }
 
+    private static func elapsedMs(since start: Date) -> Int {
+        Int(Date().timeIntervalSince(start) * 1000)
+    }
+
     private func refreshProjectedState() {
+        trainingData.syncTerminalStatuses { [queue] in queue.job(id: $0)?.status }
         appState.dictationQueueSnapshot = queue.snapshot
         if appState.isRecording {
             appState.transcriptionState = .recording

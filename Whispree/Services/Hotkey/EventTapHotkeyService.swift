@@ -50,6 +50,17 @@ final class EventTapHotkeyService {
     var isSelectionActive: Bool = false
     var isPipelineActive: Bool = false
 
+    // MARK: - Training-data edit markers (observe-only)
+
+    enum EditMarker: String {
+        case enter, cmdEnter = "cmd_enter", esc, cmdZ = "cmd_z"
+    }
+
+    /// 학습 데이터 편집 관찰 중일 때만 true. Return/Cmd+Return/Esc/Cmd+Z 발생 사실만 보고하며
+    /// 다른 키·문자는 기록하지 않고, 이벤트를 소비하거나 바꾸지 않는다.
+    var isEditObservationActive: Bool = false
+    var onEditMarker: ((EditMarker) -> Void)?
+
     // MARK: - Left Option Long-Press (recording-only)
 
     /// 녹음 중 Left Option 단독 long-press 감지 활성 여부. HotkeyManager가 `isRecording` 변화에 맞춰 토글.
@@ -275,6 +286,15 @@ final class EventTapHotkeyService {
 
         // -- Normal mode: match hotkeys --
 
+        if isEditObservationActive, type == .keyDown,
+           event.getIntegerValueField(.keyboardEventAutorepeat) == 0,
+           let marker = Self.editMarker(keyCode: keyCode, mods: eventMods)
+        {
+            DispatchQueue.main.async { [weak self] in
+                self?.onEditMarker?(marker)
+            }
+        }
+
         // ESC — 컨텍스트별 분기 (미리보기 → 선택 → 파이프라인 취소)
         if type == .keyDown, keyCode == 53,
            isPreviewOpen || isSelectionActive || isPipelineActive
@@ -309,6 +329,18 @@ final class EventTapHotkeyService {
         }
 
         return Unmanaged.passUnretained(event) // Pass through unmatched
+    }
+
+    private static func editMarker(keyCode: Int, mods: NSEvent.ModifierFlags) -> EditMarker? {
+        switch keyCode {
+            case 36, 76: // Return, keypad Enter
+                if mods.isEmpty { return .enter }
+                if mods == .command { return .cmdEnter }
+                return nil
+            case 53: return .esc
+            case 6: return mods == .command ? .cmdZ : nil // Z (Cmd+Shift+Z = redo, not reported)
+            default: return nil
+        }
     }
 
     // MARK: - Modifier-only dispatch

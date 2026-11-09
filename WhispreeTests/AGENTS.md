@@ -24,6 +24,7 @@
 | `Models/DomainWordSetsTests.swift` | 도메인 단어 세트 로직 + 프롬프트 텍스트 빌딩 |
 | `Models/DictationQueueTests.swift` | 병렬 dictation queue: admission, provider concurrency, FIFO delivery, recording block, scoped cancellation, terminal cleanup |
 | `Services/AudioServiceTests.swift` | 오디오 캡처/리샘플링 (placeholder) |
+| `Services/TrainingDataTests.swift` | 학습 데이터 스키마/마이그레이션, session roundtrip, edit event 순서, 비활성 no-op, 비밀값 제외, 오디오 길이, export 복사본/manifest |
 | `Services/LLMServiceTests.swift` | LocalTextProvider word-edit-distance + LocalModelSpec 검증 + 프로바이더 속성 테스트 |
 
 ## For AI Agents
